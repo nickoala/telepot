@@ -116,7 +116,7 @@ You may also send photos, videos, audios, documents, and stickers.
              u'width': 0}]}
 ```
 
-Note that the server returns a number of `file_id`s, with various file sizes. These are thumbnails of the uploaded images. If you want to resend the same file, just give one of the `file_id`s.
+Note that the server returns a number of `file_id`s, with various file sizes. These are thumbnails of the uploaded image. If you want to resend the same file, just give one of the `file_id`s.
 
 ```python
 >>> bot.sendPhoto(999999999, 'APNpmPKVulsdkIFAILMDmhTAADmdcmdsdfaldalk')
