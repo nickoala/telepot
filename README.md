@@ -1,8 +1,8 @@
 # telepot
 
-**P**ython wrapper for [**Tele**gram B**ot** API](https://core.telegram.org/bots/api)
+**P**ython wrapper for **Tele**gram B**ot** API
 
-To use the Telegram Bot API, you first have to get a **bot account** by [chatting with the BotFather](https://core.telegram.org/bots).
+To use the [Telegram Bot API](https://core.telegram.org/bots/api), you first have to get a **bot account** by [chatting with the BotFather](https://core.telegram.org/bots).
 
 He will then give you a **token**, something like `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ`. With the token in hand, you can start using telepot to access the bot account.
 
