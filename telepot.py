@@ -98,14 +98,12 @@ class Bot(object):
         r = requests.post(self._url('setWebhook'), params=self._rectify(p))
         return self._result(r.json())
 
-    def notifyOnMessage(self, callback, accept=None, relax=1, offset=None, timeout=20):
+    def notifyOnMessage(self, callback, relax=1, offset=None, timeout=20):
         def handle(update):
             try:
-                if accept is None or accept(update['message']):
-                    callback(update['message'])
+                callback(update['message'])
             except:
-                # Localize the error raised by accept() or callback(),
-                # so monitor thread can keep going.
+                # Localize the error so monitor thread can keep going.
                 traceback.print_exc()
             finally:
                 return update['update_id']
