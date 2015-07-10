@@ -21,7 +21,7 @@ He will then give you a **token**, something like `123456789:ABCdefGhIJKlmNoPQRs
 
 #### Receive messages
 
-Try sending the bot a message. It gets the message by calling `getUpdates()`.
+Bots cannot initiate conversations with users. You have to send it a message first. It gets the message by calling `getUpdates()`.
 
 ```python
 >>> from pprint import pprint
@@ -40,8 +40,6 @@ Try sending the bot a message. It gets the message by calling `getUpdates()`.
 ```
 
 `999999999` is obviously a fake ID. `Nick` `Lee` is my real name, though.
-
-Telegram does not allow bots to initiate conversations with users. You have to send it a message first.
 
 Also note the `update_id`. It is an ever-increasing number. Next time you should use `getUpdates(offset=100000001)` to avoid getting the same old messages over and over.
 
@@ -67,7 +65,7 @@ It is kind of troublesome to keep checking messages. Fortunately, telepot can ta
 Use a proper ID in place of `999999999`.
 
 ```python
->>> response = bot.sendMessage(999999999, 'I am fine')
+>>> bot.sendMessage(999999999, 'I am fine')
 ```
 
 #### Send a custom keyboard
