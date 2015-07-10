@@ -41,6 +41,8 @@ Try sending the bot a message. It gets the message by calling `getUpdates()`.
 
 `999999999` is obviously a fake ID. `Nick` `Lee` is my real name, though.
 
+Telegram does not allow bots to initiate conversations with users. You have to send it a message first.
+
 Also note the `update_id`. It is an ever-increasing number. Next time you should use `getUpdates(offset=100000001)` to avoid getting the same old messages over and over.
 
 ```python
@@ -66,19 +68,11 @@ Use a proper ID in place of `999999999`.
 
 ```python
 >>> response = bot.sendMessage(999999999, 'I am fine')
->>> pprint(response)
-{u'chat': {u'first_name': u'Nick', u'id': 999999999, u'last_name': u'Lee'},
- u'date': 1436425915,
- u'from': {u'first_name': u'Your Bot',
-           u'id': 123456789,
-           u'username': u'YourBot'},
- u'message_id': 114,
- u'text': u'I am fine'}
 ```
 
 #### Send a custom keyboard
 
-This is a great feature of the Telegram bot account! Try it.
+This is Telegram's Great Feature! Check it out.
 
 ```python
 >>> show_keyboard = {'keyboard': [['Yes','No'], ['Maybe','Maybe not']]}
