@@ -41,7 +41,7 @@ Bots cannot initiate conversations with users. You have to send it a message fir
 
 `999999999` is obviously a fake ID. `Nick` `Lee` is my real name, though.
 
-Also note the `update_id`. It is an ever-increasing number. Next time you should use `getUpdates(offset=100000001)` to avoid getting the same old messages over and over.
+Also note the `update_id`. It is an ever-increasing number. Next time you should use `getUpdates(offset=100000001)` to avoid getting the same old messages over and over. Giving an `offset` essentially acknowledges to the server that you have received all `update_id`s lower than `offset`.
 
 ```python
 >>> bot.getUpdates(offset=100000001)
@@ -70,7 +70,7 @@ Use a proper ID in place of `999999999`.
 
 #### Send a custom keyboard
 
-This is Telegram's Great Feature! Check it out.
+This is Telegram's Great Feature! A custom keyboard presents custom buttons for users to tab. Check it out.
 
 ```python
 >>> show_keyboard = {'keyboard': [['Yes','No'], ['Maybe','Maybe not']]}
@@ -116,7 +116,7 @@ Note that the server returns a number of `file_id`s, with various file sizes. Th
 
 #### Reference
 
-Aside from `notifyOnMessage()`, all methods and parameters are straight mappings from the [Telegram Bot API](https://core.telegram.org/bots/api). I duplicate the list for your reference:
+Aside from `notifyOnMessage()`, all methods and parameters are straight mappings from the [Telegram Bot API](https://core.telegram.org/bots/api):
 
 - [getMe](https://core.telegram.org/bots/api#getme)  
 - [sendMessage](https://core.telegram.org/bots/api#sendmessage)  
@@ -132,4 +132,10 @@ Aside from `notifyOnMessage()`, all methods and parameters are straight mappings
 - [getUpdates](https://core.telegram.org/bots/api#getupdates)  
 - [setWebhook](https://core.telegram.org/bots/api#setwebhook)  
 
-As for `notifyOnMessage()`, please refer to the source code to discover its full power.
+`notifyOnMessage(callback, relax=1, offset=None, timeout=20)`
+
+> Spawn a thread to constantly `getUpdates()`. Apply `callback` to every message received. `callback` must take one argument, which is the message.
+> - `callback`: a function to apply to every message received
+> - `relax`: seconds between each `getUpdates()`
+> - `offset`: an initial offset supplied to `getUpdates()`
+> - `timeout`: timeout supplied to `getUpdates()`
