@@ -6,9 +6,13 @@ To use the [Telegram Bot API](https://core.telegram.org/bots/api), you first hav
 
 He will then give you a **token**, something like `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ`. With the token in hand, you can start using telepot to access the bot account.
 
+Instructions are based on **Raspbian**, the only platform I have tested on.
+
 #### Installation
 
-`pip install telepot` or `sudo pip install telepot` on Raspberry Pi
+`sudo apt-get install python-pip` to install the Python package manager.
+
+`sudo pip install telepot` to install the telepot library.
 
 #### Test the account
 
