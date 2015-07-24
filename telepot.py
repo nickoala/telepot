@@ -26,7 +26,7 @@ class Bot(object):
 
     def _rectify(self, params):
         # remove None, then json-serialize if needed
-        return {key: value if type(value) in [int, float, str] else json.dumps(value, separators=(',',':')) for key,value in params.items() if value is not None}
+        return {key: value if type(value) not in [dict, list] else json.dumps(value, separators=(',',':')) for key,value in params.items() if value is not None}
 
     def getMe(self):
         r = requests.post(self._url('getMe'))
