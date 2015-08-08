@@ -3,6 +3,9 @@ import requests, json, time, threading, traceback
 # Suppress InsecurePlatformWarning
 requests.packages.urllib3.disable_warnings()
 
+# Ensure an exception is raised for requests that take too long
+http_timeout = 10
+
 
 class TelegramError(Exception):
     def __init__(self, description, error_code):
@@ -29,17 +32,17 @@ class Bot(object):
         return {key: value if type(value) not in [dict, list] else json.dumps(value, separators=(',',':')) for key,value in params.items() if value is not None}
 
     def getMe(self):
-        r = requests.post(self._url('getMe'))
+        r = requests.post(self._url('getMe'), timeout=http_timeout)
         return self._result(r.json())
 
     def sendMessage(self, chat_id, text, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None):
         p = {'chat_id': chat_id, 'text': text, 'disable_web_page_preview': disable_web_page_preview, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}
-        r = requests.post(self._url('sendMessage'), params=self._rectify(p))
+        r = requests.post(self._url('sendMessage'), params=self._rectify(p), timeout=http_timeout)
         return self._result(r.json())
 
     def forwardMessage(self, chat_id, from_chat_id, message_id):
         p = {'chat_id': chat_id, 'from_chat_id': from_chat_id, 'message_id': message_id}
-        r = requests.post(self._url('forwardMessage'), params=self._rectify(p))
+        r = requests.post(self._url('forwardMessage'), params=self._rectify(p), timeout=http_timeout)
         return self._result(r.json())
 
     def _sendFile(self, inputfile, filetype, params):
@@ -51,10 +54,10 @@ class Bot(object):
 
         if type(inputfile) is file:
             files = {filetype: inputfile}
-            r = requests.post(self._url(method), params=self._rectify(params), files=files)
+            r = requests.post(self._url(method), params=self._rectify(params), files=files, timeout=http_timeout)
         else:
             params[filetype] = inputfile
-            r = requests.post(self._url(method), params=self._rectify(params))
+            r = requests.post(self._url(method), params=self._rectify(params), timeout=http_timeout)
 
         return self._result(r.json())
 
@@ -75,27 +78,27 @@ class Bot(object):
 
     def sendLocation(self, chat_id, latitude, longitude, reply_to_message_id=None, reply_markup=None):
         p = {'chat_id': chat_id, 'latitude': latitude, 'longitude': longitude, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}
-        r = requests.post(self._url('sendLocation'), params=self._rectify(p))
+        r = requests.post(self._url('sendLocation'), params=self._rectify(p), timeout=http_timeout)
         return self._result(r.json())
 
     def sendChatAction(self, chat_id, action):
         p = {'chat_id': chat_id, 'action': action}
-        r = requests.post(self._url('sendChatAction'), params=self._rectify(p))
+        r = requests.post(self._url('sendChatAction'), params=self._rectify(p), timeout=http_timeout)
         return self._result(r.json())
 
     def getUserProfilePhotos(self, user_id, offset=None, limit=None):
         p = {'user_id': user_id, 'offset': offset, 'limit': limit}
-        r = requests.post(self._url('getUserProfilePhotos'), params=self._rectify(p))
+        r = requests.post(self._url('getUserProfilePhotos'), params=self._rectify(p), timeout=http_timeout)
         return self._result(r.json())
 
     def getUpdates(self, offset=None, limit=None, timeout=None):
         p = {'offset': offset, 'limit': limit, 'timeout': timeout}
-        r = requests.post(self._url('getUpdates'), params=self._rectify(p))
+        r = requests.post(self._url('getUpdates'), params=self._rectify(p), timeout=http_timeout+(0 if timeout is None else timeout))
         return self._result(r.json())
 
     def setWebhook(self, url=None):
         p = {'url': url}
-        r = requests.post(self._url('setWebhook'), params=self._rectify(p))
+        r = requests.post(self._url('setWebhook'), params=self._rectify(p), timeout=http_timeout)
         return self._result(r.json())
 
     def notifyOnMessage(self, callback, relax=1, offset=None, timeout=20):
@@ -111,14 +114,17 @@ class Bot(object):
         def monitor():
             f = offset  # running offset
             while 1:
-                result = self.getUpdates(offset=f, timeout=timeout)
+                try:
+                    result = self.getUpdates(offset=f, timeout=timeout)
 
-                if len(result) > 0:
-                    # No sort. Trust server to give messages in correct order.
-                    # Update offset to max(update_id) + 1
-                    f = max([handle(update) for update in result]) + 1
-
-                time.sleep(relax)
+                    if len(result) > 0:
+                        # No sort. Trust server to give messages in correct order.
+                        # Update offset to max(update_id) + 1
+                        f = max([handle(update) for update in result]) + 1
+                except:
+                    traceback.print_exc()
+                finally:
+                    time.sleep(relax)
 
         t = threading.Thread(target=monitor)
         t.daemon = True  # need this for main thread to be killable by Ctrl-C
