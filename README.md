@@ -136,10 +136,11 @@ Aside from `notifyOnMessage()`, all methods and parameters are straight mappings
 - [getUpdates](https://core.telegram.org/bots/api#getupdates)  
 - [setWebhook](https://core.telegram.org/bots/api#setwebhook)  
 
-`notifyOnMessage(callback, relax=1, offset=None, timeout=20)`
+`notifyOnMessage(callback, relax=1, timeout=20)`
 
 > Spawn a thread to constantly `getUpdates()`. Apply `callback` to every message received. `callback` must take one argument, which is the message.
 > - `callback`: a function to apply to every message received
 > - `relax`: seconds between each `getUpdates()`
-> - `offset`: an initial offset supplied to `getUpdates()`
 > - `timeout`: timeout supplied to `getUpdates()`
+>
+> This method allows you to change the callback function by `notifyOnMessage(new_callback)`. If you don't want to receive messages anymore, cancel the callback by `notifyOnMessage(None)`. After the callback is cancelled, the message-checking thread will terminate. If a new callback is set later, a new thread will be spawned again.
