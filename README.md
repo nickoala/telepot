@@ -58,7 +58,7 @@ It is kind of troublesome to keep checking messages. Fortunately, telepot can ta
 
 ```python
 >>> def handle_message(msg):
-...     print 'Message from %s %s (ID: %d)' % (msg['from']['first_name'], msg['from']['last_name'], msg['from']['id'])
+...     print 'Message from ID: %d' % msg['from']['id']
 ...     print 'Content: %s' % msg['text']
 ...
 >>>  bot.notifyOnMessage(handle_message)
