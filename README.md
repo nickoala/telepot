@@ -57,12 +57,14 @@ Also note the `update_id`. It is an ever-increasing number. Next time you should
 It is kind of troublesome to keep checking messages. Fortunately, telepot can take care of the checking for you, and notify you whenever new messages arrive.
 
 ```python
+>>> from pprint import pprint
 >>> def handle_message(msg):
-...     print 'Message from ID: %d' % msg['from']['id']
-...     print 'Content: %s' % msg['text']
+...     pprint(msg)
 ...
 >>>  bot.notifyOnMessage(handle_message)
 ```
+
+After setting up this callback, you may send various messages to the bot, and inspect their message structures.
 
 #### Send messages
 
