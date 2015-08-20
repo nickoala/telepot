@@ -120,29 +120,4 @@ Note that the server returns a number of `file_id`s, with various file sizes. Th
 >>> bot.sendPhoto(999999999, 'APNpmPKVulsdkIFAILMDmhTAADmdcmdsdfaldalk')
 ```
 
-#### Reference
-
-Aside from `notifyOnMessage()`, all methods and parameters are straight mappings from the [Telegram Bot API](https://core.telegram.org/bots/api):
-
-- [getMe](https://core.telegram.org/bots/api#getme)  
-- [sendMessage](https://core.telegram.org/bots/api#sendmessage)  
-- [forwardMessage](https://core.telegram.org/bots/api#forwardmessage)  
-- [sendPhoto](https://core.telegram.org/bots/api#sendphoto)  
-- [sendAudio](https://core.telegram.org/bots/api#sendaudio)  
-- [sendDocument](https://core.telegram.org/bots/api#senddocument)  
-- [sendSticker](https://core.telegram.org/bots/api#sendsticker)  
-- [sendVideo](https://core.telegram.org/bots/api#sendvideo)  
-- [sendLocation](https://core.telegram.org/bots/api#sendlocation)  
-- [sendChatAction](https://core.telegram.org/bots/api#sendchataction)  
-- [getUserProfilePhotos](https://core.telegram.org/bots/api#getuserprofilephotos)  
-- [getUpdates](https://core.telegram.org/bots/api#getupdates)  
-- [setWebhook](https://core.telegram.org/bots/api#setwebhook)  
-
-`notifyOnMessage(callback, relax=1, timeout=20)`
-
-> Spawn a thread to constantly `getUpdates()`. Apply `callback` to every message received. `callback` must take one argument, which is the message.
-> - `callback`: a function to apply to every message received
-> - `relax`: seconds between each `getUpdates()`
-> - `timeout`: timeout supplied to `getUpdates()`
->
-> This method allows you to change the callback function by `notifyOnMessage(new_callback)`. If you don't want to receive messages anymore, cancel the callback by `notifyOnMessage(None)`. After the callback is cancelled, the message-checking thread will terminate. If a new callback is set later, a new thread will be spawned again.
+#### [Go to documentation ►►](http://telepot.readthedocs.org/)
