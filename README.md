@@ -6,7 +6,7 @@ To use the [Telegram Bot API](https://core.telegram.org/bots/api), you first hav
 
 He will then give you a **token**, something like `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ`. With the token in hand, you can start using telepot to access the bot account.
 
-**[Go to documentation ►►](http://telepot.readthedocs.org/)**
+**[Go to telepot documentation ►►](http://telepot.readthedocs.org/)**
 
 Telepot works with **Python 2.7 & 3**, although instructions below are presented with Python 2.7. They are based on **Raspbian**, the only platform I have tested on.
 
@@ -122,4 +122,4 @@ Note that the server returns a number of `file_id`s, with various file sizes. Th
 >>> bot.sendPhoto(999999999, 'APNpmPKVulsdkIFAILMDmhTAADmdcmdsdfaldalk')
 ```
 
-#### [Go to documentation ►►](http://telepot.readthedocs.org/)
+#### [Go to telepot documentation ►►](http://telepot.readthedocs.org/)
