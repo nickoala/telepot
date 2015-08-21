@@ -346,7 +346,8 @@ If you don't want to receive messages anymore, cancel the callback by `notifyOnM
 After the callback is cancelled, the message-checking thread will terminate. 
 If a new callback is set later, a new thread will be spawned again.
 
-Examples:
+This can be a skeleton for a lot of telepot programs:
+
 ```python
 import time
 import pprint
