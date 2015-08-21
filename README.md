@@ -312,7 +312,7 @@ Tell the user that something is happening on the bot's side. The status is set f
 
 See: https://core.telegram.org/bots/api#sendchataction
 
-Examples: Please see `sendPhoto()`, `sendVideo()`, `sendDocument()`, etc.
+Examples: Please refer to examples for `sendPhoto()`, `sendVideo()`, `sendDocument()`, etc.
 
 **getUserProfilePhotos(user_id, offset=None, limit=None)**
 
