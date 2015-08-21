@@ -204,7 +204,7 @@ bot.sendPhoto(chat_id, file_id, caption='This is a lighthouse')
 
 **sendAudio(chat_id, audio, duration=None, performer=None, title=None, reply_to_message_id=None, reply_markup=None)**
 
-Send audio files, if you want Telegram clients to display them in the music player. Your audio must be in the .mp3 format. For sending voice messages, use ``sendVoice()`` instead. 
+Send audio files, if you want Telegram clients to display them in the music player. Your audio must be in the .mp3 format. For sending voice messages, use `sendVoice()` instead. 
 
 See: https://core.telegram.org/bots/api#sendaudio
 
@@ -258,7 +258,7 @@ bot.sendSticker(chat_id, file_id)
 
 **sendVideo(chat_id, video, duration=None, caption=None, reply_to_message_id=None, reply_markup=None)**
 
-Send video files. Telegram clients support mp4 videos. Other formats may be sent using ``sendDocument()``.
+Send video files. Telegram clients support mp4 videos. Other formats may be sent using `sendDocument()`.
 
 See: https://core.telegram.org/bots/api#sendvideo
 
@@ -277,9 +277,20 @@ bot.sendVideo(chat_id, file_id, duration=5)
 
 **sendVoice(chat_id, audio, duration=None, reply_to_message_id=None, reply_markup=None)**
 
-Send audio files, if you want Telegram clients to display the file as a playable voice message. For this to work, your audio must be in an .ogg file encoded with OPUS. Other formats may be sent using ``sendAudio()`` or ``sendDocument()``.
+Send audio files, if you want Telegram clients to display the file as a playable voice message. For this to work, your audio must be in an .ogg file encoded with OPUS. Other formats may be sent using `sendAudio()` or `sendDocument()`.
 
 See: https://core.telegram.org/bots/api#sendvoice
+
+Examples:
+```python
+# Send a voice message that is stored locally.
+result = bot.sendVoice(chat_id, open('example.ogg', 'rb'))
+
+file_id = result['voice']['file_id']
+
+# Use `file_id` to resend the voice message, with a duration stated this time.
+bot.sendVoice(chat_id, file_id, duration=6)
+```
 
 **sendLocation(chat_id, latitude, longitude, reply_to_message_id=None, reply_markup=None)**
 
@@ -287,11 +298,21 @@ Send point on the map.
 
 See: https://core.telegram.org/bots/api#sendlocation
 
+Examples:
+```python
+bot.sendChatAction(chat_id, 'find_location')
+bot.sendLocation(chat_id, 22.33, 114.18)   # Hong Kong
+bot.sendLocation(chat_id, 49.25, -123.1)   # Vancouver
+bot.sendLocation(chat_id, -37.82, 144.97)  # Melbourne
+```
+
 **sendChatAction(chat_id, action)**
 
 Tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status).
 
 See: https://core.telegram.org/bots/api#sendchataction
+
+Examples: Please see `sendPhoto()`, `sendVideo()`, `sendDocument()`, etc.
 
 **getUserProfilePhotos(user_id, offset=None, limit=None)**
 
@@ -301,7 +322,7 @@ See: https://core.telegram.org/bots/api#getuserprofilephotos
 
 **getUpdates(offset=None, limit=None, timeout=None)**
 
-Receive incoming updates using [long polling](https://en.wikipedia.org/wiki/Push_technology#Long_polling).
+Receive incoming updates.
 
 See: https://core.telegram.org/bots/api#getupdates
 
@@ -313,14 +334,31 @@ See: https://core.telegram.org/bots/api#setwebhook
 
 **notifyOnMessage(callback, relax=1, timeout=20)**
 
-Spawn a thread to constantly ``getUpdates()``. Apply ``callback`` to every message received. ``callback`` must take one argument, which is the message.
+Spawn a thread to constantly `getUpdates()`. Apply `callback` to every message received. `callback` must take one argument, which is the message.
 
 Parameters:
 - callback (function): a function to apply to every message received
-- relax (integer): seconds between each ``getUpdates()``
-- timeout (integer): timeout supplied to ``getUpdates()``, controlling how long to poll.
+- relax (integer): seconds between each `getUpdates()`
+- timeout (integer): timeout supplied to `getUpdates()`, controlling how long to poll.
 
-This method allows you to change the callback function by ``notifyOnMessage(new_callback)``. 
-If you don't want to receive messages anymore, cancel the callback by ``notifyOnMessage(None)``. 
+This method allows you to change the callback function by `notifyOnMessage(new_callback)`. 
+If you don't want to receive messages anymore, cancel the callback by `notifyOnMessage(None)`. 
 After the callback is cancelled, the message-checking thread will terminate. 
 If a new callback is set later, a new thread will be spawned again.
+
+Examples:
+```python
+import time
+import pprint
+import telepot
+
+def handle(msg):
+    pprint.pprint(msg)
+
+bot = telepot.Bot('***** TOKEN *****')
+bot.notifyOnMessage(handle)
+
+# Keep the program running.
+while 1:
+    time.sleep(10)
+```
