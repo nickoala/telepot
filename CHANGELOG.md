@@ -1,12 +1,19 @@
 # telepot changelog
 
-## 2015-08-21 (version 1.1)
+## 1.2 (2015-08-30)
+
+- Conforms to latest Telegram Bot API as of August 29, 2015
+- Added `certificate` parameters to `setWebhook()`
+- Added `telepot.glance()` and `telepot.namedtuple()`
+- Consolidated all tests into one script
+
+## 1.1 (2015-08-21)
 
 - Use MIT license
 
-## 2015-08-20 (version 1.0)
+## 1.0 (2015-08-20)
 
-- Conformed to latest Telegram Bot API as of August 15, 2015
+- Conforms to latest Telegram Bot API as of August 15, 2015
 - Added `sendVoice()`
 - Added `caption` and `duration` parameters to `sendVideo()`
 - Added `performer` and `title` parameters to `sendAudio()`
