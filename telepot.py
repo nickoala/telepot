@@ -1,7 +1,158 @@
-import requests, json, time, threading, traceback, sys
+import requests, json, time, threading, traceback, sys, collections
 
 # Suppress InsecurePlatformWarning
 requests.packages.urllib3.disable_warnings()
+
+
+_classmap = {}
+
+# Function to produce namedtuple classes.
+def _create_class(typename, fields):    
+    # extract field names
+    field_names = [e[0] if type(e) is tuple else e for e in fields]
+
+    # extract (non-simple) fields that need conversions
+    conversions = list(filter(lambda e: type(e) is tuple, fields))
+
+    # Some dictionary keys are Python keywords and cannot be used as field names, e.g. `from`.
+    # Get around by appending a '_', e.g. dict['from'] => namedtuple.from_
+    keymap = [(k.rstrip('_'), k) for k in filter(lambda e: e in ['from_'], field_names)]
+
+    # Create the base tuple class, with defaults.
+    base = collections.namedtuple(typename, field_names)
+    base.__new__.__defaults__ = (None,) * len(field_names)
+
+    # If no conversions needed and no key to map, base class is what we want.
+    if not conversions and not keymap:
+        _classmap[typename] = base
+        return base
+
+    class sub(base):
+        def __new__(cls, **kwargs):
+            # Map keys.
+            for oldkey, newkey in keymap:
+                kwargs[newkey] = kwargs[oldkey]
+                del kwargs[oldkey]
+
+            # Convert non-simple values to namedtuples.
+            for key, func in conversions:
+                if key in kwargs:
+                    if type(kwargs[key]) is dict:
+                        kwargs[key] = func(**kwargs[key])
+                    elif type(kwargs[key]) is list:
+                        kwargs[key] = func(kwargs[key])
+                    else:
+                        raise RuntimeError('Can only convert dict or list')
+
+            return super(sub, cls).__new__(cls, **kwargs)
+
+    sub.__name__ = typename
+    _classmap[typename] = sub
+
+    return sub
+
+
+User = _create_class('User', ['id', 'first_name', 'last_name', 'username'])
+GroupChat = _create_class('GroupChat', ['id', 'title'])
+PhotoSize = _create_class('PhotoSize', ['file_id', 'width', 'height', 'file_size'])
+
+Audio = _create_class('Audio', ['file_id', 'duration', 'performer', 'title', 'mime_type', 'file_size'])
+Document = _create_class('Document', ['file_id', ('thumb', PhotoSize), 'file_name', 'mime_type', 'file_size'])
+Sticker = _create_class('Sticker', ['file_id', 'width', 'height', ('thumb', PhotoSize), 'file_size'])
+Video = _create_class('Video', ['file_id', 'width', 'height', 'duration', ('thumb', PhotoSize), 'mime_type', 'file_size'])
+Voice = _create_class('Voice', ['file_id', 'duration', 'mime_type', 'file_size'])
+
+Contact = _create_class('Contact', ['phone_number', 'first_name', 'last_name', 'user_id'])
+Location = _create_class('Location', ['longitude', 'latitude'])
+
+def PhotoSizeArray(data):
+    return [PhotoSize(**p) for p in data]
+
+_classmap['PhotoSize[]'] = PhotoSizeArray
+
+def PhotoSizeArrayArray(data):
+    return [[PhotoSize(**p) for p in array] for array in data]
+
+_classmap['PhotoSize[][]'] = PhotoSizeArrayArray
+
+UserProfilePhotos = _create_class('UserProfilePhotos', ['total_count', ('photos', PhotoSizeArrayArray)])
+
+def User_or_GroupChat(**kwargs):
+    if kwargs['id'] < 0:
+        return GroupChat(**kwargs)
+    else:
+        return User(**kwargs)
+
+_classmap['User/GroupChat'] = User_or_GroupChat
+
+Message = _create_class('Message', [
+              'message_id',
+              ('from_', User),
+              'date',
+              ('chat', User_or_GroupChat),
+              ('forward_from', User),
+              'forward_date',
+              ('reply_to_message', lambda **kwargs: _classmap['Message'](**kwargs)),  # get around the fact that `Message` is not yet defined
+              'text',
+              ('audio', Audio),
+              ('document', Document),
+              ('photo', PhotoSizeArray),
+              ('sticker', Sticker),
+              ('video', Video),
+              ('voice', Voice),
+              'caption',
+              ('contact', Contact),
+              ('location', Location),
+              ('new_chat_participant', User),
+              ('left_chat_participant', User),
+              'new_chat_title',
+              ('new_chat_photo', PhotoSizeArray),
+              'delete_chat_photo',
+              'group_chat_created',
+          ])
+
+Update = _create_class('Update', ['update_id', ('message', Message)])
+
+def UpdateArray(data):
+    return [Update(**u) for u in data]
+
+_classmap['Update[]'] = UpdateArray
+
+
+"""
+Convert a dictionary to a namedtuple, given the type of object.
+You can see what `type` is valid by entering this in Python interpreter:
+>>> import telepot
+>>> print telepot._classmap
+It includes all Bot API objects you may get back from the server, plus a few.
+"""
+def namedtuple(data, type):
+    if type[-2:] == '[]':
+        return _classmap[type](data)
+    else:
+        return _classmap[type](**data)
+
+
+# Extract essential info of the Message.
+def glance(msg, long=False):
+    types = [
+        'text', 'voice', 'sticker', 'photo', 'audio' ,'document', 'video', 'contact', 'location',
+        'new_chat_participant', 'left_chat_participant',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo', 'group_chat_created', 
+    ]
+
+    if isinstance(msg, Message):
+        for msgtype in types:
+            if getattr(msg, msgtype) is not None:
+                break
+
+        return (msgtype, msg.from_.id, msg.chat.id) if not long else (msgtype, msg.from_.id, msg.chat.id, msg.date, msg.message_id)
+    else:
+        for msgtype in types:
+            if msgtype in msg:
+                break
+
+        return (msgtype, msg['from']['id'], msg['chat']['id']) if not long else (msgtype, msg['from']['id'], msg['chat']['id'], msg['date'], msg['message_id'])
+
 
 # Ensure an exception is raised for requests that take too long
 http_timeout = 30
@@ -112,9 +263,15 @@ class Bot(object):
         r = requests.post(self._url('getUpdates'), params=self._rectify(p), timeout=http_timeout+(0 if timeout is None else timeout))
         return self._result(r.json())
 
-    def setWebhook(self, url=None):
+    def setWebhook(self, url=None, certificate=None):
         p = {'url': url}
-        r = requests.post(self._url('setWebhook'), params=self._rectify(p), timeout=http_timeout)
+
+        if certificate:
+            files = {'certificate': certificate}
+            r = requests.post(self._url('setWebhook'), params=self._rectify(p), files=files, timeout=http_timeout)
+        else:
+            r = requests.post(self._url('setWebhook'), params=self._rectify(p), timeout=http_timeout)
+
         return self._result(r.json())
 
     def notifyOnMessage(self, callback, relax=1, timeout=20):
