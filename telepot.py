@@ -1,4 +1,4 @@
-import requests, json, time, threading, traceback, sys, collections
+import requests, json, time, threading, traceback, sys, collections, warnings
 
 # Suppress InsecurePlatformWarning
 requests.packages.urllib3.disable_warnings()
@@ -22,17 +22,31 @@ def _create_class(typename, fields):
     base = collections.namedtuple(typename, field_names)
     base.__new__.__defaults__ = (None,) * len(field_names)
 
-    # If no conversions needed and no key to map, base class is what we want.
-    if not conversions and not keymap:
-        _classmap[typename] = base
-        return base
-
     class sub(base):
         def __new__(cls, **kwargs):
             # Map keys.
             for oldkey, newkey in keymap:
                 kwargs[newkey] = kwargs[oldkey]
                 del kwargs[oldkey]
+
+            # Any unexpected arguments?
+            unexpected = set(kwargs.keys()) - set(super(sub, cls)._fields)
+
+            # Remove unexpected arguments and issue warning.
+            if unexpected:
+                for k in unexpected:
+                    del kwargs[k]
+
+                s = ('Unexpected fields: ' + ', '.join(unexpected) + ''
+                     '\nBot API seems to have added new fields to the returned data.'
+                     ' This version of namedtuple is not able to capture them.'
+                     '\n\nPlease upgrade telepot by:'
+                     '\n  sudo pip install telepot --upgrade'
+                     '\n\nIf you still see this message after upgrade, that means I am still working to bring the code up-to-date.'
+                     ' Please try upgrade again a few days later.'
+                     ' In the meantime, you can access the new fields the old-fashioned way, through the raw dictionary.')
+
+                warnings.warn(s, UserWarning)
 
             # Convert non-simple values to namedtuples.
             for key, func in conversions:
