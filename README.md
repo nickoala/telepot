@@ -175,7 +175,7 @@ print msg.text      # just print 'None' if no text
 
 **What if Bot API adds new fields to objects in the future? Would that break the namedtuple() conversion?**
 
-Well, that would break telepot 1.2. **I fix that in 1.3**. Since 1.3, unexpected fields in data would cause a warning (that reminds you to upgrade the telepot module), but would not crash the program. **Users who are using 1.2 is recommended to upgrade to 1.3.**
+Well, that would break telepot 1.2. **I fix that in 1.3**. Since 1.3, unexpected fields in data would cause a warning (that reminds you to upgrade the telepot module), but would not crash the program. **Users who are using 1.2 is recommended to upgrade to 1.3 or newer.**
 
 `namedtuple()` is just a convenience function. The underlying dictionary is always there for your consumption.
 
