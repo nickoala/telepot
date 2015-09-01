@@ -1,5 +1,9 @@
 # telepot changelog
 
+## 1.3 (2015-09-01)
+
+- On receiving unexpected fields, `namedtuple()` would issue a warning and would not break.
+
 ## 1.2 (2015-08-30)
 
 - Conforms to latest Telegram Bot API as of August 29, 2015
