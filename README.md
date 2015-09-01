@@ -2,6 +2,24 @@
 
 **P**ython wrapper for **Tele**gram B**ot** API
 
+---------
+#### Recent changes
+
+**1.3 (2015-09-01)**
+
+- On receiving unexpected fields, `namedtuple()` would issue a warning and would not break.
+
+**1.2 (2015-08-30)**
+
+- Conforms to latest Telegram Bot API as of [August 29, 2015](https://core.telegram.org/bots/api-changelog)
+- Added `certificate` parameters to `setWebhook()`
+- Added `telepot.glance()` and `telepot.namedtuple()`
+- Consolidated all tests into one script
+
+**[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
+
+---------
+
 To use the [Telegram Bot API](https://core.telegram.org/bots/api), you first have to get a **bot account** by [chatting with the BotFather](https://core.telegram.org/bots).
 
 He will then give you a **token**, something like `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ`. With the token in hand, you can start using telepot to access the bot account.
@@ -13,6 +31,8 @@ Telepot works with **Python 2.7 & 3**, although instructions below are presented
 `sudo apt-get install python-pip` to install the Python package manager.
 
 `sudo pip install telepot` to install the telepot library.
+
+`sudo pip install telepot --upgrade` to upgrade.
 
 #### Test the account
 
@@ -119,6 +139,45 @@ Note that the server returns a number of `file_id`s, with various file sizes. Th
 ```python
 >>> bot.sendPhoto(999999999, 'APNpmPKVulsdkIFAILMDmhTAADmdcmdsdfaldalk')
 ```
+
+#### Quickly `glance()` a message
+
+*Since 1.2*, you may extract a tuple of `(type, message['from']['id'], message['chat']['id'])` of a `message` by calling `telepot.glance(message)`.
+
+`type` can be one of: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, `group_chat_created`.
+
+```python
+# Almost always need these info
+msg_type, from_id, chat_id = telepot.glance(msg)
+
+# Take a long glance if you want, get message date and message id additionally
+msg_type, from_id, chat_id, msg_date, msg_id = telepot.glance(msg, long=True)
+```
+
+#### Use `namedtuple()` for easy access
+
+In telepot, Bot API objects are normally represented as Python dicts. *Since 1.2*, you may convert a dict into a namedtuple of a given type by calling `telepot.namedtuple(dict, type)`. Namedtuples offer two benefits:
+
+- it is easier to write `msg.chat.id` than to write `msg['chat']['id']`
+- you may access any given fields of a namedtuple by `namedtuple.field`, regardless of its presence in the data (absent fields just give a value of `None`), whereas in dicts, you always have to check `'field' in dict` before accessing an optional field.
+
+There is one annoyance, though. Namedtuple field names cannot be Python keywords, but the `Message` object has a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `msg['from']` becomes `msg.from_` when converting to a namedtuple. It is the only field that gets this special treatment.
+
+```python
+msg = telepot.namedtuple(msg_dict, 'Message')
+
+print msg.chat.id   # == msg_dict['chat']['id']
+
+print msg.from_.id  # == msg_dict['from']['id']
+
+print msg.text      # just print 'None' if no text
+```
+
+**What if Bot API adds new fields to objects in the future? Would that break the namedtuple() conversion?**
+
+Well, that would break telepot 1.2. **I fix that in 1.3**. Since 1.3, unexpected fields in data would cause a warning (that reminds you to upgrade the telepot module), but would not crash the program. **Users who are using 1.2 is recommended to upgrade to 1.3.**
+
+`namedtuple()` is just a convenience function. The underlying dictionary is always there for your consumption.
 
 ---------
 
@@ -326,11 +385,25 @@ Receive incoming updates.
 
 See: https://core.telegram.org/bots/api#getupdates
 
-**setWebhook(url=None)**
+**setWebhook(url=None, certificate=None)**
 
 Specify a url and receive incoming updates via an outgoing webhook.
 
+*Since 1.2*, you may upload your public key certificate with the `certificate` argument.
+
 See: https://core.telegram.org/bots/api#setwebhook
+
+Examples:
+```python
+# Webhook without a certificate
+bot.setWebhook('https://www.domain.com/webhook')
+
+# Webhook with a certificate
+bot.setWebhook('https://www.domain.com/webhook', open('domain.cert', 'rb'))
+
+# Cancel webhook
+bot.setWebhook()
+```
 
 **notifyOnMessage(callback, relax=1, timeout=20)**
 
