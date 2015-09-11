@@ -1,5 +1,12 @@
 # telepot changelog
 
+## 2.0 (2015-09-11)
+
+- Conforms to latest Telegram Bot API as of September 7, 2015
+- Added an async version for Python 3.4
+- Added a `file_link` field to some namedtuples, in response to a not-yet-documented change in Bot API
+- Better exception handling on receiving invalid JSON responses
+
 ## 1.3 (2015-09-01)
 
 - On receiving unexpected fields, `namedtuple()` would issue a warning and would not break.
