@@ -44,7 +44,7 @@ def equivalent(data, nt):
         return data==nt
 
 def examine(result, type):
-    print 'Examining %s ..........' % type
+    print 'Examining %s ......' % type
 
     nt = telepot.namedtuple(result, type)
     assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
@@ -77,6 +77,9 @@ def send_everything_on_contact(msg):
     examine(r, 'Message')
 
     r = bot.sendMessage(chat_id, u'中文')
+    examine(r, 'Message')
+
+    r = bot.sendMessage(chat_id, '*bold text*\n_italic text_\n[link](http://www.google.com)', parse_mode='Markdown')
     examine(r, 'Message')
 
     bot.sendMessage(chat_id, 'http://www.yahoo.com\nwith web page preview')
@@ -288,7 +291,7 @@ def test_webhook_getupdates_exclusive():
     try:
         bot.getUpdates()
     except telepot.TelegramError as e:
-        print e
+        print "%d: %s" % (e.error_code, e.description)
         print 'As expected, getUpdates() produces an error.'
 
     bot.setWebhook()

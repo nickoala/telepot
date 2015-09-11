@@ -1,22 +1,31 @@
 from setuptools import setup, find_packages
 from os import path
+import sys
+
+PY_34 = sys.version_info >= (3,4)
+
+install_requires = ['requests']
+
+if PY_34:
+    install_requires += ['aiohttp']
+
 
 here = path.abspath(path.dirname(__file__))
 
 setup(
     name='telepot',
-    py_modules=['telepot'],
+    packages=['telepot'],
 
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['requests'],
+    install_requires=install_requires,
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='1.3',
+    version='2.0',
 
     description='Python wrapper for Telegram Bot API',
 
