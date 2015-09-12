@@ -256,7 +256,7 @@ Note that the server returns a number of `file_id`s, with various file sizes. Th
 <a id="async"></a>
 ## Asynchronous Introduction
 
-*Since 2.0*, I introduced an async version of the `Bot` that makes use of the `asyncio` module of Python 3.4. It does not work on earlier versions of Python.
+*Since 2.0*, I introduced an async version of `Bot` that makes use of the `asyncio` module of Python 3.4. It does not work on earlier versions of Python.
 
 Raspbian does not come with Python 3.4. You have to compile it yourself.
 
