@@ -103,6 +103,95 @@ It is kind of troublesome to keep checking messages. Fortunately, telepot can ta
 
 After setting up this callback, you may send various messages to the bot, and inspect their message structures.
 
+In fact, below can be a skeleton for a lot of telepot programs:
+
+```python
+import sys
+import time
+import pprint
+import telepot
+
+def handle(msg):
+    pprint.pprint(msg)
+    # Do your stuff here ...
+
+
+# Getting the token from command-line is better than embedding it in code,
+# because tokens are supposed to be kept secret.
+TOKEN = sys.argv[1]
+
+bot = telepot.Bot(TOKEN)
+bot.notifyOnMessage(handle)
+
+# Keep the program running.
+while 1:
+    time.sleep(10)
+```
+
+#### Quickly `glance()` a message
+
+When processing a message, a few pieces of information are so central that you almost always have to extract them.
+
+*Since 1.2*, you may extract a tuple of `(type, message['from']['id'], message['chat']['id'])` of a `message` by calling `telepot.glance(message)`.
+
+The `type` of a message can be: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, `group_chat_created`.
+
+It is a good habit to always check the `type` before further processing the message. Do not assume every message is a `text` message.
+
+A better skeleton would look like:
+
+```python
+import sys
+import time
+import telepot
+
+def handle(msg):
+    msg_type, from_id, chat_id = telepot.glance(msg)
+    # Do your stuff according to `msg_type` ...
+
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.Bot(TOKEN)
+bot.notifyOnMessage(handle)
+
+# Keep the program running.
+while 1:
+    time.sleep(10)
+```
+
+#### Turn dictionary into namedtuple, if you like
+
+In telepot, everything is a dict. For example, a `message` is a dict whose **keys** are just **field names** specified in Bot API's **[Message](https://core.telegram.org/bots/api#message)** object. Accessing `message['from']`, you get another dict whose **keys** are just **field names** specified in Bot API's **[User](https://core.telegram.org/bots/api#user)** object. In fact, all objects returned by Bot API are serialized as JSON associative arrays. Turning those into Python dicts is not just easy, but natural. I like the transparency.
+
+However, accessing them "like an object" does have some benefits:
+
+- It is easier to write `msg.chat.id` than to write `msg['chat']['id']`
+- If you want to read an optional `field` in a `dict`, since it may be absent, you always have to check whether `'field' in dict` before accessing `dict['field']` (unless you don't mind catching an exception). Using an "object", you can access `object.field` regardless, because an absent field will just give a value of `None`.
+
+To implement object-like behaviours, I use **namedtuple**. *Since 1.2*, you may convert a dict into a namedtuple of a given object type by calling `telepot.namedtuple(dict, object)`.
+
+For example, to convert a `message` dict into a namedtuple, you do:
+
+```python
+m = telepot.namedtuple(message, 'Message')
+
+print m.chat.id  # == message['chat']['id']
+print m.text   # just print 'None' if no text
+```
+
+There is one annoyance, though. Namedtuple field names cannot be Python keywords, but the **[Message](https://core.telegram.org/bots/api#message)** object has a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `message['from']` becomes `m.from_` when converted to a namedtuple:
+
+```python
+print m.from_.id  # == message['from']['id']
+```
+
+**What if Bot API adds new fields to objects in the future? Would that break the namedtuple() conversion?**
+
+Well, that would break telepot 1.2. **I fixed that in 1.3**. Since 1.3, unexpected fields in data would cause a warning (that reminds you to upgrade the telepot library), but would not crash the program. **Users of 1.2 are recommended to upgrade.**
+
+`namedtuple()` is just a convenience function. The underlying dictionary is always there for your consumption.
+
 #### Send messages
 
 Now, it's the bot's turn to send you messages. You should have discovered your own user ID from above interactions. I will keeping using the fake ID of `999999999`. Remember to substitute your own user ID.
@@ -156,45 +245,6 @@ Note that the server returns a number of `file_id`s, with various file sizes. Th
 ```python
 >>> bot.sendPhoto(999999999, u'APNpmPKVulsdkIFAILMDmhTAADmdcmdsdfaldalk')
 ```
-
-#### Quickly `glance()` a message
-
-*Since 1.2*, you may extract a tuple of `(type, message['from']['id'], message['chat']['id'])` of a `message` by calling `telepot.glance(message)`.
-
-`type` can be one of: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, `group_chat_created`.
-
-```python
-# Almost always need these info
-msg_type, from_id, chat_id = telepot.glance(msg)
-
-# Take a long glance if you want, get message date and message id additionally
-msg_type, from_id, chat_id, msg_date, msg_id = telepot.glance(msg, long=True)
-```
-
-#### Use `namedtuple()` for easy access
-
-In telepot, Bot API objects are normally represented as Python dicts. *Since 1.2*, you may convert a dict into a namedtuple of a given type by calling `telepot.namedtuple(dict, type)`. Namedtuples offer two benefits:
-
-- it is easier to write `msg.chat.id` than to write `msg['chat']['id']`
-- you may access any given fields of a namedtuple by `namedtuple.field`, regardless of its presence in the data (absent fields just give a value of `None`), whereas in dicts, you always have to check `'field' in dict` before accessing an optional field.
-
-There is one annoyance, though. Namedtuple field names cannot be Python keywords, but the `Message` object has a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `msg['from']` becomes `msg.from_` when converting to a namedtuple. It is the only field that gets this special treatment.
-
-```python
-msg = telepot.namedtuple(msg_dict, 'Message')
-
-print msg.chat.id   # == msg_dict['chat']['id']
-
-print msg.from_.id  # == msg_dict['from']['id']
-
-print msg.text      # just print 'None' if no text
-```
-
-**What if Bot API adds new fields to objects in the future? Would that break the namedtuple() conversion?**
-
-Well, that would break telepot 1.2. **I fix that in 1.3**. Since 1.3, unexpected fields in data would cause a warning (that reminds you to upgrade the telepot module), but would not crash the program. **Users of 1.2 are recommended to upgrade to 1.3 or newer.**
-
-`namedtuple()` is just a convenience function. The underlying dictionary is always there for your consumption.
 
 ---------
 
