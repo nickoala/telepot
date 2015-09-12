@@ -4,6 +4,7 @@
 
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
+**[Asynchronous Introduction](#async)**  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
 ### Recent changes
@@ -251,5 +252,26 @@ Note that the server returns a number of `file_id`s, with various file sizes. Th
 ```python
 >>> bot.sendPhoto(999999999, u'APNpmPKVulsdkIFAILMDmhTAADmdcmdsdfaldalk')
 ```
+
+<a id="async"></a>
+## Asynchronous Introduction
+
+*Since 2.0*, I introduced an async version of the `Bot` that makes use of the `asyncio` module of Python 3.4. It does not work on earlier versions of Python.
+
+Raspbian does not come with Python 3.4. You have to compile it yourself.
+
+```
+$ cd ~
+$ wget https://www.python.org/ftp/python/3.4.3/Python-3.4.3.tgz
+$ tar zxf Python-3.4.3.tgz
+$ cd Python-3.4.3
+$ ./configure
+$ make
+$ sudo make install
+```
+
+After that, you should have `python3.4` and `pip3.4` installed.
+
+
 
 ## More coming ...
