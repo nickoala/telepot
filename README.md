@@ -2,6 +2,8 @@
 
 **P**ython wrapper for **Tele**gram B**ot** API
 
+[Installation](#installation)
+
 ### Recent changes
 
 **2.0 (2015-09-11)**
@@ -17,7 +19,7 @@
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
-## Installation
+## Installation <a id="installation"></a>
 
 Telepot has been tested on **Python 2.7 & 3**, running **Raspbian**.
 
