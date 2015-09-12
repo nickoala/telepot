@@ -272,6 +272,12 @@ $ sudo make install
 
 After that, you should have `python3.4` and `pip3.4` installed.
 
+If you are not familiar with asynchronous programming, I suggest you read up on some general concepts:
 
+- [Understanding Asynchronous IO](http://sahandsaba.com/understanding-asyncio-node-js-python-3-4.html)
+- [What are the main uses of `yield from`?](http://stackoverflow.com/questions/9708902/in-practice-what-are-the-main-uses-for-the-new-yield-from-syntax-in-python-3)
+- [A Curious Course on Coroutines and Concurrency](http://www.dabeaz.com/coroutines/)
+
+These will not be enough. Just keep learning more as you go.
 
 ## More coming ...
