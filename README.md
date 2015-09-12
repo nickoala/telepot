@@ -45,9 +45,11 @@ Cleaning up...
 
 ## The Basics
 
-To use the [Telegram Bot API](https://core.telegram.org/bots/api), you first have to get a **bot account** by [chatting with the BotFather](https://core.telegram.org/bots).
+To use the [Telegram Bot API](https://core.telegram.org/bots/api), you first have to [get a **bot account**](http://www.instructables.com/id/Set-up-Telegram-Bot-on-Raspberry-Pi/) by [chatting with the BotFather](https://core.telegram.org/bots).
 
 He will then give you a **token**, something like `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ`. With the token in hand, you can start using telepot to access the bot account.
+
+Instructions below are presented in Python 2.7
 
 #### Test the account
 
@@ -80,7 +82,7 @@ Bots cannot initiate conversations with users. You have to send it a message fir
 
 `999999999` is obviously a fake ID. `Nick` `Lee` is my real name, though.
 
-Also note the `update_id`. It is an ever-increasing number. Next time you should use `getUpdates(offset=100000001)` to avoid getting the same old messages over and over. Giving an `offset` essentially acknowledges to the server that you have received all `update_id`s lower than `offset`.
+Note the `update_id`. It is an ever-increasing number. Next time you should use `getUpdates(offset=100000001)` to avoid getting the same old messages over and over. Giving an `offset` essentially acknowledges to the server that you have received all `update_id`s lower than `offset`.
 
 ```python
 >>> bot.getUpdates(offset=100000001)
@@ -103,7 +105,7 @@ After setting up this callback, you may send various messages to the bot, and in
 
 #### Send messages
 
-Use a proper ID in place of `999999999`.
+Now, it's the bot's turn to send you messages. You should have discovered your own user ID from above interactions. I will keeping using the fake ID of `999999999`. Remember to substitute your own user ID.
 
 ```python
 >>> bot.sendMessage(999999999, 'I am fine')
@@ -111,7 +113,7 @@ Use a proper ID in place of `999999999`.
 
 #### Send a custom keyboard
 
-This is Telegram's Great Feature! A custom keyboard presents custom buttons for users to tab. Check it out.
+A custom keyboard presents custom buttons for users to tab. Check it out.
 
 ```python
 >>> show_keyboard = {'keyboard': [['Yes','No'], ['Maybe','Maybe not']]}
@@ -127,10 +129,10 @@ This is Telegram's Great Feature! A custom keyboard presents custom buttons for 
 
 #### Send files
 
-You may also send photos, videos, audios, documents, and stickers.
+You may also send photos, videos, audios, documents, stickers, and voice messages.
 
 ```python
->>> f = open('zzzzzzzz.png', 'rb')  # this is some file on local disk
+>>> f = open('zzzzzzzz.jpg', 'rb')  # some file on local disk
 >>> response = bot.sendPhoto(999999999, f)
 >>> pprint(response)
 {u'chat': {u'first_name': u'Nick', u'id': 999999999, u'last_name': u'Lee'},
@@ -152,7 +154,7 @@ You may also send photos, videos, audios, documents, and stickers.
 Note that the server returns a number of `file_id`s, with various file sizes. These are thumbnails of the uploaded image. If you want to resend the same file, just give one of the `file_id`s.
 
 ```python
->>> bot.sendPhoto(999999999, 'APNpmPKVulsdkIFAILMDmhTAADmdcmdsdfaldalk')
+>>> bot.sendPhoto(999999999, u'APNpmPKVulsdkIFAILMDmhTAADmdcmdsdfaldalk')
 ```
 
 #### Quickly `glance()` a message
