@@ -19,7 +19,8 @@
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
-## Installation <a id="installation"></a>
+<a id="installation"></a>
+## Installation
 
 Telepot has been tested on **Python 2.7 & 3**, running **Raspbian**.
 
