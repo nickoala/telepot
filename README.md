@@ -2,7 +2,8 @@
 
 **P**ython wrapper for **Tele**gram B**ot** API
 
-[Installation](#installation)
+**[Installation](#installation)**  
+**[The Basics](#basics)**
 
 ### Recent changes
 
@@ -46,6 +47,7 @@ Cleaning up...
 
 **Don't worry.** It is because I have added some asynchronous stuff that works only on Python 3.4. The installation is successful despite that error. As long as you don't touch the async stuff, telepot will work fine. (If anyone knows how to selectively *exclude* a certain file on a certain version of Python, please tell me.)
 
+<a id="basics"></a>
 ## The Basics
 
 To use the [Telegram Bot API](https://core.telegram.org/bots/api), you first have to [get a **bot account**](http://www.instructables.com/id/Set-up-Telegram-Bot-on-Raspberry-Pi/) by [chatting with the BotFather](https://core.telegram.org/bots).
