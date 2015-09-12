@@ -2,37 +2,52 @@
 
 **P**ython wrapper for **Tele**gram B**ot** API
 
----------
-#### Recent changes
+### Recent changes
+
+**2.0 (2015-09-11)**
+
+- Conforms to latest Telegram Bot API as of [September 7, 2015](https://core.telegram.org/bots/api-changelog)
+- Added an async version for Python 3.4
+- Added a `file_link` field to some namedtuples, in response to a not-yet-documented change in Bot API
+- Better exception handling on receiving invalid JSON responses
 
 **1.3 (2015-09-01)**
 
 - On receiving unexpected fields, `namedtuple()` would issue a warning and would not break.
 
-**1.2 (2015-08-30)**
-
-- Conforms to latest Telegram Bot API as of [August 29, 2015](https://core.telegram.org/bots/api-changelog)
-- Added `certificate` parameters to `setWebhook()`
-- Added `telepot.glance()` and `telepot.namedtuple()`
-- Consolidated all tests into one script
-
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
----------
+## Installation
 
-To use the [Telegram Bot API](https://core.telegram.org/bots/api), you first have to get a **bot account** by [chatting with the BotFather](https://core.telegram.org/bots).
-
-He will then give you a **token**, something like `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ`. With the token in hand, you can start using telepot to access the bot account.
-
-Telepot works with **Python 2.7 & 3**, although instructions below are presented with Python 2.7. They are based on **Raspbian**, the only platform I have tested on.
-
-#### Installation
+Telepot has been tested on **Python 2.7 & 3**, running **Raspbian**.
 
 `sudo apt-get install python-pip` to install the Python package manager.
 
 `sudo pip install telepot` to install the telepot library.
 
 `sudo pip install telepot --upgrade` to upgrade.
+
+During installation on **Python 3.3 or below**, a SyntaxError may occur:
+
+```
+$ sudo pip install telepot
+...
+...
+Running setup.py install for telepot
+    SyntaxError: ('invalid syntax', ('/usr/local/lib/python2.7/dist-packages/telepot/async.py', 21, 29, '            data = yield from response.json()\n'))
+
+
+Successfully installed telepot
+Cleaning up...
+```
+
+**Don't worry.** It is because I have added some asynchronous stuff that works only on Python 3.4. The installation is successful despite that error. As long as you don't touch the async stuff, telepot will work fine. (If anyone knows how to selectively *exclude* a certain file on a certain version of Python, please tell me.)
+
+## The Basics
+
+To use the [Telegram Bot API](https://core.telegram.org/bots/api), you first have to get a **bot account** by [chatting with the BotFather](https://core.telegram.org/bots).
+
+He will then give you a **token**, something like `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ`. With the token in hand, you can start using telepot to access the bot account.
 
 #### Test the account
 
