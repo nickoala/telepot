@@ -194,7 +194,7 @@ Well, that would break telepot 1.2. **I fixed that in 1.3**. Since 1.3, unexpect
 
 #### Send messages
 
-Now, it's the bot's turn to send you messages. You should have discovered your own user ID from above interactions. I will keeping using the fake ID of `999999999`. Remember to substitute your own user ID.
+Enough about processing incoming messages. Sooner or later, your bot would want to send *you* messages. You should have discovered your own user ID from above interactions. I will keeping using my fake ID of `999999999`. Remember to substitute your own (real) user ID.
 
 ```python
 >>> bot.sendMessage(999999999, 'I am fine')
