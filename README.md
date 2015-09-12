@@ -270,14 +270,53 @@ $ make
 $ sudo make install
 ```
 
-After that, you should have `python3.4` and `pip3.4` installed.
+Finally:
+
+```
+$ sudo pip3.4 install telepot
+```
 
 If you are not familiar with asynchronous programming, I suggest you read up on some general concepts:
 
 - [Understanding Asynchronous IO](http://sahandsaba.com/understanding-asyncio-node-js-python-3-4.html)
 - [What are the main uses of `yield from`?](http://stackoverflow.com/questions/9708902/in-practice-what-are-the-main-uses-for-the-new-yield-from-syntax-in-python-3)
 - [A Curious Course on Coroutines and Concurrency](http://www.dabeaz.com/coroutines/)
+- [Problem: Threads Are Bad](https://glyph.twistedmatrix.com/2014/02/unyielding.html)
 
-These will not be enough. Just keep learning more as you go.
+And look at how an asyncio program is generally structured:
+
+- [Event loop examples](https://docs.python.org/3/library/asyncio-eventloop.html#event-loop-examples)
+- [HTTP server and client](http://aiohttp.readthedocs.org/en/stable/)
+
+#### Create an asynchronous `Bot`
+
+```python
+import telepot.async
+bot = telepot.async.Bot('TOKEN')
+```
+
+#### An asynchronous skeleton
+
+```python
+import sys
+import asyncio
+import telepot
+import telepot.async
+
+def handle(msg):
+    msg_type, from_id, chat_id = telepot.glance(msg)
+    # Do your stuff according to `msg_type` ...
+
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.async.Bot(TOKEN)
+
+loop = asyncio.get_event_loop()
+loop.create_task(bot.messageLoop(handle))  # kind of like notifyOnMessage()
+loop.run_forever()
+```
+
+Note the (superficial) similarities between the async version and the traditional version of the skeleton, although the underlying concepts are quite different.
 
 ## More coming ...
