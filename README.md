@@ -4,7 +4,7 @@
 
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
-**[Asynchronous Introduction](#async)**  
+**[The Async Stuff](#async)** (only for Python 3.4)  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
 ### Recent changes
@@ -143,7 +143,7 @@ When processing a message, a few pieces of information are so central that you a
 
 The `type` of a message can be: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, `group_chat_created`.
 
-It is a good habit to always check the `type` before further processing the message. Do not assume every message is a `text` message.
+It is a good habit to always check the `type` before further processing. Do not assume every message is a `text` message.
 
 A better skeleton would look like:
 
@@ -201,7 +201,7 @@ Well, that would break telepot 1.2. **I fixed that in 1.3**. Since 1.3, unexpect
 
 #### Send messages
 
-Enough about processing incoming messages. Sooner or later, your bot would want to send *you* messages. You should have discovered your own user ID from above interactions. I will keeping using my fake ID of `999999999`. Remember to substitute your own (real) user ID.
+Enough about receiving messages. Sooner or later, your bot would want to send *you* messages. You should have discovered your own user ID from above interactions. I will keeping using my fake ID of `999999999`. Remember to substitute your own (real) user ID.
 
 ```python
 >>> bot.sendMessage(999999999, 'I am fine')
@@ -253,14 +253,19 @@ Note that the server returns a number of `file_id`s, with various file sizes. Th
 >>> bot.sendPhoto(999999999, u'APNpmPKVulsdkIFAILMDmhTAADmdcmdsdfaldalk')
 ```
 
-<a id="async"></a>
-## Asynchronous Introduction
+**[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
-*Since 2.0*, I introduced an async version of `Bot` that makes use of the `asyncio` module of Python 3.4. It does not work on earlier versions of Python.
+<a id="async"></a>
+## The Async Stuff (only for Python 3.4)
+
+*Since 2.0*, I introduced an async version of `Bot` that makes use of the `asyncio` module of **Python 3.4**. All async stuff described in this section would not work on earlier versions of Python.
 
 Raspbian does not come with Python 3.4. You have to compile it yourself.
 
 ```
+$ sudo apt-get update
+$ sudo apt-get upgrade
+$ sudo apt-get install libssl-dev openssl
 $ cd ~
 $ wget https://www.python.org/ftp/python/3.4.3/Python-3.4.3.tgz
 $ tar zxf Python-3.4.3.tgz
@@ -276,7 +281,7 @@ Finally:
 $ sudo pip3.4 install telepot
 ```
 
-If you are not familiar with asynchronous programming, I suggest you read up on some general concepts:
+If you are not familiar with asynchronous programming, I suggest you read up on some general concepts and, more importantly, the motivations behind:
 
 - [Understanding Asynchronous IO](http://sahandsaba.com/understanding-asyncio-node-js-python-3-4.html)
 - [What are the main uses of `yield from`?](http://stackoverflow.com/questions/9708902/in-practice-what-are-the-main-uses-for-the-new-yield-from-syntax-in-python-3)
@@ -288,14 +293,14 @@ And look at how an asyncio program is generally structured:
 - [Event loop examples](https://docs.python.org/3/library/asyncio-eventloop.html#event-loop-examples)
 - [HTTP server and client](http://aiohttp.readthedocs.org/en/stable/)
 
-#### Create an asynchronous `Bot`
+#### Create an async `Bot`
 
 ```python
 import telepot.async
 bot = telepot.async.Bot('TOKEN')
 ```
 
-#### An asynchronous skeleton
+#### An async skeleton
 
 ```python
 import sys
@@ -305,6 +310,7 @@ import telepot.async
 
 def handle(msg):
     msg_type, from_id, chat_id = telepot.glance(msg)
+    print(msg_type, from_id, chat_id)
     # Do your stuff according to `msg_type` ...
 
 
@@ -317,6 +323,33 @@ loop.create_task(bot.messageLoop(handle))  # kind of like notifyOnMessage()
 loop.run_forever()
 ```
 
-Note the (superficial) similarities between the async version and the traditional version of the skeleton, although the underlying concepts are quite different.
+Note the (superficial) similarities with the traditional skeleton, although the underlying concepts are quite different.
 
-## More coming ...
+#### Send asynchronously
+
+The async `Bot` has all the `sendZZZ()` methods seen in the traditional `Bot`. Unlike the traditional, however, these methods are now **coroutines**, and will not work in the interactive python interpreter like regular functions would. They will have to be driven by the event loop.
+
+Supply the bot token and your own user ID on the command-line:
+
+```python
+import sys
+import asyncio
+import telepot.async
+
+@asyncio.coroutine
+def textme():
+    print('Sending a text ...')
+    yield from bot.sendMessage(USER_ID, 'Good morning!')
+
+
+TOKEN = sys.argv[1]         # get token from command-line
+USER_ID = int(sys.argv[2])  # get user id from command-line
+
+bot = telepot.async.Bot(TOKEN)
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(textme())
+print('Done.')
+```
+
+**[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
