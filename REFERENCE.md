@@ -1,3 +1,59 @@
+# telepot reference
+
+## Functions
+
+**glance(msg, long=False)**
+
+If `long` is `False`, extract a tuple of `(type, msg['from']['id'], msg['chat']['id'])`.
+
+If `long` is `True`, extract a tuple of `(type, msg['from']['id'], msg['chat']['id'], msg['date'], msg['message_id'])`.
+
+`type` indicates the content type of the message, can be one of:  `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, `group_chat_created`.
+
+Examples:
+
+```python
+# Suppose `msg` is a message previously received.
+
+msg_type, from_id, chat_id = telepot.glance(msg)
+msg_type, from_id, chat_id, msg_date, msg_id = telepot.glance(msg, long=True)
+```
+
+**namedtuple(data, type)**
+
+Convert a dictionary to a namedtuple of a given object type.
+
+`type` can be: `Audio`, `Contact`, `Document`, `GroupChat`, `Location`, `Message`, `PhotoSize`, `PhotoSize[]`, `PhotoSize[][]`, `Sticker`, `Update`, `Update[]`, `User`, `User/GroupChat`, `UserProfilePhotos`, `Video`, `Voice`.
+
+Examples:
+
+```python
+# Suppose `msg` is a message (dict) previously received.
+
+# Turn the entire message to a namedtuple
+m = telepot.namedtuple(msg, 'Message')
+
+# Turn only the 'from' field to a User namedtuple
+u = telepot.namedtuple(msg['from'], 'User')
+
+# 'chat' field can be either a User or GroupChat
+chat = telepot.namedtuple(msg['chat'], 'User/GroupChat')
+
+if type(chat) == telepot.User:
+    print 'A private conversation'
+elif type(chat) == telepot.GroupChat:
+    print 'An open discussion'
+else:
+    print 'Impossible!'
+
+# Actually, you can check more efficiently by looking at the chat ID.
+# A negative ID indicates a GroupChat; a positive ID indicates a User.
+```
+
+`namedtuple()` is just a convenience function. *Frankly, you can do without it.*
+
+## telepot.Bot
+
 Aside from the `Bot` constructor and `notifyOnMessage()`, all methods are straight mappings from **[Telegram Bot API](https://core.telegram.org/bots/api)**. No point to duplicate all the details here. I will only give brief descriptions below, and encourage you to visit the underlying API's documentations. Full power of the Bot API can be exploited only by understanding the API itself.
 
 Just remember one thing: all Bot API's **objects** are nothing more than Python **dicts**.
