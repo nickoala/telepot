@@ -25,6 +25,8 @@ Convert a dictionary to a namedtuple of a given object type.
 
 `type` can be: `Audio`, `Contact`, `Document`, `GroupChat`, `Location`, `Message`, `PhotoSize`, `PhotoSize[]`, `PhotoSize[][]`, `Sticker`, `Update`, `Update[]`, `User`, `User/GroupChat`, `UserProfilePhotos`, `Video`, `Voice`.
 
+Namedtuple field names cannot be Python keywords, but the **[Message](https://core.telegram.org/bots/api#message)** object has a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `dict['from']` becomes `namedtuple.from_` when converted to a namedtuple.
+
 Examples:
 
 ```python
@@ -32,6 +34,9 @@ Examples:
 
 # Turn the entire message to a namedtuple
 m = telepot.namedtuple(msg, 'Message')
+
+print m.from_.id  # == msg['from']['id']
+print m.chat.id   # == msg['chat']['id']
 
 # Turn only the 'from' field to a User namedtuple
 u = telepot.namedtuple(msg['from'], 'User')
@@ -54,9 +59,7 @@ else:
 
 ## telepot.Bot
 
-Aside from the `Bot` constructor and `notifyOnMessage()`, all methods are straight mappings from **[Telegram Bot API](https://core.telegram.org/bots/api)**. No point to duplicate all the details here. I will only give brief descriptions below, and encourage you to visit the underlying API's documentations. Full power of the Bot API can be exploited only by understanding the API itself.
-
-Just remember one thing: all Bot API's **objects** are nothing more than Python **dicts**.
+Aside from `notifyOnMessage()`, all methods are straight mappings from **[Telegram Bot API](https://core.telegram.org/bots/api)**. No point to duplicate all the details here. I will only give brief descriptions below, and encourage you to visit the underlying API's documentations. Full power of the Bot API can be exploited only by understanding the API itself.
 
 **Bot(token)**
 
@@ -74,7 +77,7 @@ Returns basic information about the bot in form of a [User](https://core.telegra
 
 See: https://core.telegram.org/bots/api#getme
 
-**sendMessage(chat_id, text, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None)**
+**sendMessage(chat_id, text, parse_mode=None, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None)**
 
 Send text messages.
 
@@ -93,6 +96,9 @@ bot.sendMessage(chat_id, 'A short sentence.')
 bot.sendMessage(chat_id, 'I do not understand your last message.', reply_to_message_id=msg_id)
 
 bot.sendMessage(chat_id, 'http://www.yahoo.com \n no web page preview', disable_web_page_preview=True)
+
+# Support very basic markdown since 2.0
+bot.sendMessage(chat_id, '*bold text*\n_italic text_\n[link](http://www.google.com)', parse_mode='Markdown')
 
 # Show a custom keyboard
 show_keyboard = {'keyboard': [['Yes', 'No'], ['Maybe', 'Maybe not']]}
@@ -295,17 +301,51 @@ If a new callback is set later, a new thread will be spawned again.
 This can be a skeleton for a lot of telepot programs:
 
 ```python
+import sys
 import time
-import pprint
 import telepot
 
 def handle(msg):
-    pprint.pprint(msg)
+    msg_type, from_id, chat_id = telepot.glance(msg)
+    print msg_type, from_id, chat_id
+    # Do your stuff according to `msg_type` ...
 
-bot = telepot.Bot('***** TOKEN *****')
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.Bot(TOKEN)
 bot.notifyOnMessage(handle)
+print 'Listening ...'
 
 # Keep the program running.
 while 1:
     time.sleep(10)
+```
+
+## telepot.async.Bot (only for Python 3.4)
+
+This class makes use of the `asyncio` module of Python 3.4. All methods share identical signatures with its traditional sibling, `telepot.Bot`, with one important difference - they are **coroutines** and are often "called" with `yield from`.
+
+Instead of `notifyOnMessage()`, it has a `messageLoop()` coroutine to constantly `getUpdates()`. Here is an async skeleton:
+
+```python
+import sys
+import asyncio
+import telepot
+import telepot.async
+
+def handle(msg):
+    msg_type, from_id, chat_id = telepot.glance(msg)
+    print(msg_type, from_id, chat_id)
+    # Do your stuff according to `msg_type` ...
+
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.async.Bot(TOKEN)
+
+loop = asyncio.get_event_loop()
+loop.create_task(bot.messageLoop(handle))  # kind of like notifyOnMessage()
+print('Listening ...')
+loop.run_forever()
 ```
