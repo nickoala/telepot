@@ -9,16 +9,17 @@
 
 ### Recent changes
 
+**2.5 (2015-09-15)**
+
+- Fixed `pip install` syntax error
+- Having wasted a lot of version numbers, I finally get a better hang of setup.py, pip, and PyPI.
+
 **2.0 (2015-09-11)**
 
 - Conforms to latest Telegram Bot API as of [September 7, 2015](https://core.telegram.org/bots/api-changelog)
 - Added an async version for Python 3.4
 - Added a `file_link` field to some namedtuples, in response to a not-yet-documented change in Bot API
 - Better exception handling on receiving invalid JSON responses
-
-**1.3 (2015-09-01)**
-
-- On receiving unexpected fields, `namedtuple()` would issue a warning and would not break.
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
@@ -47,7 +48,9 @@ Successfully installed telepot
 Cleaning up...
 ```
 
-**Don't worry.** It is because I have added some asynchronous stuff that works only on Python 3.4. The installation is successful despite that error. As long as you don't touch the async stuff, telepot will work fine. (If anyone knows how to selectively *exclude* a certain file on a certain version of Python, please tell me.)
+**Don't worry.** It is because I have added some asynchronous stuff that works only on Python 3.4. The installation is successful despite that error. As long as you don't touch the async stuff, telepot will work fine.
+
+Note: I should have fixed this in 2.5, and have uploaded to PyPI. But PyPI, for some reason, has not updated the latest version. As of 0800 UTC, September 15, You may still see that error.
 
 <a id="basics"></a>
 ## The Basics
