@@ -35,24 +35,6 @@ Telepot has been tested on **Python 2.7 & 3**, running **Raspbian**.
 
 `sudo pip install telepot --upgrade` to upgrade.
 
-During installation on **Python 3.3 or below**, a SyntaxError may occur:
-
-```
-$ sudo pip install telepot
-...
-...
-Running setup.py install for telepot
-    SyntaxError: ('invalid syntax', ('/usr/local/lib/python2.7/dist-packages/telepot/async.py', 21, 29, '            data = yield from response.json()\n'))
-
-
-Successfully installed telepot
-Cleaning up...
-```
-
-**Don't worry.** It is because I have added some asynchronous stuff that works only on Python 3.4. The installation is successful despite that error. As long as you don't touch the async stuff, telepot will work fine.
-
-Note: I should have fixed this in 2.5, and have uploaded to PyPI. But PyPI, for some reason, has not updated the latest version. As of 0800 UTC, September 15, you may still see that error.
-
 <a id="basics"></a>
 ## The Basics
 
