@@ -50,7 +50,7 @@ Cleaning up...
 
 **Don't worry.** It is because I have added some asynchronous stuff that works only on Python 3.4. The installation is successful despite that error. As long as you don't touch the async stuff, telepot will work fine.
 
-Note: I should have fixed this in 2.5, and have uploaded to PyPI. But PyPI, for some reason, has not updated the latest version. As of 0800 UTC, September 15, You may still see that error.
+Note: I should have fixed this in 2.5, and have uploaded to PyPI. But PyPI, for some reason, has not updated the latest version. As of 0800 UTC, September 15, you may still see that error.
 
 <a id="basics"></a>
 ## The Basics
@@ -91,6 +91,8 @@ Bots cannot initiate conversations with users. You have to send it a message fir
 ```
 
 `999999999` is obviously a fake ID. `Nick` `Lee` is my real name, though.
+
+If the message is from a private chat, `from` and `chat` are the same party (like above). If the message is from a group chat, `from` means the original sender and `chat` means the group. (Bots do not receive all messages in a group chat; see [Privacy mode](https://core.telegram.org/bots#privacy-mode) for details) **A negative `chat` `id` indicates a group; a positive `chat` `id` indicates a user (that is, a private chat).**
 
 Note the `update_id`. It is an ever-increasing number. Next time you should use `getUpdates(offset=100000001)` to avoid getting the same old messages over and over. Giving an `offset` essentially acknowledges to the server that you have received all `update_id`s lower than `offset`.
 
@@ -287,14 +289,22 @@ Finally:
 $ sudo pip3.4 install telepot
 ```
 
-If you are not familiar with asynchronous programming, I suggest you read up on some general concepts and, more importantly, the motivations behind:
+In case you are not familiar with asynchronous programming, let's start by learning about generators and coroutines:
+
+- ['yield' and Generators Explained](https://www.jeffknupp.com/blog/2013/04/07/improve-your-python-yield-and-generators-explained/)
+- [Sequences and Coroutines](http://wla.berkeley.edu/~cs61a/fa11/lectures/streams.html)
+
+... why we want asynchronous programming:
+
+- [Problem: Threads Are Bad](https://glyph.twistedmatrix.com/2014/02/unyielding.html)
+
+... how generators and coroutines are applied to asynchronous programming:
 
 - [Understanding Asynchronous IO](http://sahandsaba.com/understanding-asyncio-node-js-python-3-4.html)
 - [What are the main uses of `yield from`?](http://stackoverflow.com/questions/9708902/in-practice-what-are-the-main-uses-for-the-new-yield-from-syntax-in-python-3)
 - [A Curious Course on Coroutines and Concurrency](http://www.dabeaz.com/coroutines/)
-- [Problem: Threads Are Bad](https://glyph.twistedmatrix.com/2014/02/unyielding.html)
 
-And look at how an asyncio program is generally structured:
+... and how an asyncio program is generally structured:
 
 - [Event loop examples](https://docs.python.org/3/library/asyncio-eventloop.html#event-loop-examples)
 - [HTTP server and client](http://aiohttp.readthedocs.org/en/stable/)
@@ -334,7 +344,7 @@ Note the (superficial) similarities with the traditional skeleton, although the 
 
 #### Send asynchronously
 
-The async `Bot` has all the `sendZZZ()` methods seen in the traditional `Bot`. Unlike the traditional, however, these methods are now **coroutines**, and will not work in the interactive python interpreter like regular functions would. They will have to be driven by the event loop.
+The async `Bot` has all the `sendZZZ()` methods seen in the traditional `Bot`. Unlike the traditional, however, these methods are now **coroutines**, and will not work in the interactive python interpreter like regular functions would. They will have to be driven by an event loop.
 
 Supply the bot token and your own user ID on the command-line:
 
