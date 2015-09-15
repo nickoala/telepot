@@ -5,7 +5,8 @@
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
 **[The Async Stuff](#async)** (only for Python 3.4)  
-**[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
+**[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
+**[Mailing List](https://groups.google.com/forum/#!forum/telepot)**
 
 ### Recent changes
 
