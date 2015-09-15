@@ -1,5 +1,10 @@
 # telepot changelog
 
+## 2.5 (2015-09-15)
+
+- Fixed pip install syntax error
+- Having wasted a lot of version numbers, I finally get a better hang of setup.py, pip, and PyPI.
+
 ## 2.0 (2015-09-11)
 
 - Conforms to latest Telegram Bot API as of September 7, 2015
