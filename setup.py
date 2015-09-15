@@ -1,18 +1,49 @@
-from setuptools import setup, find_packages
+from setuptools import setup
+from setuptools.command.install_lib import install_lib
+from setuptools.command.build_py import build_py
 from os import path
 import sys
 
+def _not_async_py(filepath):
+    return filepath[-8:] != 'async.py'
+
+# Do not copy async.py for Python 3.3 or below.
+class nocopy_async(build_py):
+    def find_all_modules(self):
+        modules = build_py.find_all_modules(self)
+        modules = list(filter(lambda m: _not_async_py(m[-1]), modules))
+        return modules
+
+    def find_package_modules(self, package, package_dir):
+        modules = build_py.find_package_modules(self, package, package_dir)
+        modules = list(filter(lambda m: _not_async_py(m[-1]), modules))
+        return modules
+
+# Do not compile async.py for Python 3.3 or below.
+class nocompile_async(install_lib):
+    def byte_compile(self, files):
+        files = list(filter(_not_async_py, files))
+        install_lib.byte_compile(self, files)
+
+
 PY_34 = sys.version_info >= (3,4)
-
-install_requires = ['requests']
-
-if PY_34:
-    install_requires += ['aiohttp']
-
 
 here = path.abspath(path.dirname(__file__))
 
+install_requires = ['requests']
+cmdclass = {}
+
+if PY_34:
+    # one more dependency for Python 3.4
+    install_requires += ['aiohttp']
+else:
+    # do not copy/compile async.py for Python 3.3 or below
+    cmdclass['build_py'] = nocopy_async
+    cmdclass['install_lib'] = nocompile_async
+
+
 try:
+    # read pypi.rst for long_description
     with open(path.join(here, 'pypi.rst')) as f:
         long_description = f.read()
 except:
@@ -20,6 +51,8 @@ except:
 
 
 setup(
+    cmdclass=cmdclass,
+
     name='telepot',
     packages=['telepot'],
 
@@ -32,7 +65,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='2.34',
+    version='2.5',
 
     description='Python wrapper for Telegram Bot API',
 
