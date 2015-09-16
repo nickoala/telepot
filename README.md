@@ -307,6 +307,8 @@ import asyncio
 import telepot
 import telepot.async
 
+# Add this decorator if you have `yield from` inside the function.
+# @asyncio.coroutine
 def handle(msg):
     msg_type, from_id, chat_id = telepot.glance(msg)
     print(msg_type, from_id, chat_id)
@@ -316,10 +318,11 @@ def handle(msg):
 TOKEN = sys.argv[1]  # get token from command-line
 
 bot = telepot.async.Bot(TOKEN)
-
 loop = asyncio.get_event_loop()
+
 loop.create_task(bot.messageLoop(handle))  # kind of like notifyOnMessage()
 print('Listening ...')
+
 loop.run_forever()
 ```
 
