@@ -289,6 +289,7 @@ In case you are not familiar with asynchronous programming, let's start by learn
 
 ... and how an asyncio program is generally structured:
 
+- [The New asyncio Module in Python 3.4](http://www.drdobbs.com/open-source/the-new-asyncio-module-in-python-34-even/240168401)
 - [Event loop examples](https://docs.python.org/3/library/asyncio-eventloop.html#event-loop-examples)
 - [HTTP server and client](http://aiohttp.readthedocs.org/en/stable/)
 
