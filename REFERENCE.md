@@ -322,7 +322,7 @@ while 1:
     time.sleep(10)
 ```
 
-## telepot.async.Bot (only for Python 3.4)
+## telepot.async.Bot (Python 3.4 only)
 
 This class makes use of the `asyncio` module of Python 3.4. Nearly all methods share identical signatures with its traditional sibling, `telepot.Bot`, with one important difference - they are **coroutines** and are often "called" with `yield from`.
 
