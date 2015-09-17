@@ -10,6 +10,11 @@
 
 ### Recent changes
 
+**2.51 (2015-09-17)**
+
+- In async `messageLoop()`, a regular handler function would be called directly, whereas a coroutine would be allocated a task, using `BaseEventLoop.create_task()`.
+- In `messageLoop()` and `notifyOnMessage()`, the `relax` time default is now 0.1 second.
+
 **2.5 (2015-09-15)**
 
 - Fixed `pip install` syntax error
@@ -27,7 +32,7 @@
 <a id="installation"></a>
 ## Installation
 
-Telepot has been tested on **Python 2.7 & 3**, running **Raspbian**.
+Telepot has been tested on **Python 2.7 - 3.4**, running **Raspbian**.
 
 `sudo apt-get install python-pip` to install the Python package manager.
 
