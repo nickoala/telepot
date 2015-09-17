@@ -3,7 +3,7 @@
 ## 2.51 (2015-09-17)
 
 - In async `messageLoop()`, a regular handler function would be called directly, whereas a coroutine would be allocated a task, using `BaseEventLoop.create_task()`.
-- In `messageLoop()` and `notifyOnMessage()`, the `relax` time is defaulted to 0.1 second.
+- In `messageLoop()` and `notifyOnMessage()`, the `relax` time default is now 0.1 second.
 
 ## 2.5 (2015-09-15)
 
