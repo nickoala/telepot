@@ -129,10 +129,6 @@ class Bot(object):
 
     @asyncio.coroutine
     def messageLoop(self, handler):
-        # Wrap it in a coroutine if it is not.
-        if not asyncio.iscoroutinefunction(handler):
-            handler = asyncio.coroutine(handler)
-
         offset = None  # running offset
         while 1:
             try:
@@ -143,12 +139,15 @@ class Bot(object):
                     offset = max([u['update_id'] for u in updates]) + 1
 
                     for u in updates:
-                        self._loop.create_task(handler(u['message']))
+                        if asyncio.iscoroutinefunction(handler):
+                            self._loop.create_task(handler(u['message']))
+                        else:
+                            handler(u['message'])
 
             except CancelledError:
                 raise  # Stop if cancelled
             except:
                 traceback.print_exc()  # Keep running on other errors
-                yield from asyncio.sleep(1)
+                yield from asyncio.sleep(0.1)
             else:
-                yield from asyncio.sleep(1)
+                yield from asyncio.sleep(0.1)

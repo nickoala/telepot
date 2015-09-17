@@ -312,7 +312,7 @@ class Bot(object):
 
         return self._parse(r)
 
-    def notifyOnMessage(self, callback, relax=1, timeout=20):
+    def notifyOnMessage(self, callback, relax=0.1, timeout=20):
         # For MessageThread to call outer class getUpdates()
         def get_updates(offset, timeout):
             return self.getUpdates(offset=offset, timeout=timeout)

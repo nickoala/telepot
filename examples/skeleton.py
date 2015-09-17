@@ -1,23 +1,25 @@
 import sys
 import time
-import pprint
 import telepot
 
 """
-This can be a skeleton for a lot of telepot programs.
-It basically waits for messages and prints out each one.
+$ python2.7 skeleton.py <token>
 
-Run:
-$ python skeleton.py <token>
-
-Ctrl-C to kill.
+A skeleton for your telepot programs.
 """
 
 def handle(msg):
-    pprint.pprint(msg)
+    msg_type, from_id, chat_id = telepot.glance(msg)
+    print msg_type, from_id, chat_id
+    # Do your stuff according to `msg_type` ...
 
-bot = telepot.Bot(sys.argv[1])  # get token from command-line
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.Bot(TOKEN)
 bot.notifyOnMessage(handle)
+print 'Listening ...'
 
+# Keep the program running.
 while 1:
     time.sleep(10)
