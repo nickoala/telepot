@@ -1,8 +1,13 @@
 # telepot changelog
 
+## 2.51 (2015-09-17)
+
+- In async `messageLoop()`, a regular handler function would be called directly, whereas a coroutine would be allocated a task, using `BaseEventLoop.create_task()`.
+- In `messageLoop()` and `notifyOnMessage()`, the `relax` time is defaulted to 0.1 second.
+
 ## 2.5 (2015-09-15)
 
-- Fixed pip install syntax error
+- Fixed `pip install` syntax error
 - Having wasted a lot of version numbers, I finally get a better hang of setup.py, pip, and PyPI.
 
 ## 2.0 (2015-09-11)
