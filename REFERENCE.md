@@ -284,7 +284,7 @@ bot.setWebhook('https://www.domain.com/webhook', open('domain.cert', 'rb'))
 bot.setWebhook()
 ```
 
-**notifyOnMessage(callback, relax=1, timeout=20)**
+**notifyOnMessage(callback, relax=0.1, timeout=20)**
 
 Spawn a thread to constantly `getUpdates()`. Apply `callback` to every message received. `callback` must take one argument, which is the message.
 
@@ -324,9 +324,31 @@ while 1:
 
 ## telepot.async.Bot (only for Python 3.4)
 
-This class makes use of the `asyncio` module of Python 3.4. All methods share identical signatures with its traditional sibling, `telepot.Bot`, with one important difference - they are **coroutines** and are often "called" with `yield from`.
+This class makes use of the `asyncio` module of Python 3.4. Nearly all methods share identical signatures with its traditional sibling, `telepot.Bot`, with one important difference - they are **coroutines** and are often "called" with `yield from`.
 
-Instead of `notifyOnMessage()`, it has a `messageLoop()` coroutine to constantly `getUpdates()`. Here is an async skeleton:
+Notable differences are given below.
+
+**Bot(token, loop=None)**
+
+Use the token to specify the bot. If no `loop` is given, it uses `asyncio.get_event_loop()` to get the default event loop.
+
+Examples:
+```python
+import telepot.async
+bot = telepot.async.Bot('123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ')
+```
+
+**messageLoop(handler)**
+
+Functionally equivalent to `notifyOnMessage()`, this method constantly `getUpdates()` and applies `handler` to each message received.
+
+`handler` must take one argument, which is the message.
+
+If `handler` is a regular function, it is called directly from within `messageLoop()`.
+
+If `handler` is a coroutine, it is allocated a task using `BaseEventLoop.create_task()`.
+
+An async skeleton:
 
 ```python
 import sys
@@ -334,6 +356,8 @@ import asyncio
 import telepot
 import telepot.async
 
+# Add this decorator if you have `yield from` inside the function.
+# @asyncio.coroutine
 def handle(msg):
     msg_type, from_id, chat_id = telepot.glance(msg)
     print(msg_type, from_id, chat_id)
@@ -343,9 +367,10 @@ def handle(msg):
 TOKEN = sys.argv[1]  # get token from command-line
 
 bot = telepot.async.Bot(TOKEN)
-
 loop = asyncio.get_event_loop()
-loop.create_task(bot.messageLoop(handle))  # kind of like notifyOnMessage()
+
+loop.create_task(bot.messageLoop(handle))
 print('Listening ...')
+
 loop.run_forever()
 ```
