@@ -4,7 +4,7 @@
 
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
-**[The Async Stuff](#async)** (only for Python 3.4)  
+**[The Async Stuff](#async)** (Python 3.4 only)  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
 **[Mailing List](https://groups.google.com/forum/#!forum/telepot)**
 
@@ -252,7 +252,7 @@ Note that the server returns a number of `file_id`s, with various file sizes. Th
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
 <a id="async"></a>
-## The Async Stuff (only for Python 3.4)
+## The Async Stuff (Python 3.4 only)
 
 *Since 2.0*, I introduced an async version of `Bot` that makes use of the `asyncio` module of **Python 3.4**. All async stuff described in this section would not work on earlier versions of Python.
 
