@@ -1,5 +1,12 @@
 # telepot changelog
 
+## 2.6 (2015-09-22)
+
+- Conforms to latest Telegram Bot API as of September 18, 2015
+- Added `getFile()` and `downloadFile()` method
+- Added `File` namedtuple
+- Removed `file_link` field from namedtuples
+
 ## 2.51 (2015-09-17)
 
 - In async `messageLoop()`, a regular handler function would be called directly, whereas a coroutine would be allocated a task, using `BaseEventLoop.create_task()`.
