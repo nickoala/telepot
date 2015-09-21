@@ -1,4 +1,8 @@
-import asyncio, aiohttp, json, traceback, io
+import io
+import json
+import asyncio
+import aiohttp
+import traceback
 from concurrent.futures._base import CancelledError
 import telepot
 
@@ -8,7 +12,10 @@ class Bot(object):
         self._token = token
         self._loop = loop if loop is not None else asyncio.get_event_loop()
 
-    def _url(self, method):
+    def _fileurl(self, path):
+        return 'https://api.telegram.org/file/bot%s/%s' % (self._token, path)
+
+    def _methodurl(self, method):
         return 'https://api.telegram.org/bot%s/%s' % (self._token, method)
 
     def _rectify(self, params):
@@ -30,19 +37,19 @@ class Bot(object):
 
     @asyncio.coroutine
     def getMe(self):
-        r = yield from asyncio.wait_for(aiohttp.post(self._url('getMe')), telepot._http_timeout)
+        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('getMe')), telepot._http_timeout)
         return (yield from self._parse(r))
 
     @asyncio.coroutine
     def sendMessage(self, chat_id, text, parse_mode=None, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None):
         p = {'chat_id': chat_id, 'text': text, 'parse_mode': parse_mode, 'disable_web_page_preview': disable_web_page_preview, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}
-        r = yield from asyncio.wait_for(aiohttp.post(self._url('sendMessage'), params=self._rectify(p)), telepot._http_timeout)
+        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('sendMessage'), params=self._rectify(p)), telepot._http_timeout)
         return (yield from self._parse(r))
 
     @asyncio.coroutine
     def forwardMessage(self, chat_id, from_chat_id, message_id):
         p = {'chat_id': chat_id, 'from_chat_id': from_chat_id, 'message_id': message_id}
-        r = yield from asyncio.wait_for(aiohttp.post(self._url('forwardMessage'), params=self._rectify(p)), telepot._http_timeout)
+        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('forwardMessage'), params=self._rectify(p)), telepot._http_timeout)
         return (yield from self._parse(r))
 
     @asyncio.coroutine
@@ -56,14 +63,14 @@ class Bot(object):
 
         if isinstance(inputfile, io.IOBase):
             files = {filetype: inputfile}
-            r = yield from aiohttp.post(self._url(method), params=self._rectify(params), data=files)
+            r = yield from aiohttp.post(self._methodurl(method), params=self._rectify(params), data=files)
 
             # `_http_timeout` is not used here because, for some reason, the larger the file, 
             # the longer it takes for the server to respond (after upload is finished). It is hard to say
             # what value `_http_timeout` should be. In the future, maybe I should let user specify.
         else:
             params[filetype] = inputfile
-            r = yield from asyncio.wait_for(aiohttp.post(self._url(method), params=self._rectify(params)), telepot._http_timeout)
+            r = yield from asyncio.wait_for(aiohttp.post(self._methodurl(method), params=self._rectify(params)), telepot._http_timeout)
 
         return (yield from self._parse(r))
 
@@ -94,25 +101,31 @@ class Bot(object):
     @asyncio.coroutine
     def sendLocation(self, chat_id, latitude, longitude, reply_to_message_id=None, reply_markup=None):
         p = {'chat_id': chat_id, 'latitude': latitude, 'longitude': longitude, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}
-        r = yield from asyncio.wait_for(aiohttp.post(self._url('sendLocation'), params=self._rectify(p)), telepot._http_timeout)
+        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('sendLocation'), params=self._rectify(p)), telepot._http_timeout)
         return (yield from self._parse(r))
 
     @asyncio.coroutine
     def sendChatAction(self, chat_id, action):
         p = {'chat_id': chat_id, 'action': action}
-        r = yield from asyncio.wait_for(aiohttp.post(self._url('sendChatAction'), params=self._rectify(p)), telepot._http_timeout)
+        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('sendChatAction'), params=self._rectify(p)), telepot._http_timeout)
         return (yield from self._parse(r))
 
     @asyncio.coroutine
     def getUserProfilePhotos(self, user_id, offset=None, limit=None):
         p = {'user_id': user_id, 'offset': offset, 'limit': limit}
-        r = yield from asyncio.wait_for(aiohttp.post(self._url('getUserProfilePhotos'), params=self._rectify(p)), telepot._http_timeout)
+        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('getUserProfilePhotos'), params=self._rectify(p)), telepot._http_timeout)
+        return (yield from self._parse(r))
+
+    @asyncio.coroutine
+    def getFile(self, file_id):
+        p = {'file_id': file_id}
+        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('getFile'), params=self._rectify(p)), telepot._http_timeout)
         return (yield from self._parse(r))
 
     @asyncio.coroutine
     def getUpdates(self, offset=None, limit=None, timeout=None):
         p = {'offset': offset, 'limit': limit, 'timeout': timeout}
-        r = yield from asyncio.wait_for(aiohttp.post(self._url('getUpdates'), params=self._rectify(p)), telepot._http_timeout+(0 if timeout is None else timeout))
+        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('getUpdates'), params=self._rectify(p)), telepot._http_timeout+(0 if timeout is None else timeout))
         return (yield from self._parse(r))
 
     @asyncio.coroutine
@@ -121,11 +134,37 @@ class Bot(object):
 
         if certificate:
             files = {'certificate': certificate}
-            r = yield from asyncio.wait_for(aiohttp.post(self._url('setWebhook'), params=self._rectify(p), files=files), telepot._http_timeout)
+            r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('setWebhook'), params=self._rectify(p), files=files), telepot._http_timeout)
         else:
-            r = yield from asyncio.wait_for(aiohttp.post(self._url('setWebhook'), params=self._rectify(p)), telepot._http_timeout)
+            r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('setWebhook'), params=self._rectify(p)), telepot._http_timeout)
 
         return (yield from self._parse(r))
+
+    @asyncio.coroutine
+    def downloadFile(self, file_id, dest):
+        f = yield from self.getFile(file_id)
+
+        # `file_path` is optional in File object
+        if 'file_path' not in f:
+            raise TelegramError('No file_path returned', None)
+
+        try:
+            r = yield from asyncio.wait_for(aiohttp.get(self._fileurl(f['file_path'])), telepot._http_timeout)
+
+            d = dest if isinstance(dest, io.IOBase) else open(dest, 'wb')
+
+            while 1:
+                chunk = yield from r.content.read(telepot._file_chunk_size)
+                if not chunk:
+                    break
+                d.write(chunk)
+                d.flush()
+        finally:
+            if not isinstance(dest, io.IOBase) and 'd' in locals():
+                d.close()
+
+            if 'r' in locals():
+                r.close()
 
     @asyncio.coroutine
     def messageLoop(self, handler):

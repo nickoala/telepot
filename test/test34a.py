@@ -5,6 +5,7 @@ import time
 import threading
 import pprint
 import sys
+import traceback
 import telepot
 import telepot.async
 
@@ -26,17 +27,24 @@ def equivalent(data, nt):
         return data==nt
 
 def examine(result, type):
-    print('Examining %s ......' % type)
+    try:
+        print('Examining %s ......' % type)
 
-    nt = telepot.namedtuple(result, type)
-    assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
+        nt = telepot.namedtuple(result, type)
+        assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
 
-    if type == 'Message':
-        print('Message glance: %s' % str(telepot.glance(nt, long=True)))
+        if type == 'Message':
+            print('Message glance: %s' % str(telepot.glance(nt, long=True)))
 
-    pprint.pprint(result)
-    pprint.pprint(nt)
-    print()
+        pprint.pprint(result)
+        pprint.pprint(nt)
+        print()
+    except AssertionError:
+        traceback.print_exc()
+        print('Do you want to continue? [y]', end=' ')
+        answer = input()
+        if answer != 'y':
+            exit(1)
 
 @asyncio.coroutine
 def send_everything(msg):
@@ -92,6 +100,26 @@ def send_everything(msg):
 
     yield from bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=hide_keyboard)
 
+    ##### getFile
+    
+    f = yield from bot.getFile(file_id)
+    examine(f, 'File')
+
+    ##### downloadFile
+    
+    try:
+        print('Downloading file to non-existent directory ...')
+        yield from bot.downloadFile(file_id, 'non-existent-dir/file')
+    except:
+        print('Error: as expected')
+
+    print('Downloading file to down.1 ...')
+    yield from bot.downloadFile(file_id, 'down.1')
+
+    print('Open down.2 and download to it ...')
+    with open('down.2', 'wb') as down:
+        yield from bot.downloadFile(file_id, down)
+
     ##### sendAudio
     # Need one of `performer` or `title' for server to regard it as audio. Otherwise, server treats it as voice.
 
@@ -139,6 +167,11 @@ def send_everything(msg):
     yield from bot.sendVideo(chat_id, file_id, duration=5, caption='Hong Kong traffic', reply_to_message_id=msg_id, reply_markup=show_keyboard)
 
     yield from bot.sendVideo(chat_id, file_id, reply_markup=hide_keyboard)
+
+    ##### downloadFile, multiple chunks
+
+    print('Downloading file to down.3 ...')
+    yield from bot.downloadFile(file_id, 'down.3')
 
     ##### sendVoice
 

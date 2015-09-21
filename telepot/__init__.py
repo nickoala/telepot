@@ -1,4 +1,12 @@
-import requests, json, time, threading, traceback, sys, io, collections, warnings
+import sys
+import io
+import time
+import json
+import requests
+import threading
+import traceback
+import collections
+import warnings
 
 # Suppress InsecurePlatformWarning
 requests.packages.urllib3.disable_warnings()
@@ -68,16 +76,17 @@ def _create_class(typename, fields):
 
 User = _create_class('User', ['id', 'first_name', 'last_name', 'username'])
 GroupChat = _create_class('GroupChat', ['id', 'title'])
-PhotoSize = _create_class('PhotoSize', ['file_id', 'width', 'height', 'file_size', 'file_link'])
+PhotoSize = _create_class('PhotoSize', ['file_id', 'width', 'height', 'file_size'])
 
-Audio = _create_class('Audio', ['file_id', 'duration', 'performer', 'title', 'mime_type', 'file_size', 'file_link'])
-Document = _create_class('Document', ['file_id', ('thumb', PhotoSize), 'file_name', 'mime_type', 'file_size', 'file_link'])
-Sticker = _create_class('Sticker', ['file_id', 'width', 'height', ('thumb', PhotoSize), 'file_size', 'file_link'])
-Video = _create_class('Video', ['file_id', 'width', 'height', 'duration', ('thumb', PhotoSize), 'mime_type', 'file_size', 'file_link'])
-Voice = _create_class('Voice', ['file_id', 'duration', 'mime_type', 'file_size', 'file_link'])
+Audio = _create_class('Audio', ['file_id', 'duration', 'performer', 'title', 'mime_type', 'file_size'])
+Document = _create_class('Document', ['file_id', ('thumb', PhotoSize), 'file_name', 'mime_type', 'file_size'])
+Sticker = _create_class('Sticker', ['file_id', 'width', 'height', ('thumb', PhotoSize), 'file_size'])
+Video = _create_class('Video', ['file_id', 'width', 'height', 'duration', ('thumb', PhotoSize), 'mime_type', 'file_size'])
+Voice = _create_class('Voice', ['file_id', 'duration', 'mime_type', 'file_size'])
 
 Contact = _create_class('Contact', ['phone_number', 'first_name', 'last_name', 'user_id'])
 Location = _create_class('Location', ['longitude', 'latitude'])
+File = _create_class('File', ['file_id', 'file_size', 'file_path'])
 
 def PhotoSizeArray(data):
     return [PhotoSize(**p) for p in data]
@@ -199,12 +208,18 @@ class TelegramError(TelepotException):
 # Ensure an exception is raised for requests that take too long
 _http_timeout = 30
 
+# For streaming file download
+_file_chunk_size = 65536
+
 class Bot(object):
     def __init__(self, token):
         self._token = token
         self._msg_thread = None
 
-    def _url(self, method):
+    def _fileurl(self, path):
+        return 'https://api.telegram.org/file/bot%s/%s' % (self._token, path)
+
+    def _methodurl(self, method):
         return 'https://api.telegram.org/bot%s/%s' % (self._token, method)
 
     def _parse(self, response):
@@ -223,17 +238,17 @@ class Bot(object):
         return {key: value if type(value) not in [dict, list] else json.dumps(value, separators=(',',':')) for key,value in params.items() if value is not None}
 
     def getMe(self):
-        r = requests.post(self._url('getMe'), timeout=_http_timeout)
+        r = requests.post(self._methodurl('getMe'), timeout=_http_timeout)
         return self._parse(r)
 
     def sendMessage(self, chat_id, text, parse_mode=None, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None):
         p = {'chat_id': chat_id, 'text': text, 'parse_mode': parse_mode, 'disable_web_page_preview': disable_web_page_preview, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}
-        r = requests.post(self._url('sendMessage'), params=self._rectify(p), timeout=_http_timeout)
+        r = requests.post(self._methodurl('sendMessage'), params=self._rectify(p), timeout=_http_timeout)
         return self._parse(r)
 
     def forwardMessage(self, chat_id, from_chat_id, message_id):
         p = {'chat_id': chat_id, 'from_chat_id': from_chat_id, 'message_id': message_id}
-        r = requests.post(self._url('forwardMessage'), params=self._rectify(p), timeout=_http_timeout)
+        r = requests.post(self._methodurl('forwardMessage'), params=self._rectify(p), timeout=_http_timeout)
         return self._parse(r)
 
     def _isfile(self, f):
@@ -252,14 +267,14 @@ class Bot(object):
 
         if self._isfile(inputfile):
             files = {filetype: inputfile}
-            r = requests.post(self._url(method), params=self._rectify(params), files=files)
+            r = requests.post(self._methodurl(method), params=self._rectify(params), files=files)
 
             # `_http_timeout` is not used here because, for some reason, the larger the file, 
             # the longer it takes for the server to respond (after upload is finished). It is hard to say
             # what value `_http_timeout` should be. In the future, maybe I should let user specify.
         else:
             params[filetype] = inputfile
-            r = requests.post(self._url(method), params=self._rectify(params), timeout=_http_timeout)
+            r = requests.post(self._methodurl(method), params=self._rectify(params), timeout=_http_timeout)
 
         return self._parse(r)
 
@@ -283,22 +298,27 @@ class Bot(object):
 
     def sendLocation(self, chat_id, latitude, longitude, reply_to_message_id=None, reply_markup=None):
         p = {'chat_id': chat_id, 'latitude': latitude, 'longitude': longitude, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}
-        r = requests.post(self._url('sendLocation'), params=self._rectify(p), timeout=_http_timeout)
+        r = requests.post(self._methodurl('sendLocation'), params=self._rectify(p), timeout=_http_timeout)
         return self._parse(r)
 
     def sendChatAction(self, chat_id, action):
         p = {'chat_id': chat_id, 'action': action}
-        r = requests.post(self._url('sendChatAction'), params=self._rectify(p), timeout=_http_timeout)
+        r = requests.post(self._methodurl('sendChatAction'), params=self._rectify(p), timeout=_http_timeout)
         return self._parse(r)
 
     def getUserProfilePhotos(self, user_id, offset=None, limit=None):
         p = {'user_id': user_id, 'offset': offset, 'limit': limit}
-        r = requests.post(self._url('getUserProfilePhotos'), params=self._rectify(p), timeout=_http_timeout)
+        r = requests.post(self._methodurl('getUserProfilePhotos'), params=self._rectify(p), timeout=_http_timeout)
+        return self._parse(r)
+
+    def getFile(self, file_id):
+        p = {'file_id': file_id}
+        r = requests.post(self._methodurl('getFile'), params=self._rectify(p), timeout=_http_timeout)
         return self._parse(r)
 
     def getUpdates(self, offset=None, limit=None, timeout=None):
         p = {'offset': offset, 'limit': limit, 'timeout': timeout}
-        r = requests.post(self._url('getUpdates'), params=self._rectify(p), timeout=_http_timeout+(0 if timeout is None else timeout))
+        r = requests.post(self._methodurl('getUpdates'), params=self._rectify(p), timeout=_http_timeout+(0 if timeout is None else timeout))
         return self._parse(r)
 
     def setWebhook(self, url=None, certificate=None):
@@ -306,11 +326,34 @@ class Bot(object):
 
         if certificate:
             files = {'certificate': certificate}
-            r = requests.post(self._url('setWebhook'), params=self._rectify(p), files=files, timeout=_http_timeout)
+            r = requests.post(self._methodurl('setWebhook'), params=self._rectify(p), files=files, timeout=_http_timeout)
         else:
-            r = requests.post(self._url('setWebhook'), params=self._rectify(p), timeout=_http_timeout)
+            r = requests.post(self._methodurl('setWebhook'), params=self._rectify(p), timeout=_http_timeout)
 
         return self._parse(r)
+
+    def downloadFile(self, file_id, dest):
+        f = self.getFile(file_id)
+
+        # `file_path` is optional in File object
+        if 'file_path' not in f:
+            raise TelegramError('No file_path returned', None)
+
+        try:
+            r = requests.get(self._fileurl(f['file_path']), stream=True, timeout=_http_timeout)
+
+            d = dest if self._isfile(dest) else open(dest, 'wb')
+
+            for chunk in r.iter_content(chunk_size=_file_chunk_size):
+                if chunk:
+                    d.write(chunk)
+                    d.flush()
+        finally:
+            if not self._isfile(dest) and 'd' in locals():
+                d.close()
+
+            if 'r' in locals():
+                r.close()
 
     def notifyOnMessage(self, callback, relax=0.1, timeout=20):
         # For MessageThread to call outer class getUpdates()
