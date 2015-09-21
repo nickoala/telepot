@@ -10,6 +10,13 @@
 
 ### Recent changes
 
+**2.6 (2015-09-22)**
+
+- Conforms to latest Telegram Bot API as of [September 18, 2015](https://core.telegram.org/bots/api-changelog)
+- Added `getFile()` and `downloadFile()` method
+- Added `File` namedtuple
+- Removed `file_link` field from namedtuples
+
 **2.51 (2015-09-17)**
 
 - In async `messageLoop()`, a regular handler function would be called directly, whereas a coroutine would be allocated a task, using `BaseEventLoop.create_task()`.
@@ -19,13 +26,6 @@
 
 - Fixed `pip install` syntax error
 - Having wasted a lot of version numbers, I finally get a better hang of setup.py, pip, and PyPI.
-
-**2.0 (2015-09-11)**
-
-- Conforms to latest Telegram Bot API as of [September 7, 2015](https://core.telegram.org/bots/api-changelog)
-- Added an async version for Python 3.4
-- Added a `file_link` field to some namedtuples, in response to a not-yet-documented change in Bot API
-- Better exception handling on receiving invalid JSON responses
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
