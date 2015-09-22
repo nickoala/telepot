@@ -163,6 +163,39 @@ while 1:
     time.sleep(10)
 ```
 
+#### Download files
+
+For a `voice`, `sticker`, `photo`, `audio`, `document`, or `video` message, look for the `file_id` and you may download the file. For example, a `photo` may look like this:
+
+```python
+{u'chat': {u'first_name': u'Nick', u'id': 999999999},
+ u'date': 1442905828,
+ u'from': {u'first_name': u'Nick', u'id': 999999999},
+ u'message_id': 2007,
+ u'photo': [{u'file_id': u'ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJklJAkimnoPQrsTuvWxyz',
+             u'file_size': 615,
+             u'height': 67,
+             u'width': 90},
+            {u'file_id': u'ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJklkodamnoPQrsTuvWxyz',
+             u'file_size': 4990,
+             u'height': 240,
+             u'width': 320},
+            {u'file_id': u'ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJklYAGAmnoPQrsTuvWxyz',
+             u'file_size': 34506,
+             u'height': 600,
+             u'width': 800},
+            {u'file_id': u'ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJklujGamnoPQrsTuvWxyz',
+             u'file_size': 73196,
+             u'height': 960,
+             u'width': 1280}]}
+```
+
+It has a number of `file_id`s, with various file sizes. These are thumbnails of the same image. Download one of them by:
+
+```python
+>>> bot.downloadFile(u'ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJklJAkimnoPQrsTuvWxyz', 'save/to/path')
+```
+
 #### Turn dictionary into namedtuple, if you like
 
 In telepot, everything is a dict. For example, a `message` is a dict whose **keys** are just **field names** specified in Bot API's **[Message](https://core.telegram.org/bots/api#message)** object. Accessing `message['from']`, you get another dict whose **keys** are just **field names** specified in Bot API's **[User](https://core.telegram.org/bots/api#user)** object. In fact, all objects returned by Bot API are serialized as JSON associative arrays. Turning those into Python dicts is not just easy, but natural. I like the transparency.
@@ -221,8 +254,6 @@ A custom keyboard presents custom buttons for users to tab. Check it out.
 
 #### Send files
 
-You may also send photos, videos, audios, documents, stickers, and voice messages.
-
 ```python
 >>> f = open('zzzzzzzz.jpg', 'rb')  # some file on local disk
 >>> response = bot.sendPhoto(999999999, f)
@@ -248,6 +279,8 @@ Note that the server returns a number of `file_id`s, with various file sizes. Th
 ```python
 >>> bot.sendPhoto(999999999, u'APNpmPKVulsdkIFAILMDmhTAADmdcmdsdfaldalk')
 ```
+
+Besides `sendPhoto()`, you may also `sendAudio()`, `sendDocument()`, `sendSticker()`, `sendVideo()`, and `sendVoice()`. See [reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md) for details.
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
