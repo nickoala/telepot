@@ -23,7 +23,7 @@ msg_type, from_id, chat_id, msg_date, msg_id = telepot.glance(msg, long=True)
 
 Convert a dictionary to a namedtuple of a given object type.
 
-`type` can be: `Audio`, `Contact`, `Document`, `GroupChat`, `Location`, `Message`, `PhotoSize`, `PhotoSize[]`, `PhotoSize[][]`, `Sticker`, `Update`, `Update[]`, `User`, `User/GroupChat`, `UserProfilePhotos`, `Video`, `Voice`.
+`type` can be: `Audio`, `Contact`, `Document`, `GroupChat`, `Location`, `Message`, `PhotoSize`, `PhotoSize[]`, `PhotoSize[][]`, `Sticker`, `Update`, `Update[]`, `User`, `User/GroupChat`, `UserProfilePhotos`, `Video`, `Voice`, `File`.
 
 Namedtuple field names cannot be Python keywords, but the **[Message](https://core.telegram.org/bots/api#message)** object has a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `dict['from']` becomes `namedtuple.from_` when converted to a namedtuple.
 
@@ -59,7 +59,7 @@ else:
 
 ## telepot.Bot
 
-Aside from `notifyOnMessage()`, all methods are straight mappings from **[Telegram Bot API](https://core.telegram.org/bots/api)**. No point to duplicate all the details here. I will only give brief descriptions below, and encourage you to visit the underlying API's documentations. Full power of the Bot API can be exploited only by understanding the API itself.
+Aside from `downloadFile()` and `notifyOnMessage()`, all methods are straight mappings from **[Telegram Bot API](https://core.telegram.org/bots/api)**. No point to duplicate all the details here. I will only give brief descriptions below, and encourage you to visit the underlying API's documentations. Full power of the Bot API can be exploited only by understanding the API itself.
 
 **Bot(token)**
 
@@ -258,6 +258,12 @@ Get a list of profile pictures for a user.
 
 See: https://core.telegram.org/bots/api#getuserprofilephotos
 
+**getFile(file_id)**
+
+Get a [File](https://core.telegram.org/bots/api#file) object, usually as a prelude to downloading a file. If you just want to download a file, call `downloadFile()` instead.
+
+See: https://core.telegram.org/bots/api#getfile
+
 **getUpdates(offset=None, limit=None, timeout=None)**
 
 Receive incoming updates.
@@ -282,6 +288,19 @@ bot.setWebhook('https://www.domain.com/webhook', open('domain.cert', 'rb'))
 
 # Cancel webhook
 bot.setWebhook()
+```
+
+**downloadFile(file_id, dest)**
+
+Download a file. `dest` can be a path (string) or a Python file object.
+
+Examples:
+```python
+bot.downloadFile('ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJ', 'save/to/path')
+
+# If you open the file yourself, you are responsible for closing it.
+with open('save/to/path', 'wb') as f:
+    bot.downloadFile('ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJ', f)
 ```
 
 **notifyOnMessage(callback, relax=0.1, timeout=20)**
