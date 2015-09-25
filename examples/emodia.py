@@ -1,13 +1,22 @@
 import sys
 import logging
 import asyncio
+import os
+import configparser
 import telepot
 import telepot.async
 
 """
-$ python3.4 emodia.py <token>
+$ python3.4 emodia.py <config_path>
 
 Emodi: An Emoji Unicode Decoder - You send me an emoji, I give you the unicode.
+
+Because this program is run on a hosted server, I don't want the token on the
+command-line, which may be seen by listing the processes. I put the token in a 
+config file, which looks like:
+
+[emodia.py]
+bot_token = .........
 
 Caution: Python's treatment of unicode characters longer than 2 bytes (which 
 most emojis are) varies across versions and platforms. I have tested this program 
@@ -54,7 +63,13 @@ def handle(msg):
         yield from bot.sendMessage(chat_id, reply)
 
 
-TOKEN = sys.argv[1]  # get token from command-line
+# Read token from config file, whose path is specified on command-line.
+config = configparser.ConfigParser()
+config.read(sys.argv[1])
+
+filename = os.path.basename(sys.argv[0])
+
+TOKEN = config[filename]['bot_token']
 
 bot = telepot.async.Bot(TOKEN)
 loop = asyncio.get_event_loop()
