@@ -441,4 +441,6 @@ Sooner or later, you want your bots to be able to send emoji. You may look up th
 
 Two versions: **[traditional](https://github.com/nickoala/telepot/blob/master/examples/emodi.py)** | **[async](https://github.com/nickoala/telepot/blob/master/examples/emodia.py)**
 
-I am running this bot on a CentOS server. You should be able to talk to it 24/7. Meant to be publicly accessible, the async version is being run.
+I am running this bot on a CentOS server. You should be able to talk to it 24/7. Intended for multiple users, the async version is being run.
+
+By the way, I just discovered a Python **[emoji](https://pypi.python.org/pypi/emoji/)** package. Use it.
