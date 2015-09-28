@@ -355,7 +355,10 @@ class Bot(object):
             if 'r' in locals():
                 r.close()
 
-    def notifyOnMessage(self, callback, relax=0.1, timeout=20):
+    def notifyOnMessage(self, callback=None, relax=0.1, timeout=20, run=False):
+        if callback is None:
+            callback = self.handle
+
         # For MessageThread to call outer class getUpdates()
         def get_updates(offset, timeout):
             return self.getUpdates(offset=offset, timeout=timeout)
@@ -449,3 +452,47 @@ class Bot(object):
             self._msg_thread = MessageThread(callback, relax, timeout)
             self._msg_thread.daemon = True
             self._msg_thread.start()
+
+        if run:
+            # keep program going
+            while 1:
+                time.sleep(10)
+
+
+import telepot.listener
+
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
+
+class SpeakerBot(Bot):
+    DEFAULT_TIMEOUT = 30
+
+    def __init__(self, token):
+        super(SpeakerBot, self).__init__(token)
+        self._mic = telepot.listener.Microphone()
+
+    @property
+    def mic(self):
+        return self._mic
+
+    def listener(self):
+        q = Queue()
+        self._mic.add(q)
+        ln = telepot.listener.Listener(self._mic, q, self.DEFAULT_TIMEOUT)
+        return ln
+
+"""
+class ThreadedChatBot(SpeakerBot):
+    def __init__(self, token, Thread):
+        super(...).__init__(...)
+        self._
+
+    def handle(self, msg):
+        if from_id not in player_threads:
+            ln = bot.listener()
+            p = Player(from_id, bot, ln)
+            player_threads[from_id] = p
+            p.start()
+"""

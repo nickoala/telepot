@@ -167,7 +167,10 @@ class Bot(object):
                 r.close()
 
     @asyncio.coroutine
-    def messageLoop(self, handler):
+    def messageLoop(self, handler=None):
+        if handler is None:
+            handler = self.handle
+
         offset = None  # running offset
         while 1:
             try:
@@ -190,3 +193,24 @@ class Bot(object):
                 yield from asyncio.sleep(0.1)
             else:
                 yield from asyncio.sleep(0.1)
+
+
+from asyncio import Queue
+import telepot.async.listener
+
+class SpeakerBot(Bot):
+    DEFAULT_TIMEOUT = 30
+
+    def __init__(self, token):
+        super(SpeakerBot, self).__init__(token)
+        self._mic = telepot.async.listener.Microphone()
+
+    @property
+    def mic(self):
+        return self._mic
+
+    def listener(self):
+        q = Queue()
+        self._mic.add(q)
+        ln = telepot.async.listener.Listener(self._mic, q)
+        return ln
