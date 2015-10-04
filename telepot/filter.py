@@ -4,9 +4,6 @@ def pick(obj, key):
     if type(obj) is dict:
         return obj[key]
     else:
-        if key == 'from':
-            key = 'from_'
-        
         return getattr(obj, key)
 
 def match(part, template):
@@ -24,16 +21,22 @@ def match(part, template):
         return part == template
 
 def kmatch(msg, key, template):
-    try:
-        levels = key.split('__')
-        part = reduce(pick, levels, msg)
+    if key == '_':
+        part = msg
+    else:
+        try:
+            levels = key.split('__')
+            part = reduce(pick, levels, msg)
+            # Drill down one level at a time, similar to:
+            #   reduce(lambda a,b: a[b], ['chat', 'id'], msg)
 
-    except (KeyError, AttributeError):
-        return False
+        except (KeyError, AttributeError):
+            return False
 
     return match(part, template)
+    # Do not bracket `match()` in above `try` clause because 
+    # `template()` may produce its own errors.
 
-def ok(msg, *args, **kwargs):
-    return (all(map(match, [msg]*len(args), args)) and 
-            all(map(kmatch, [msg]*len(kwargs), *zip(*kwargs.items()))))
-                                              # e.g. {'a':1, 'b':2} -> [('a','b'), (1,2)]
+def ok(msg, **kwargs):
+    return all(map(kmatch, [msg]*len(kwargs), *zip(*kwargs.items())))
+                                            # e.g. {'a':1, 'b':2} -> [('a','b'), (1,2)]

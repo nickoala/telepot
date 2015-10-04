@@ -2,6 +2,7 @@ import asyncio
 import traceback
 import telepot.filter
 
+
 class Microphone(object):
     def __init__(self):
         self._queues = set()
@@ -20,16 +21,17 @@ class Microphone(object):
                 traceback.print_exc()
                 pass
 
+
 class Listener(object):
     def __init__(self, mic, queue):
         self._mic = mic
         self._queue = queue
 
     @asyncio.coroutine
-    def wait(self, *args, **kwargs):
+    def wait(self, **kwargs):
         while 1:
             msg = yield from self._queue.get()
-            if telepot.filter.ok(msg, *args, **kwargs):
+            if telepot.filter.ok(msg, **kwargs):
                 return msg
     
     def __del__(self):

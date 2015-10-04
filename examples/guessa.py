@@ -1,14 +1,17 @@
 import sys
 import asyncio
 import random
-import math
+import traceback
 import telepot
+import telepot.helper
 import telepot.async
 
-class GuessBot(telepot.async.SpeakerBot):
-    def __init__(self, token):
-        super(GuessBot, self).__init__(token)
-        self._tasks = {}
+
+class Player(telepot.helper.ChatHandler):
+    WAIT_TIMEOUT = 10
+
+    def __init__(self, seed_tuple):
+        super(Player, self).__init__(*seed_tuple)
 
     def _hint(self, answer, guess):
         if answer > guess:
@@ -17,50 +20,46 @@ class GuessBot(telepot.async.SpeakerBot):
             return 'smaller'
 
     @asyncio.coroutine
-    def _player(self, chat_id, listener):
-        answer = random.randint(0,100)
-
+    def run(self):
         try:
-            yield from self.sendMessage(chat_id, 'Guess my number')
+            answer = random.randint(0,100)
+
+            yield from self.sender.sendMessage('Guess my number')
 
             while 1:
-                msg = yield from asyncio.wait_for(listener.wait(chat__id=chat_id), self.DEFAULT_TIMEOUT)
+                msg = yield from asyncio.wait_for(self.listener.wait(chat__id=self.chat_id), self.WAIT_TIMEOUT)
 
                 msg_type, from_id, chat_id = telepot.glance(msg)
 
                 if msg_type != 'text':
-                    yield from self.sendMessage(chat_id, 'Give me a number, please.')   # built-in retry???
+                    yield from self.sender.sendMessage('Give me a number, please.')
                     continue
 
                 try:
                    guess = int(msg['text'])
                 except ValueError:
-                    yield from self.sendMessage(chat_id, 'Give me a number, please.')   # built-in retry???
+                    yield from self.sender.sendMessage('Give me a number, please.')
                     continue
 
                 if guess != answer:
                     hint = self._hint(answer, guess)
-                    yield from self.sendMessage(chat_id, hint)   # built-in retry???
+                    yield from self.sender.sendMessage(hint)
                 else:
-                    yield from self.sendMessage(chat_id, 'Correct!')   # built-in retry???
+                    yield from self.sender.sendMessage('Correct!')
                     return
-        finally:
-            del self._tasks[chat_id]
-
-    def handle(self, msg):
-        self.mic.send(msg)
-        msg_type, from_id, chat_id = telepot.glance(msg)
-
-        if chat_id not in self._tasks:
-            ln = self.listener()
-            p = self._player(chat_id, ln)
-            self._tasks[chat_id] = p
-            self._loop.create_task(p)
+        except:
+            traceback.print_exc()
+            # display exceptions immediately
 
 
 TOKEN = sys.argv[1]
 
-bot = GuessBot(TOKEN)
+from telepot.delegate import per_chat_id
+from telepot.async.delegate import create_run
+
+bot = telepot.async.DelegatorBot(TOKEN, [
+                                    (per_chat_id(), create_run(Player)),
+                                ])
 loop = asyncio.get_event_loop()
 
 loop.create_task(bot.messageLoop())

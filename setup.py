@@ -4,25 +4,25 @@ from setuptools.command.build_py import build_py
 from os import path
 import sys
 
-def _not_async_py(filepath):
-    return filepath[-8:] != 'async.py'
+def _not_async(filepath):
+    return filepath.find('async/') < 0
 
-# Do not copy async.py for Python 3.3 or below.
+# Do not copy async module for Python 3.3 or below.
 class nocopy_async(build_py):
     def find_all_modules(self):
         modules = build_py.find_all_modules(self)
-        modules = list(filter(lambda m: _not_async_py(m[-1]), modules))
+        modules = list(filter(lambda m: _not_async(m[-1]), modules))
         return modules
 
     def find_package_modules(self, package, package_dir):
         modules = build_py.find_package_modules(self, package, package_dir)
-        modules = list(filter(lambda m: _not_async_py(m[-1]), modules))
+        modules = list(filter(lambda m: _not_async(m[-1]), modules))
         return modules
 
 # Do not compile async.py for Python 3.3 or below.
 class nocompile_async(install_lib):
     def byte_compile(self, files):
-        files = list(filter(_not_async_py, files))
+        files = list(filter(_not_async, files))
         install_lib.byte_compile(self, files)
 
 
@@ -37,7 +37,7 @@ if PY_34:
     # one more dependency for Python 3.4
     install_requires += ['aiohttp']
 else:
-    # do not copy/compile async.py for Python 3.3 or below
+    # do not copy/compile async module for Python 3.3 or below
     cmdclass['build_py'] = nocopy_async
     cmdclass['install_lib'] = nocompile_async
 
@@ -54,7 +54,8 @@ setup(
     cmdclass=cmdclass,
 
     name='telepot',
-    packages=['telepot'],
+    packages=['telepot', 'telepot.async'],
+    # Do not filter out packages because we need the whole thing during `sdist`.
 
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
@@ -65,7 +66,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='2.60',
+    version='3.0',
 
     description='Python wrapper for Telegram Bot API',
 
