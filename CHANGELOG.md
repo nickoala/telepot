@@ -1,5 +1,9 @@
 # telepot changelog
 
+## 3.0 (2015-10-05)
+
+- Added listener and delegation mechanism
+
 ## 2.6 (2015-09-22)
 
 - Conforms to latest Telegram Bot API as of September 18, 2015
