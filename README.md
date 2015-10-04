@@ -6,6 +6,7 @@
 **[The Basics](#basics)**  
 **[The Async Stuff](#async)** (Python 3.4.3 or newer)  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
+**[Examples](#examples)**  
 **[Mailing List](https://groups.google.com/forum/#!forum/telepot)**
 
 ### Recent changes
@@ -395,3 +396,51 @@ print('Done.')
 ```
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
+
+<a id="examples"></a>
+## Examples
+
+#### Dicey Clock
+
+[Here is a tutorial](http://www.instructables.com/id/Set-up-Telegram-Bot-on-Raspberry-Pi/) teaching you how to setup a bot on Raspberry Pi. This simple bot does nothing much but accepts two commands:
+
+- `/roll` - reply with a random integer between 1 and 6, like rolling a dice.
+- `/time` - reply with the current time, like a clock.
+
+**[Source »](https://github.com/nickoala/telepot/blob/master/examples/diceyclock.py)**
+
+#### Skeleton
+
+A starting point for your telepot programs.
+
+Two versions: **[traditional](https://github.com/nickoala/telepot/blob/master/examples/skeleton.py)** | **[async](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)**
+
+#### Indoor climate monitor
+
+Running on a Raspberry Pi with a few sensors attached, this bot accepts these commands:
+
+- `/now` - Report current temperature, humidity, and pressure
+- `/1m` - Report every 1 minute
+- `/1h` - Report every 1 hour
+- `/cancel` - Cancel reporting
+
+**[Source »](https://github.com/nickoala/sensor/blob/master/examples/indoor.py)**
+
+#### IP Cam using Telegram as DDNS
+
+Running on a Raspberry Pi with a camera module attached, this bot accepts these commands:
+
+- `/open` - Open a port through the router to make the video stream accessible, and send you the URL (which includes the router's public IP address)
+- `/close` - Close the port
+
+**[Project page »](https://github.com/nickoala/ipcam)**
+
+#### Emodi - an Emoji Unicode Decoder
+
+Sooner or later, you want your bots to be able to send emoji. You may look up the unicode on the web, or from now on, you may just fire up Telegram and ask **[Emodi :blush:](https://telegram.me/emodibot)**
+
+Two versions: **[traditional](https://github.com/nickoala/telepot/blob/master/examples/emodi.py)** | **[async](https://github.com/nickoala/telepot/blob/master/examples/emodia.py)**
+
+I am running this bot on a CentOS server. You should be able to talk to it 24/7. Intended for multiple users, the async version is being run.
+
+By the way, I just discovered a Python **[emoji](https://pypi.python.org/pypi/emoji/)** package. Use it.
