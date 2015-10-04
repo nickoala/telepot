@@ -30,7 +30,7 @@
 
 The job done by telepot so far has been quite trivial, nothing more than adding a thin layer of Python on top of the Bot API. I have been calling it a *wrapper*.
 
-In 3.0, telepot has grown up to be more appropriately called a *framework*. I have introduced some useful features that support writing more sophisticated programs. While I don't have time to say more right now, more documentations are definitely coming.
+In 3.0, telepot has grown up to be more appropriately called a *framework*. I have introduced some useful features that support writing more sophisticated programs. While I don't have time to say more right now, **more documentations are definitely coming**.
 
 The code has been uploaded. Feel free to look at the [guess-a-number](https://github.com/nickoala/telepot/blob/master/examples/guess.py) and [chatbox](https://github.com/nickoala/telepot/blob/master/examples/chatbox.py) examples, both of which make use of the new features.
 
