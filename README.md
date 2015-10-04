@@ -1,7 +1,8 @@
 # telepot
 
-**P**ython wrapper for **Tele**gram B**ot** API
+**P**ython framework for **Tele**gram B**ot** API
 
+**[What's New in 3.0?](#whatsnew)**  
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
 **[The Async Stuff](#async)** (Python 3.4.3 or newer)  
@@ -11,6 +12,10 @@
 
 ### Recent changes
 
+**3.0 (2015-10-05)**
+
+- Added listener and delegation mechanism
+
 **2.6 (2015-09-22)**
 
 - Conforms to latest Telegram Bot API as of [September 18, 2015](https://core.telegram.org/bots/api-changelog)
@@ -18,17 +23,16 @@
 - Added `File` namedtuple
 - Removed `file_link` field from namedtuples
 
-**2.51 (2015-09-17)**
-
-- In async `messageLoop()`, a regular handler function would be called directly, whereas a coroutine would be allocated a task, using `BaseEventLoop.create_task()`.
-- In `messageLoop()` and `notifyOnMessage()`, the `relax` time default is now 0.1 second.
-
-**2.5 (2015-09-15)**
-
-- Fixed `pip install` syntax error
-- Having wasted a lot of version numbers, I finally get a better hang of setup.py, pip, and PyPI.
-
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
+
+<a id="whatsnew"></a>
+## What's New in 3.0?
+
+The job done by telepot so far has been quite trivial, nothing more than adding a thin layer of Python on top of the Bot API. I have been calling it a *wrapper*.
+
+In 3.0, telepot has grown up to be more appropriately called a *framework*. I have introduced some useful features that support writing more sophisticated programs. While I don't have time to say more right now, more documentations are definitely coming.
+
+The code has been uploaded. Feel free to look at the [guess-a-number](https://github.com/nickoala/telepot/blob/master/examples/guess.py) and [chatbox](https://github.com/nickoala/telepot/blob/master/examples/chatbox.py) examples, both of which make use of the new features.
 
 <a id="installation"></a>
 ## Installation
