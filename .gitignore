@@ -1,6 +1,4 @@
 *.pyc
 telepot.egg-info/
 dist/
-docs/_*/
-docs/Makefile
-docs/make.bat
+.idea/

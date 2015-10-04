@@ -8,6 +8,11 @@ import traceback
 import collections
 import warnings
 
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
+
 # Suppress InsecurePlatformWarning
 requests.packages.urllib3.disable_warnings()
 
@@ -205,16 +210,16 @@ class TelegramError(TelepotException):
         return self.args[1]
 
 
-# Ensure an exception is raised for requests that take too long
-_http_timeout = 30
-
-# For streaming file download
-_file_chunk_size = 65536
-
 class Bot(object):
     def __init__(self, token):
         self._token = token
         self._msg_thread = None
+
+        # Ensure an exception is raised for requests that take too long
+        self._http_timeout = 30
+
+        # For streaming file download
+        self._file_chunk_size = 65536
 
     def _fileurl(self, path):
         return 'https://api.telegram.org/file/bot%s/%s' % (self._token, path)
@@ -238,17 +243,17 @@ class Bot(object):
         return {key: value if type(value) not in [dict, list] else json.dumps(value, separators=(',',':')) for key,value in params.items() if value is not None}
 
     def getMe(self):
-        r = requests.post(self._methodurl('getMe'), timeout=_http_timeout)
+        r = requests.post(self._methodurl('getMe'), timeout=self._http_timeout)
         return self._parse(r)
 
     def sendMessage(self, chat_id, text, parse_mode=None, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None):
         p = {'chat_id': chat_id, 'text': text, 'parse_mode': parse_mode, 'disable_web_page_preview': disable_web_page_preview, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}
-        r = requests.post(self._methodurl('sendMessage'), params=self._rectify(p), timeout=_http_timeout)
+        r = requests.post(self._methodurl('sendMessage'), params=self._rectify(p), timeout=self._http_timeout)
         return self._parse(r)
 
     def forwardMessage(self, chat_id, from_chat_id, message_id):
         p = {'chat_id': chat_id, 'from_chat_id': from_chat_id, 'message_id': message_id}
-        r = requests.post(self._methodurl('forwardMessage'), params=self._rectify(p), timeout=_http_timeout)
+        r = requests.post(self._methodurl('forwardMessage'), params=self._rectify(p), timeout=self._http_timeout)
         return self._parse(r)
 
     def _isfile(self, f):
@@ -269,12 +274,12 @@ class Bot(object):
             files = {filetype: inputfile}
             r = requests.post(self._methodurl(method), params=self._rectify(params), files=files)
 
-            # `_http_timeout` is not used here because, for some reason, the larger the file, 
+            # `self._http_timeout` is not used here because, for some reason, the larger the file, 
             # the longer it takes for the server to respond (after upload is finished). It is hard to say
-            # what value `_http_timeout` should be. In the future, maybe I should let user specify.
+            # what value `self._http_timeout` should be. In the future, maybe I should let user specify.
         else:
             params[filetype] = inputfile
-            r = requests.post(self._methodurl(method), params=self._rectify(params), timeout=_http_timeout)
+            r = requests.post(self._methodurl(method), params=self._rectify(params), timeout=self._http_timeout)
 
         return self._parse(r)
 
@@ -298,27 +303,27 @@ class Bot(object):
 
     def sendLocation(self, chat_id, latitude, longitude, reply_to_message_id=None, reply_markup=None):
         p = {'chat_id': chat_id, 'latitude': latitude, 'longitude': longitude, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}
-        r = requests.post(self._methodurl('sendLocation'), params=self._rectify(p), timeout=_http_timeout)
+        r = requests.post(self._methodurl('sendLocation'), params=self._rectify(p), timeout=self._http_timeout)
         return self._parse(r)
 
     def sendChatAction(self, chat_id, action):
         p = {'chat_id': chat_id, 'action': action}
-        r = requests.post(self._methodurl('sendChatAction'), params=self._rectify(p), timeout=_http_timeout)
+        r = requests.post(self._methodurl('sendChatAction'), params=self._rectify(p), timeout=self._http_timeout)
         return self._parse(r)
 
     def getUserProfilePhotos(self, user_id, offset=None, limit=None):
         p = {'user_id': user_id, 'offset': offset, 'limit': limit}
-        r = requests.post(self._methodurl('getUserProfilePhotos'), params=self._rectify(p), timeout=_http_timeout)
+        r = requests.post(self._methodurl('getUserProfilePhotos'), params=self._rectify(p), timeout=self._http_timeout)
         return self._parse(r)
 
     def getFile(self, file_id):
         p = {'file_id': file_id}
-        r = requests.post(self._methodurl('getFile'), params=self._rectify(p), timeout=_http_timeout)
+        r = requests.post(self._methodurl('getFile'), params=self._rectify(p), timeout=self._http_timeout)
         return self._parse(r)
 
     def getUpdates(self, offset=None, limit=None, timeout=None):
         p = {'offset': offset, 'limit': limit, 'timeout': timeout}
-        r = requests.post(self._methodurl('getUpdates'), params=self._rectify(p), timeout=_http_timeout+(0 if timeout is None else timeout))
+        r = requests.post(self._methodurl('getUpdates'), params=self._rectify(p), timeout=self._http_timeout+(0 if timeout is None else timeout))
         return self._parse(r)
 
     def setWebhook(self, url=None, certificate=None):
@@ -326,9 +331,9 @@ class Bot(object):
 
         if certificate:
             files = {'certificate': certificate}
-            r = requests.post(self._methodurl('setWebhook'), params=self._rectify(p), files=files, timeout=_http_timeout)
+            r = requests.post(self._methodurl('setWebhook'), params=self._rectify(p), files=files, timeout=self._http_timeout)
         else:
-            r = requests.post(self._methodurl('setWebhook'), params=self._rectify(p), timeout=_http_timeout)
+            r = requests.post(self._methodurl('setWebhook'), params=self._rectify(p), timeout=self._http_timeout)
 
         return self._parse(r)
 
@@ -340,11 +345,11 @@ class Bot(object):
             raise TelegramError('No file_path returned', None)
 
         try:
-            r = requests.get(self._fileurl(f['file_path']), stream=True, timeout=_http_timeout)
+            r = requests.get(self._fileurl(f['file_path']), stream=True, timeout=self._http_timeout)
 
             d = dest if self._isfile(dest) else open(dest, 'wb')
 
-            for chunk in r.iter_content(chunk_size=_file_chunk_size):
+            for chunk in r.iter_content(chunk_size=self._file_chunk_size):
                 if chunk:
                     d.write(chunk)
                     d.flush()
@@ -355,7 +360,10 @@ class Bot(object):
             if 'r' in locals():
                 r.close()
 
-    def notifyOnMessage(self, callback, relax=0.1, timeout=20):
+    def notifyOnMessage(self, callback=None, relax=0.1, timeout=20, run_forever=False):
+        if callback is None:
+            callback = self.handle
+
         # For MessageThread to call outer class getUpdates()
         def get_updates(offset, timeout):
             return self.getUpdates(offset=offset, timeout=timeout)
@@ -449,3 +457,71 @@ class Bot(object):
             self._msg_thread = MessageThread(callback, relax, timeout)
             self._msg_thread.daemon = True
             self._msg_thread.start()
+
+        if run_forever:
+            while 1:
+                time.sleep(10)
+
+
+import inspect
+import telepot.helper
+
+
+class SpeakerBot(Bot):
+    def __init__(self, token):
+        super(SpeakerBot, self).__init__(token)
+        self._mic = telepot.helper.Microphone()
+
+    @property
+    def mic(self):
+        return self._mic
+
+    def create_listener(self):
+        q = Queue()
+        self._mic.add(q)
+        ln = telepot.helper.Listener(self._mic, q)
+        return ln
+
+
+class DelegatorBot(SpeakerBot):
+    def __init__(self, token, seed_delegates):
+        super(DelegatorBot, self).__init__(token)
+        self._delegate_records = [s+({},) for s in seed_delegates]
+
+    def _startable(self, delegate):
+        return ((hasattr(delegate, 'start') and inspect.ismethod(delegate.start)) and
+                (hasattr(delegate, 'is_alive') and inspect.ismethod(delegate.is_alive)))
+
+    def _tuple_is_valid(self, t):
+        return len(t) == 3 and callable(t[0]) and type(t[1]) in [list, tuple] and type(t[2]) is dict
+
+    def _ensure_startable(self, delegate):
+        if self._startable(delegate):
+            return delegate
+        elif callable(delegate):
+            return threading.Thread(target=delegate)
+        elif type(delegate) is tuple and self._tuple_is_valid(delegate):
+            func, args, kwargs = delegate
+            return threading.Thread(target=func, args=args, kwargs=kwargs)
+        else:
+            raise RuntimeError('Delegate does not have the required methods, is not callable, and is not a valid tuple.')
+
+    def handle(self, msg):
+        self._mic.send(msg)
+
+        for calculate_seed, make_delegate, dict in self._delegate_records:
+            id = calculate_seed(msg)
+            
+            if id is None:
+                continue
+            elif isinstance(id, collections.Hashable):
+                if id not in dict or not dict[id].is_alive():
+                    d = make_delegate((self, msg, id))
+                    d = self._ensure_startable(d)
+
+                    dict[id] = d
+                    dict[id].start()
+            else:
+                d = make_delegate((self, msg, id))
+                d = self._ensure_startable(d)
+                d.start()
