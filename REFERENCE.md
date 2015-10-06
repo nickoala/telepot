@@ -431,7 +431,35 @@ else:
 <a id="telepot-helper"></a>
 ## telepot.helper
 
-Coming soon ...
+### `telepot.helper.Microphone`
+
+One `Microphone` broadcasts to many `Listener`s. Each listener has a queue. Microphone puts messages into the queues, listeners get from them. Adding a queue to a microphone essentially adds a listener to its audience.
+
+**Microphone()**
+
+**add(queue)**
+
+Add a listener's queue.
+
+**remove(queue)**
+
+Remove a listener's queue.
+
+**send(msg)**
+
+Broadcast to all listeners by putting `msg` to each queue.
+
+### `telepot.helper.Listener`
+
+**Listener(microphone, queue)**
+
+**wait(\*\*kwargs)**
+
+Coming soon ......
+
+### `telepot.helper.Sender`
+
+### `telepot.helper.ChatHandler`
 
 <a id="telepot-delegate"></a>
 ## telepot.delegate
