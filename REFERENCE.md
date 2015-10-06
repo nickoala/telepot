@@ -428,7 +428,20 @@ else:
 
 `namedtuple()` is just a convenience function. *Frankly, you can do without it.*
 
-## telepot.async.Bot (Python 3.4.3 or newer)
+<a id="telepot-helper"></a>
+## telepot.helper
+
+Coming soon ...
+
+<a id="telepot-delegate"></a>
+## telepot.delegate
+
+Coming soon ...
+
+<a id="telepot-async"></a>
+## telepot.async (Python 3.4.3 or newer)
+
+### `telepot.async.Bot`
 
 This class makes use of the `asyncio` module of Python 3.4.3. Nearly all methods share identical signatures with its traditional sibling, `telepot.Bot`, with one important difference - they are **coroutines** and are often "called" with `yield from`.
 
@@ -480,3 +493,13 @@ print('Listening ...')
 
 loop.run_forever()
 ```
+
+<a id="telepot-async-helper"></a>
+## telepot.async.helper (Python 3.4.3 or newer)
+
+Coming soon ...
+
+<a id="telepot-async-delegate"></a>
+## telepot.async.delegate (Python 3.4.3 or newer)
+
+Coming soon ...
