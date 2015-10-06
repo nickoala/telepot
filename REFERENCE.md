@@ -294,7 +294,7 @@ bot = YourBot(TOKEN)
 bot.notifyOnMessage(run_forever=True)
 ```
 
-If you prefer defining a `handle()` function externally, or want to have a custom infinite loop at the end, this skeleton may be for you:
+If you prefer defining a `handle(msg)` function externally, or want to have a custom infinite loop at the end, this skeleton may be for you:
 
 ```python
 import sys
@@ -318,15 +318,60 @@ while 1:
     time.sleep(10)
 ```
 
-### SpeakerBot
+### `telepot.SpeakerBot`
 
-More coming ...
+Subclass of `telepot.Bot`
 
-### DelegatorBot
+**SpeakerBot(token)**
 
-More coming ...
+**create_listener()**
 
-### Functions
+Returns a `telepot.helper.Listener` object, which you may use to listen for messages broadcast by `mic.send(msg)`.
+
+**mic**
+
+A `telepot.helper.Microphone` object. Used to broadcast messages to listeners obtained by `create_listener()`.
+
+### `telepot.DelegatorBot`
+
+Subclass of `telepot.SpeakerBot`
+
+**DelegatorBot(token, seed_delegates)**
+
+Parameters:
+
+- token: self-explanatory
+- seed_delegates: a list of `(seed_calculating_func, delegate_producing_func)` tuples
+
+`seed_calculating_func` is a function that takes one argument - the message being processed - and returns a *seed*. The **type** and **value** of a seed determine whether and when the associated `delegate_producing_func` is called.
+
+- If the seed is a *hashable* (e.g. number, string, tuple), the bot looks for a *delegate* associated with the seed.
+  - If such a delegate exists and is alive, it is assumed that the message will be picked up by the delegate. The bot does nothing.
+  - If no delegate exists or that delegate is no longer alive, the bot spawns a new delegate by calling `delegate_producing_func` and associates the seed with the new delegate.
+
+- If the seed is a *non-hashable* (e.g. list), the bot always spawns a new delegate by calling `delegate_producing_func`. No seed-delegate association occurs.
+
+- If the seed is `None`, nothing is done.
+
+`delegate_producing_func` is a function that takes one argument - a tuple of `(bot, msg, seed)` - and returns a *delegate*. A delegate can be one of the following:
+
+- an object that has a `start()` and `is_alive()` method. Therefore, a `threading.Thread` object is a natural delegate. Once the `object` is obtained, `object.start()` is called.
+- a `function`. In this case, it is wrapped by a `Thread(target=function)` and started.
+- a tuple of `(func, args, kwargs)`. In this case, it is wrapped by a `Thread(target=func, args=args, kwargs=kwargs)` and started.
+
+All `seed_calculating_func`s are evaluated in the order supplied. One message may cause multiple delegates to be spawned.
+
+This class implements the above logic in its `handle(msg)` method. Once you supply a list of `(seed_calculating_func, delegate_producing_func)` pairs to the constructor and invoke `notifyOnMessage()`, the above logic will be executed for each message received.
+
+Even if you use a webhook and don't need `notifyOnMessage()`, you may always call `bot.handle(msg)` directly to take advantage of the above logic, if you find it useful.
+
+Examples:
+
+```python
+Coming soon ......
+```
+
+### Functions in `telepot` module
 
 **glance(msg, long=False)**
 
