@@ -1,65 +1,20 @@
 # telepot reference
 
-## Functions
+## Modules
 
-**glance(msg, long=False)**
+**[telepot](#telepot)**  
+**[telepot.helper](#telepot-helper)**  
+**[telepot.delegate](#telepot-delegate)**  
+**[telepot.async](#telepot-async)**  
+**[telepot.async.helper](#telepot-async-helper)**  
+**[telepot.async.delegate](#telepot-async-delegate)**  
 
-If `long` is `False`, extract a tuple of `(type, msg['from']['id'], msg['chat']['id'])`.
+<a id="telepot"></a>
+## telepot
 
-If `long` is `True`, extract a tuple of `(type, msg['from']['id'], msg['chat']['id'], msg['date'], msg['message_id'])`.
+### `telepot.Bot`
 
-`type` indicates the content type of the message, can be one of:  `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, `group_chat_created`.
-
-Examples:
-
-```python
-# Suppose `msg` is a message previously received.
-
-msg_type, from_id, chat_id = telepot.glance(msg)
-msg_type, from_id, chat_id, msg_date, msg_id = telepot.glance(msg, long=True)
-```
-
-**namedtuple(data, type)**
-
-Convert a dictionary to a namedtuple of a given object type.
-
-`type` can be: `Audio`, `Contact`, `Document`, `GroupChat`, `Location`, `Message`, `PhotoSize`, `PhotoSize[]`, `PhotoSize[][]`, `Sticker`, `Update`, `Update[]`, `User`, `User/GroupChat`, `UserProfilePhotos`, `Video`, `Voice`, `File`.
-
-Namedtuple field names cannot be Python keywords, but the **[Message](https://core.telegram.org/bots/api#message)** object has a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `dict['from']` becomes `namedtuple.from_` when converted to a namedtuple.
-
-Examples:
-
-```python
-# Suppose `msg` is a message (dict) previously received.
-
-# Turn the entire message to a namedtuple
-m = telepot.namedtuple(msg, 'Message')
-
-print m.from_.id  # == msg['from']['id']
-print m.chat.id   # == msg['chat']['id']
-
-# Turn only the 'from' field to a User namedtuple
-u = telepot.namedtuple(msg['from'], 'User')
-
-# 'chat' field can be either a User or GroupChat
-chat = telepot.namedtuple(msg['chat'], 'User/GroupChat')
-
-if type(chat) == telepot.User:
-    print 'A private conversation'
-elif type(chat) == telepot.GroupChat:
-    print 'An open discussion'
-else:
-    print 'Impossible!'
-
-# Actually, you can check more efficiently by looking at the chat ID.
-# A negative ID indicates a GroupChat; a positive ID indicates a User.
-```
-
-`namedtuple()` is just a convenience function. *Frankly, you can do without it.*
-
-## telepot.Bot
-
-Aside from `downloadFile()` and `notifyOnMessage()`, all methods are straight mappings from **[Telegram Bot API](https://core.telegram.org/bots/api)**. No point to duplicate all the details here. I will only give brief descriptions below, and encourage you to visit the underlying API's documentations. Full power of the Bot API can be exploited only by understanding the API itself.
+Aside from `downloadFile()` and `notifyOnMessage()`, all methods are straight mappings from **[Telegram Bot API](https://core.telegram.org/bots/api)**. No point to duplicate all the details here. I only give brief descriptions below, and encourage you to visit the underlying API's documentations. Full power of the Bot API can be exploited only by understanding the API itself.
 
 **Bot(token)**
 
@@ -303,14 +258,17 @@ with open('save/to/path', 'wb') as f:
     bot.downloadFile('ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJ', f)
 ```
 
-**notifyOnMessage(callback, relax=0.1, timeout=20)**
+**notifyOnMessage(callback=None, relax=0.1, timeout=20, run_forever=False)**
 
 Spawn a thread to constantly `getUpdates()`. Apply `callback` to every message received. `callback` must take one argument, which is the message.
 
+If `callback` is not supplied, `self.handle` is assumed. In other words, a bot must have the method, `handle(msg)`, defined if `notifyOnMessage()` is called without the `callback` argument.
+
 Parameters:
-- callback (function): a function to apply to every message received
+- callback (function): a function to apply to every message received. If `None`, `self.handle` is assumed. 
 - relax (integer): seconds between each `getUpdates()`
 - timeout (integer): timeout supplied to `getUpdates()`, controlling how long to poll.
+- run_forever (boolean): append an infinite loop at the end, so this function never returns. Useful as the very last line in a program.
 
 This method allows you to change the callback function by `notifyOnMessage(new_callback)`. 
 If you don't want to receive messages anymore, cancel the callback by `notifyOnMessage(None)`. 
@@ -318,6 +276,25 @@ After the callback is cancelled, the message-checking thread will terminate.
 If a new callback is set later, a new thread will be spawned again.
 
 This can be a skeleton for a lot of telepot programs:
+
+```python
+import sys
+import telepot
+
+class YourBot(telepot.Bot):
+    def handle(self, msg):
+        msg_type, from_id, chat_id = telepot.glance(msg)
+        print msg_type, from_id, chat_id
+        # Do your stuff according to `msg_type` ...
+
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = YourBot(TOKEN)
+bot.notifyOnMessage(run_forever=True)
+```
+
+If you prefer defining a `handle()` function externally, or want to have a custom infinite loop at the end, this skeleton may be for you:
 
 ```python
 import sys
@@ -340,6 +317,71 @@ print 'Listening ...'
 while 1:
     time.sleep(10)
 ```
+
+### SpeakerBot
+
+More coming ...
+
+### DelegatorBot
+
+More coming ...
+
+### Functions
+
+**glance(msg, long=False)**
+
+If `long` is `False`, extract a tuple of `(type, msg['from']['id'], msg['chat']['id'])`.
+
+If `long` is `True`, extract a tuple of `(type, msg['from']['id'], msg['chat']['id'], msg['date'], msg['message_id'])`.
+
+`type` indicates the content type of the message, can be one of:  `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, `group_chat_created`.
+
+Examples:
+
+```python
+# Suppose `msg` is a message previously received.
+
+msg_type, from_id, chat_id = telepot.glance(msg)
+msg_type, from_id, chat_id, msg_date, msg_id = telepot.glance(msg, long=True)
+```
+
+**namedtuple(data, type)**
+
+Convert a dictionary to a namedtuple of a given object type.
+
+`type` can be: `Audio`, `Contact`, `Document`, `GroupChat`, `Location`, `Message`, `PhotoSize`, `PhotoSize[]`, `PhotoSize[][]`, `Sticker`, `Update`, `Update[]`, `User`, `User/GroupChat`, `UserProfilePhotos`, `Video`, `Voice`, `File`.
+
+Namedtuple field names cannot be Python keywords, but the **[Message](https://core.telegram.org/bots/api#message)** object has a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `dict['from']` becomes `namedtuple.from_` when converted to a namedtuple.
+
+Examples:
+
+```python
+# Suppose `msg` is a message (dict) previously received.
+
+# Turn the entire message to a namedtuple
+m = telepot.namedtuple(msg, 'Message')
+
+print m.from_.id  # == msg['from']['id']
+print m.chat.id   # == msg['chat']['id']
+
+# Turn only the 'from' field to a User namedtuple
+u = telepot.namedtuple(msg['from'], 'User')
+
+# 'chat' field can be either a User or GroupChat
+chat = telepot.namedtuple(msg['chat'], 'User/GroupChat')
+
+if type(chat) == telepot.User:
+    print 'A private conversation'
+elif type(chat) == telepot.GroupChat:
+    print 'An open discussion'
+else:
+    print 'Impossible!'
+
+# Actually, you can check more efficiently by looking at the chat ID.
+# A negative ID indicates a GroupChat; a positive ID indicates a User.
+```
+
+`namedtuple()` is just a convenience function. *Frankly, you can do without it.*
 
 ## telepot.async.Bot (Python 3.4.3 or newer)
 
