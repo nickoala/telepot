@@ -486,15 +486,103 @@ Broadcast to all listeners by putting `msg` to each queue.
 
 ### `telepot.helper.Listener`
 
+This class is supposed to be used inside a delegate to suspend execution and wait for a message with certain characteristics to appear. Most commonly, it is used within a `telepot.helper.ChatHandler` to suspend execution until a user's reply arrives.
+
 **Listener(microphone, queue)**
 
 **wait(\*\*kwargs)**
 
-Coming soon ......
+Blocks until a "matched" message is encountered.
+
+`kwargs` is used to select parts of message to match against. It is best to illustrate with some examples.
+
+```python
+# Blocks until a message whose `msg['chat']['id']` equals `12345678` appears
+listener.wait(chat__id=12345678)
+# `chat__id` selects `msg['chat']['id']` to match against
+# Double-underscore is used to indicate "get down a level"
+
+# Besides simple values, a function may be used to perform the match.
+# A match occurs if the function returns true.
+def certain_chat_ids(id):
+    return id in [12345678, 99999999]
+
+listener.wait(chat__id=certain_chat_ids)
+
+# Equivalent to `listener.wait(chat__id=12345678)`
+listener.wait(chat={'id': 12345678})
+# Besides using double-underscore, a dict may be used to "get down a level".
+
+def check_entire_message(msg):
+    # is this a text message?
+    return 'text' in msg
+
+# Use a single underscore to match against the entire message
+listener.wait(_=check_entire_message)
+
+# Equivalent to `listener.wait(chat__id=12345678)`
+listener.wait(_={'chat':{'id': 12345678}})
+
+# Blocks until all conditions are satisfied
+listener.wait(_=check_entire_message, chat__id=12345678)
+```
+
+- each **key** is used to select a part of message
+  - use a double__underscore to "get down a level", e.g. `chat__id` selects `msg['chat']['id']`
+  - use a `_` to select the entire message
+
+- each **value** may be one of the following:
+  - a simple value
+  - a function that performs the match. Returns `True` to indicate a match.
+  - a dict to further select parts of message
+
+Thanks to [Django](https://www.djangoproject.com/) for inspiration.
 
 ### `telepot.helper.Sender`
 
+A proxy to a bot's `sendZZZ()` and `forwardMessage()` methods, with a fixed `chat_id` to save having to supply it every time.
+
+**Sender(bot, chat_id)**
+
+**sendMessage(text, parse_mode=None, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None)**
+
+**forwardMessage(from_chat_id, message_id)**
+
+**sendPhoto(photo, caption=None, reply_to_message_id=None, reply_markup=None)**
+
+**sendAudio(audio, duration=None, performer=None, title=None, reply_to_message_id=None, reply_markup=None)**
+
+**sendDocument(document, reply_to_message_id=None, reply_markup=None)**
+
+**sendSticker(sticker, reply_to_message_id=None, reply_markup=None)**
+
+**sendVideo(video, duration=None, caption=None, reply_to_message_id=None, reply_markup=None)**
+
+**sendVoice(audio, duration=None, reply_to_message_id=None, reply_markup=None)**
+
+**sendLocation(latitude, longitude, reply_to_message_id=None, reply_markup=None)**
+
+**sendChatAction(action)**
+
 ### `telepot.helper.ChatHandler`
+
+Provides facilities for an ongoing chat.
+
+**ChatHandler(bot, initial_message, *args)**
+
+Note: Extra arguments are allowed (but ignored) to make it easy for users to call with `ChatHandler(*seed_tuple)`, where `seed_tuple` is `(bot, msg, seed)`. See `telepot.DelegatorBot` for what `seed` means.
+
+Here are the public properties:
+
+**chat_id**
+
+**initial_message**
+
+**bot**
+
+**listener**
+
+**sender**
 
 <a id="telepot-delegate"></a>
 ## telepot.delegate
