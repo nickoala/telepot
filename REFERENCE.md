@@ -359,16 +359,51 @@ Parameters:
 - a `function`. In this case, it is wrapped by a `Thread(target=function)` and started.
 - a tuple of `(func, args, kwargs)`. In this case, it is wrapped by a `Thread(target=func, args=args, kwargs=kwargs)` and started.
 
-All `seed_calculating_func`s are evaluated in the order supplied. One message may cause multiple delegates to be spawned.
+All `seed_calculating_func`s are evaluated in order. One message may cause multiple delegates to be spawned.
 
 This class implements the above logic in its `handle(msg)` method. Once you supply a list of `(seed_calculating_func, delegate_producing_func)` pairs to the constructor and invoke `notifyOnMessage()`, the above logic will be executed for each message received.
 
 Even if you use a webhook and don't need `notifyOnMessage()`, you may always call `bot.handle(msg)` directly to take advantage of the above logic, if you find it useful.
 
-Examples:
+The `telepot.delegate` module has a number of functions that make it very convenient to define `seed_calculating_func` and `delegate_producing_func`, as illustrated by the example below:
 
 ```python
-Coming soon ......
+import sys
+import telepot
+from telepot.delegate import per_chat_id, per_chat_id_in, call, create_run
+
+class Handler(object):
+    # a tuple of `(bot, msg, seed)` is always the first argument
+    def __init__(self, seed_tuple):
+        print('In Handler constructor ...')
+        print(seed_tuple)
+
+    def run(self):
+        print('In Handler.run() ...')
+
+# a tuple of `(bot, msg, seed)` is always the first argument
+def delegate_func(seed_tuple):
+    print('In delegate_func() ...')
+    print(seed_tuple)
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.DelegatorBot(TOKEN, [
+
+# Per each chat id --> spawn a thread around `delegate_func` and supplied arguments
+(lambda msg: msg['chat']['id'], lambda seed_tuple: (delegate_func, [seed_tuple], {})),
+
+# Achieve exactly the same thing as above, but easier to understand
+(per_chat_id(), call(delegate_func)),
+
+# Per each chat id --> create a `Handler` object and spawn a thread around its `run()` method
+(per_chat_id(), create_run(Handler)),
+
+# Spawn only per selected chat id
+(per_chat_id_in([12345678, 999999999]), create_run(Handler)),
+      ])
+
+bot.notifyOnMessage(run_forever=True)
 ```
 
 ### Functions in `telepot` module
