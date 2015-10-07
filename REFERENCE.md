@@ -587,7 +587,15 @@ Here are the public properties:
 <a id="telepot-delegate"></a>
 ## telepot.delegate
 
-Coming soon ...
+This module provides functions to be used in conjunction with `telepot.DelegatorBot`.
+
+**per_chat_id()**
+
+**per_chat_id_in(s)**
+
+**call(func, \*args, \*\*kwargs)**
+
+**create_run(cls, \*args, \*\*kwargs)**
 
 <a id="telepot-async"></a>
 ## telepot.async (Python 3.4.3 or newer)
