@@ -1,5 +1,10 @@
 # telepot changelog
 
+## 3.1 (2015-10-08)
+
+- Added `per_chat_id_except()`
+- Added lock to `Microphone`, make it thread-safe
+
 ## 3.0 (2015-10-05)
 
 - Added listener and delegation mechanism
