@@ -12,6 +12,11 @@
 
 ### Recent changes
 
+**3.1 (2015-10-08)**
+
+- Added `per_chat_id_except()`
+- Added lock to `Microphone`, make it thread-safe
+
 **3.0 (2015-10-05)**
 
 - Added listener and delegation mechanism
@@ -32,7 +37,7 @@ The job done by telepot so far has been quite trivial, nothing more than adding 
 
 In 3.0, telepot has grown up to be more appropriately called a *framework*. I have introduced some useful features that support writing more sophisticated programs. While I don't have time to say more right now, **more documentations are definitely coming**.
 
-The code has been uploaded. Feel free to look at the [guess-a-number](https://github.com/nickoala/telepot/blob/master/examples/guess.py) and [chatbox](https://github.com/nickoala/telepot/blob/master/examples/chatbox.py) examples, both of which make use of the new features.
+The code has been uploaded. Feel free to look at the [guess-a-number](https://github.com/nickoala/telepot/blob/master/examples/guess.py) and [chatbox](https://github.com/nickoala/telepot/blob/master/examples/chatbox_nodb.py) examples, both of which make use of the new features.
 
 <a id="installation"></a>
 ## Installation
