@@ -1,5 +1,6 @@
 import time
 import traceback
+import threading
 import telepot
 import telepot.filter
 from functools import partial
@@ -13,20 +14,29 @@ except ImportError:
 class Microphone(object):
     def __init__(self):
         self._queues = set()
+        self._lock = threading.Lock()
 
+    def _locked(func):
+        def k(self, *args, **kwargs):
+            with self._lock:
+                func(self, *args, **kwargs)
+        return k
+
+    @_locked
     def add(self, q):
         self._queues.add(q)
 
+    @_locked
     def remove(self, q):
         self._queues.remove(q)
 
+    @_locked
     def send(self, msg):
         for q in self._queues:
             try:
                 q.put_nowait(msg)
             except queue.Full:
                 traceback.print_exc()
-                pass
 
 
 class WaitTooLong(telepot.TelepotException):
