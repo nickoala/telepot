@@ -422,7 +422,8 @@ print('Done.')
 
 A starting point for your telepot programs.
 
-Two versions: **[traditional](https://github.com/nickoala/telepot/blob/master/examples/skeleton.py)** | **[async](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)**
+**[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/skeleton.py)**   
+**[Async version »](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)**
 
 #### Indoor climate monitor
 
@@ -448,8 +449,39 @@ Running on a Raspberry Pi with a camera module attached, this bot accepts these 
 
 Sooner or later, you want your bots to be able to send emoji. You may look up the unicode on the web, or from now on, you may just fire up Telegram and ask **[Emodi :blush:](https://telegram.me/emodibot)**
 
-Two versions: **[traditional](https://github.com/nickoala/telepot/blob/master/examples/emodi.py)** | **[async](https://github.com/nickoala/telepot/blob/master/examples/emodia.py)**
+**[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/emodi.py)**  
+**[Async version »](https://github.com/nickoala/telepot/blob/master/examples/emodia.py)**
 
 I am running this bot on a CentOS server. You should be able to talk to it 24/7. Intended for multiple users, the async version is being run.
 
 By the way, I just discovered a Python **[emoji](https://pypi.python.org/pypi/emoji/)** package. Use it.
+
+#### Guess-a-number
+
+1. The bot randomly picks an integer between 0-100. 
+2. You make a guess. 
+3. The bot tells you to go higher or lower.
+4. Repeat step 2 and 3, until guess is correct.
+
+This example illustrates the use of `DelegateBot` and how to subclass from `ChatHandler`, two very useful techniques beyond simple programs.
+
+**[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/guess.py)**  
+**[Async version »](https://github.com/nickoala/telepot/blob/master/examples/guessa.py)**
+
+#### Chatbox - a Mailbox for Chats
+
+1. People send messages to your bot.
+2. Your bot remembers the messages.
+3. You read the messages later.
+
+It accepts the following commands from you, the owner, only:
+
+- `/unread` - tells you who has sent you messages and how many
+- `/next` - read next sender's messages
+
+This example can be a starting point for **customer support** type of bot accounts. For example, customers send questions to a bot account; staff answers the questions behind the scene, makes it look like the bot is answering questions.
+
+This example only handles text messages and stores messages in memory. If the bot is killed, all messages are lost. It is an *example* after all.
+
+**[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/chatbox_nodb.py)**  
+**[Async version »](https://github.com/nickoala/telepot/blob/master/examples/chatboxa_nodb.py)**
