@@ -463,7 +463,7 @@ By the way, I just discovered a Python **[emoji](https://pypi.python.org/pypi/em
 3. The bot tells you to go higher or lower.
 4. Repeat step 2 and 3, until guess is correct.
 
-This example illustrates the use of `DelegateBot` and how to subclass from `ChatHandler`, two very useful techniques beyond simple programs.
+This example is able to serve many players at once. It illustrates the use of `DelegateBot` and how to subclass from `ChatHandler`, two very useful techniques beyond simple programs.
 
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/guess.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/guessa.py)**
@@ -480,6 +480,8 @@ It accepts the following commands from you, the owner, only:
 - `/next` - read next sender's messages
 
 This example can be a starting point for **customer support** type of bot accounts. For example, customers send questions to a bot account; staff answers the questions behind the scene, makes it look like the bot is answering questions.
+
+It further illustrates the use of `DelegateBot` and `ChatHandler`, and how to spawn delegates differently according to the role of users.
 
 This example only handles text messages and stores messages in memory. If the bot is killed, all messages are lost. It is an *example* after all.
 
