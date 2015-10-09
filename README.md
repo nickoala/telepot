@@ -5,6 +5,7 @@
 **[What's New in 3.0?](#whatsnew)**  
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
+**[The Advanced](#advanced)**  
 **[The Async Stuff](#async)** (Python 3.4.3 or newer)  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
 **[Examples](#examples)**  
@@ -294,6 +295,86 @@ Besides `sendPhoto()`, you may also `sendAudio()`, `sendDocument()`, `sendSticke
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
+<a id="advanced"></a>
+## The Advanced
+
+Having a single message-handling function is adequate for simple programs. For more sophisticated programs where states need to be maintained across messages, a single message-handling function may still do the job, but is probably not ideal.
+
+For example, if a bot wants to have an intelligent conversation with a lot of users, and if we could only use a single message-handling function, we would have to maintain some state variables about each conversation *outside* the message-handling function. On receiving each message, we first have to check whether the user already has a conversation initiated, and if so, what we have been talking about. Implementing this type of behaviour calls for something beyond a single message-handler.
+
+Let's look at my solution. Here, I implement a bot that counts how many messages a user has sent it:
+
+```python
+import sys
+import telepot
+from telepot.delegate import create_run
+
+class MessageCounter(telepot.helper.ChatHandler):
+    def __init__(self, seed_tuple):
+        super(MessageCounter, self).__init__(*seed_tuple)
+        self.listener.timeout = 10
+
+    def run(self):
+        count = 1
+        self.sender.sendMessage(count)
+
+        while 1:
+            msg = self.listener.wait(chat__id=self.chat_id)
+            count += 1
+            self.sender.sendMessage(count)
+
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.DelegatorBot(TOKEN, [
+    (lambda msg: msg['chat']['id'], create_run(MessageCounter)),
+])
+bot.notifyOnMessage(run_forever=True)
+```
+
+Let me explain. First, note that `MessageCounter` is a subclass of `telepot.helper.ChatHandler`. The idea of `ChatHandler` is that it is "responsible" for a certain chat, like a telephone support person is "responsible" for interacting with a certain customer. `ChatHandler` exposes a bunch of very useful properties:
+
+- `listener` - used to wait for certain messages. Above, it is used to suspend execution until next message from the same user arrives.
+- `sender` - used to send messages to user. A proxy to `bot.sendZZZ()` methods, it saves you having to supply `chat_id` every time.
+- `chat_id` - the target chat
+- `bot` - the parent bot 
+- `initial_message` - the message that initiated this chat
+
+Pay attention to the method, `listener.wait()`. It blocks until a "specified" message is encountered, as determined by the arguments. Waiting for messages from the same chat is almost a necessity, but it can wait for anything by giving the appropriate arguments. See **[reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)** for details.
+
+How is a `MessageCounter` spawned? Is it a thread? Let's look at the bottom part of the code:
+
+```python
+bot = telepot.DelegatorBot(TOKEN, [
+    (lambda msg: msg['chat']['id'], create_run(MessageCounter)),
+])
+```
+
+`DelegatorBot` decides when to "delegate" to a `MessageCounter`. This line:
+
+```python
+    (lambda msg: msg['chat']['id'], create_run(MessageCounter)),
+```
+
+essentially says, for each chat id, create a `MessageCounter` object and spawn a thread around its `run()` method.
+
+Technically, I call the first element *seed_calculating_function*, and the second element *delegate_producing_function*.
+
+- *seed_calculating_function* takes one argument (the message just received by the bot), and returns a *seed*. The bot will check whether the seed is already associated with a delegate. If no such delegate exists, of if that delegate is no longer alive, the *delegate_producing_function* is invoked. And the new delegate will be associated with the seed.
+
+- *delegate_producing_function* takes one argument (a tuple of `(bot, msg, seed)`), and returns one of the following:
+  - an object that has a `start()` and `is_alive()` method. Therefore, a `threading.Thread` object is a natural delegate. Once the `object` is obtained, `object.start()` is called.
+  - a `function`. In this case, it is wrapped by a `Thread(target=function)` and started.
+  - a tuple of `(func, args, kwargs)`. In this case, it is wrapped by a `Thread(target=func, args=args, kwargs=kwargs)` and started.
+
+In case you are wondering, `create_run` above is actually a function that returns a *delegate_producing_function* that returns another function (a `MessageCounter` object's `run` method).
+
+If you want your own implementation of threads or another form of delegation entirely unrelated to threads, you can always wrap it around the `create_run()` function. The **[Chatbox example](#chatbox)** demonstrates this technique. Remember, if *delegate_producing_function* returns an object, it is only required to have a `start()` and `is_alive()` method, not necessarily a thread.
+
+I hope this architecture makes harder programs easier. Thanks to **[Django](https://www.djangoproject.com/)** and **[Tornado](http://www.tornadoweb.org/)** for inspirations.
+
+**[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
+
 <a id="async"></a>
 ## The Async Stuff (Python 3.4.3 or newer)
 
@@ -456,6 +537,7 @@ I am running this bot on a CentOS server. You should be able to talk to it 24/7.
 
 By the way, I just discovered a Python **[emoji](https://pypi.python.org/pypi/emoji/)** package. Use it.
 
+<a id="guess-a-number"></a>
 #### Guess-a-number
 
 1. The bot randomly picks an integer between 0-100. 
@@ -468,6 +550,7 @@ This example is able to serve many players at once. It illustrates the use of `D
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/guess.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/guessa.py)**
 
+<a id="chatbox"></a>
 #### Chatbox - a Mailbox for Chats
 
 1. People send messages to your bot.
