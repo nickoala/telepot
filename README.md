@@ -13,6 +13,12 @@
 
 ### Recent changes
 
+**3.2 (2015-10-13)**
+
+- Conforms to latest Telegram Bot API as of [October 8, 2015](https://core.telegram.org/bots/api-changelog)
+- Added `Chat` class, removed `GroupChat`
+- Added `glance2()`
+
 **3.1 (2015-10-08)**
 
 - Added `per_chat_id_except()`
@@ -21,13 +27,6 @@
 **3.0 (2015-10-05)**
 
 - Added listener and delegation mechanism
-
-**2.6 (2015-09-22)**
-
-- Conforms to latest Telegram Bot API as of [September 18, 2015](https://core.telegram.org/bots/api-changelog)
-- Added `getFile()` and `downloadFile()` method
-- Added `File` namedtuple
-- Removed `file_link` field from namedtuples
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
