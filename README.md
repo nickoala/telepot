@@ -1,8 +1,5 @@
-# telepot
+# telepot - a Python framework for Telegram Bot API
 
-**P**ython framework for **Tele**gram B**ot** API
-
-**[What's New in 3.0?](#whatsnew)**  
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
 **[The Advanced](#advanced)**  
@@ -30,19 +27,16 @@
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
-<a id="whatsnew"></a>
-## What's New in 3.0?
+------
 
-The job done by telepot so far has been quite trivial, nothing more than adding a thin layer of Python on top of the Bot API. I have been calling it a *wrapper*.
+Because things are rapidly evolving, instead of sprinkling "since version N.n" all over the place, **all documentations aim at the latest version.**
 
-In 3.0, telepot has grown up to be more appropriately called a *framework*. I have introduced some useful features that support writing more sophisticated programs. While I don't have time to say more right now, **more documentations are definitely coming**.
+If you are an existing user, don't worry. Most of the changes are backward-compatible. Where changes are needed in your code, they should not be hard to fix. Feel free to bug me at **lee1nick@yahoo.ca**
 
-The code has been uploaded. Feel free to look at the [guess-a-number](https://github.com/nickoala/telepot/blob/master/examples/guess.py) and [chatbox](https://github.com/nickoala/telepot/blob/master/examples/chatbox_nodb.py) examples, both of which make use of the new features.
+Telepot has been tested on **Raspbian** and **CentOS**, using **Python 2.7 - 3.4**. Below discussions are based on Raspbian and Python 2.7, except noted otherwise.
 
 <a id="installation"></a>
 ## Installation
-
-Telepot has been tested on **Python 2.7 - 3.4**, running **Raspbian**.
 
 `sudo apt-get install python-pip` to install the Python package manager.
 
@@ -55,9 +49,7 @@ Telepot has been tested on **Python 2.7 - 3.4**, running **Raspbian**.
 
 To use the [Telegram Bot API](https://core.telegram.org/bots/api), you first have to [get a **bot account**](http://www.instructables.com/id/Set-up-Telegram-Bot-on-Raspberry-Pi/) by [chatting with the BotFather](https://core.telegram.org/bots).
 
-He will then give you a **token**, something like `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ`. With the token in hand, you can start using telepot to access the bot account.
-
-Instructions below are presented in Python 2.7
+BotFather will give you a **token**, something like `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ`. With the token in hand, you can start using telepot to access the bot account.
 
 #### Test the account
 
@@ -78,19 +70,22 @@ Bots cannot initiate conversations with users. You have to send it a message fir
 >>> pprint(response)
 [{u'message': {u'chat': {u'first_name': u'Nick',
                          u'id': 999999999,
-                         u'last_name': u'Lee'},
-               u'date': 1436423831,
+                         u'last_name': u'Lee',
+                         u'type': u'private'},
+               u'date': 1444723969,
                u'from': {u'first_name': u'Nick',
                          u'id': 999999999,
                          u'last_name': u'Lee'},
-               u'message_id': 106,
-               u'text': u'Hi, how are you?'},
+               u'message_id': 4015,
+               u'text': u'Hello'},
   u'update_id': 100000000}]
 ```
 
 `999999999` is obviously a fake ID. `Nick` `Lee` is my real name, though.
 
-If the message is from a private chat, `from` and `chat` are the same party (like above). If the message is from a group chat, `from` means the original sender and `chat` means the group. (Bots do not receive all messages in a group chat; see [Privacy mode](https://core.telegram.org/bots#privacy-mode) for details) **A negative `chat` `id` indicates a group; a positive `chat` `id` indicates a user (that is, a private chat).**
+The `chat` field indicates the source of the message. Its `type` can be `private`, `group`, or `channel` (whose meanings should be obvious, I hope). In the above example, `Nick` `Lee` just sent a `private` message to the bot.
+
+I encourage you to experiment sending various types of messages (e.g. voice, photo, sticker, etc) to the bot, via different sources (e.g. private chat, group chat, channel), to see the varying structures of messages. Consult the [Bot API documentations](https://core.telegram.org/bots/api#available-types) to learn what fields may be present under what circumstances. **Bot API's [object](https://core.telegram.org/bots/api#available-types) translates directly to Python dict.** In the above example, `getUpdates()` just returns an array of `Update` objects.
 
 Note the `update_id`. It is an ever-increasing number. Next time you should use `getUpdates(offset=100000001)` to avoid getting the same old messages over and over. Giving an `offset` essentially acknowledges to the server that you have received all `update_id`s lower than `offset`.
 
@@ -101,19 +96,19 @@ Note the `update_id`. It is an ever-increasing number. Next time you should use 
 
 #### An easier way to receive messages
 
-It is kind of troublesome to keep checking messages. Fortunately, telepot can take care of the checking for you, and notify you whenever new messages arrive.
+It is troublesome to keep checking messages and managing `offset`. Fortunately, telepot can take care of that for you, and notify you whenever new messages arrive.
 
 ```python
 >>> from pprint import pprint
 >>> def handle_message(msg):
 ...     pprint(msg)
 ...
->>>  bot.notifyOnMessage(handle_message)
+>>> bot.notifyOnMessage(handle_message)
 ```
 
-After setting up this callback, you may send various messages to the bot, and inspect their message structures.
+After setting up this callback, sit back and monitor the arriving messages.
 
-In fact, below can be a skeleton for a lot of telepot programs:
+Below can be a skeleton for simple telepot programs:
 
 ```python
 import sys
@@ -139,15 +134,17 @@ while 1:
     time.sleep(10)
 ```
 
-#### Quickly `glance()` a message
+#### Quickly `glance2()` a message
 
-When processing a message, a few pieces of information are so central that you almost always have to extract them.
+When processing a message, a few pieces of information are so central that you almost always have to extract them. Use `glance2()` to extract a tuple of `(content_type, chat_type, chat_id)` from a message.
 
-*Since 1.2*, you may extract a tuple of `(type, message['from']['id'], message['chat']['id'])` of a `message` by calling `telepot.glance(message)`.
+`content_type` can be: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, or `group_chat_created`.
 
-The `type` of a message can be: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, `group_chat_created`.
+`chat_type` can be: `private`, `group`, or `channel`.
 
-It is a good habit to always check the `type` before further processing. Do not assume every message is a `text` message.
+It is a good habit to always check the `content_type` before further processing. Do not assume every message is a `text` message.
+
+*The old `glance()` function should not be used anymore. It relies on the `from` field, which becomes optional in the latest Bot API. The new `glance2()` will supercede it eventually. I keep it for now to maintain backward-compatibility.*
 
 A better skeleton would look like:
 
@@ -157,9 +154,9 @@ import time
 import telepot
 
 def handle(msg):
-    msg_type, from_id, chat_id = telepot.glance(msg)
-    print msg_type, from_id, chat_id
-    # Do your stuff according to `msg_type` ...
+    content_type, chat_type, chat_id = telepot.glance2(msg)
+    print content_type, chat_type, chat_id
+    # Do your stuff according to `content_type` ...
 
 
 TOKEN = sys.argv[1]  # get token from command-line
@@ -175,27 +172,27 @@ while 1:
 
 #### Download files
 
-For a `voice`, `sticker`, `photo`, `audio`, `document`, or `video` message, look for the `file_id` and you may download the file. For example, a `photo` may look like this:
+For a `voice`, `sticker`, `photo`, `audio`, `document`, or `video` message, look for the `file_id` to download the file. For example, a `photo` may look like:
 
 ```python
-{u'chat': {u'first_name': u'Nick', u'id': 999999999},
- u'date': 1442905828,
+{u'chat': {u'first_name': u'Nick', u'id': 999999999, u'type': u'private'},
+ u'date': 1444727788,
  u'from': {u'first_name': u'Nick', u'id': 999999999},
- u'message_id': 2007,
- u'photo': [{u'file_id': u'ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJklJAkimnoPQrsTuvWxyz',
-             u'file_size': 615,
+ u'message_id': 4017,
+ u'photo': [{u'file_id': u'JiLOABNODdbdP_q2vwXLtLxHFnUxNq2zszIABM4s1rQm6sTYG3QAAgI',
+             u'file_size': 734,
              u'height': 67,
              u'width': 90},
-            {u'file_id': u'ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJklkodamnoPQrsTuvWxyz',
-             u'file_size': 4990,
+            {u'file_id': u'JiLOABNODdbdP_q2vwXLtLxHFnUxNq2zszIABJDUyXzQs-kJGnQAAgI',
+             u'file_size': 4568,
              u'height': 240,
              u'width': 320},
-            {u'file_id': u'ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJklYAGAmnoPQrsTuvWxyz',
-             u'file_size': 34506,
+            {u'file_id': u'JiLOABNODdbdP_q2vwXLtLxHFnUxNq2zszIABHWm5IQnJk-EGXQAAgI',
+             u'file_size': 20480,
              u'height': 600,
              u'width': 800},
-            {u'file_id': u'ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJklujGamnoPQrsTuvWxyz',
-             u'file_size': 73196,
+            {u'file_id': u'JiLOABNODdbdP_q2vwXLtLxHFnUxNq2zszIABEn8PaFUzRhBGHQAAgI',
+             u'file_size': 39463,
              u'height': 960,
              u'width': 1280}]}
 ```
@@ -203,47 +200,15 @@ For a `voice`, `sticker`, `photo`, `audio`, `document`, or `video` message, look
 It has a number of `file_id`s, with various file sizes. These are thumbnails of the same image. Download one of them by:
 
 ```python
->>> bot.downloadFile(u'ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJklJAkimnoPQrsTuvWxyz', 'save/to/path')
+>>> bot.downloadFile(u'JiLOABNODdbdP_q2vwXLtLxHFnUxNq2zszIABEn8PaFUzRhBGHQAAgI', 'save/to/path')
 ```
-
-#### Turn dictionary into namedtuple, if you like
-
-In telepot, everything is a dict. For example, a `message` is a dict whose **keys** are just **field names** specified in Bot API's **[Message](https://core.telegram.org/bots/api#message)** object. Accessing `message['from']`, you get another dict whose **keys** are just **field names** specified in Bot API's **[User](https://core.telegram.org/bots/api#user)** object. In fact, all objects returned by Bot API are serialized as JSON associative arrays. Turning those into Python dicts is not just easy, but natural. I like the transparency.
-
-However, accessing them "like an object" does have some benefits:
-
-- It is easier to write `msg.chat.id` than to write `msg['chat']['id']`
-- If you want to read an optional `field` in a `dict`, since it may be absent, you always have to check whether `'field' in dict` before accessing `dict['field']` (unless you don't mind catching an exception). Using an "object", you can access `object.field` regardless, because an absent field will just give a value of `None`.
-
-To implement object-like behaviours, I use **namedtuple**. *Since 1.2*, you may convert a dict into a namedtuple of a given object type by calling `telepot.namedtuple(dict, object)`.
-
-For example, to convert a `message` dict into a namedtuple, you do:
-
-```python
-m = telepot.namedtuple(message, 'Message')
-
-print m.chat.id  # == message['chat']['id']
-print m.text   # just print 'None' if no text
-```
-
-There is one annoyance, though. Namedtuple field names cannot be Python keywords, but the **[Message](https://core.telegram.org/bots/api#message)** object has a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `message['from']` becomes `m.from_` when converted to a namedtuple:
-
-```python
-print m.from_.id  # == message['from']['id']
-```
-
-**What if Bot API adds new fields to objects in the future? Would that break the namedtuple() conversion?**
-
-Well, that would break telepot 1.2. **I fixed that in 1.3**. Since 1.3, unexpected fields in data would cause a warning (that reminds you to upgrade the telepot library), but would not crash the program. **Users of 1.2 are recommended to upgrade.**
-
-`namedtuple()` is just a convenience function. The underlying dictionary is always there for your consumption.
 
 #### Send messages
 
-Enough about receiving messages. Sooner or later, your bot would want to send *you* messages. You should have discovered your own user ID from above interactions. I will keeping using my fake ID of `999999999`. Remember to substitute your own (real) user ID.
+Enough about receiving messages. Sooner or later, your bot will want to send *you* messages. You should have discovered your own user ID from above interactions. I will keeping using my fake ID of `999999999`. Remember to substitute your own (real) user ID.
 
 ```python
->>> bot.sendMessage(999999999, 'I am fine')
+>>> bot.sendMessage(999999999, 'Good morning!')
 ```
 
 #### Send a custom keyboard
@@ -268,26 +233,30 @@ A custom keyboard presents custom buttons for users to tab. Check it out.
 >>> f = open('zzzzzzzz.jpg', 'rb')  # some file on local disk
 >>> response = bot.sendPhoto(999999999, f)
 >>> pprint(response)
-{u'chat': {u'first_name': u'Nick', u'id': 999999999, u'last_name': u'Lee'},
- u'date': 1436428640,
+{u'chat': {u'first_name': u'Nick', u'id': 999999999, u'type': u'private'},
+ u'date': 1444728667,
  u'from': {u'first_name': u'Your Bot',
            u'id': 123456789,
            u'username': u'YourBot'},
- u'message_id': 117,
- u'photo': [{u'file_id': u'APNpmPKVulsdkIFAILMDmhTAADmdcmdsdfaldalk',
-             u'file_size': 2030,
-             u'height': 64,
-             u'width': 64},
-            {u'file_id': u'VgbD_v___6AInvuOAlPldf',
-             u'file_size': 7987,
-             u'height': 0,
-             u'width': 0}]}
+ u'message_id': 4022,
+ u'photo': [{u'file_id': u'JiLOABNODdbdPyNZjwa-sKYQW6TBqrWfsztABO2NukbYlhLYlREBAAEC',
+             u'file_size': 887,
+             u'height': 29,
+             u'width': 90},
+            {u'file_id': u'JiLOABNODdbdPyNZjwa-sKYQW6TBqrWfsztABHKq66Hh0YDrlBEBAAEC',
+             u'file_size': 9971,
+             u'height': 102,
+             u'width': 320},
+            {u'file_id': u'JiLOABNODdbdPyNZjwa-sKYQW6TBqrWfsztABNBLmxkkiqKikxEBAAEC',
+             u'file_size': 14218,
+             u'height': 128,
+             u'width': 400}]}
 ```
 
-Note that the server returns a number of `file_id`s, with various file sizes. These are thumbnails of the uploaded image. If you want to resend the same file, just give one of the `file_id`s.
+The server returns a number of `file_id`s, with various file sizes. These are thumbnails of the uploaded image. If you want to resend the same file, just give one of the `file_id`s.
 
 ```python
->>> bot.sendPhoto(999999999, u'APNpmPKVulsdkIFAILMDmhTAADmdcmdsdfaldalk')
+>>> bot.sendPhoto(999999999, u'JiLOABNODdbdPyNZjwa-sKYQW6TBqrWfsztABO2NukbYlhLYlREBAAEC')
 ```
 
 Besides `sendPhoto()`, you may also `sendAudio()`, `sendDocument()`, `sendSticker()`, `sendVideo()`, and `sendVoice()`. See [reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md) for details.
