@@ -1,5 +1,11 @@
 # telepot changelog
 
+## 3.2 (2015-10-13)
+
+- Conforms to latest Telegram Bot API as of October 8, 2015
+- Added `Chat` class, removed `GroupChat`
+- Added `glance2()`
+
 ## 3.1 (2015-10-08)
 
 - Added `per_chat_id_except()`
