@@ -343,7 +343,7 @@ It is a subclass of `Bot`, with the newfound ability to spawn *delegates*. Its c
     (lambda msg: msg['chat']['id'], create_run(MessageCounter)),
 ```
 
-essentially says, for each chat id, create a `MessageCounter` object and spawn a thread around its `run` method.
+essentially says, **for each chat id, create a `MessageCounter` object and spawn a thread around its `run` method.**
 
 Technically, I call the tuple's first element *seed_calculating_function*, and the second element *delegate_producing_function*.
 
