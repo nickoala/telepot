@@ -80,7 +80,7 @@ def _create_class(typename, fields):
 
 
 User = _create_class('User', ['id', 'first_name', 'last_name', 'username'])
-GroupChat = _create_class('GroupChat', ['id', 'title'])
+Chat = _create_class('Chat', ['id', 'type', 'title', 'username', 'first_name', 'last_name'])
 PhotoSize = _create_class('PhotoSize', ['file_id', 'width', 'height', 'file_size'])
 
 Audio = _create_class('Audio', ['file_id', 'duration', 'performer', 'title', 'mime_type', 'file_size'])
@@ -105,19 +105,11 @@ _classmap['PhotoSize[][]'] = PhotoSizeArrayArray
 
 UserProfilePhotos = _create_class('UserProfilePhotos', ['total_count', ('photos', PhotoSizeArrayArray)])
 
-def User_or_GroupChat(**kwargs):
-    if kwargs['id'] < 0:
-        return GroupChat(**kwargs)
-    else:
-        return User(**kwargs)
-
-_classmap['User/GroupChat'] = User_or_GroupChat
-
 Message = _create_class('Message', [
               'message_id',
               ('from_', User),
               'date',
-              ('chat', User_or_GroupChat),
+              ('chat', Chat),
               ('forward_from', User),
               'forward_date',
               ('reply_to_message', lambda **kwargs: _classmap['Message'](**kwargs)),  # get around the fact that `Message` is not yet defined
@@ -161,25 +153,38 @@ def namedtuple(data, type):
         return _classmap[type](**data)
 
 
-# Extract essential info of the Message.
-def glance(msg, long=False):
+def _infer_content_type(msg):
     types = [
         'text', 'voice', 'sticker', 'photo', 'audio' ,'document', 'video', 'contact', 'location',
         'new_chat_participant', 'left_chat_participant',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo', 'group_chat_created', 
     ]
 
-    if isinstance(msg, Message):
-        for msgtype in types:
-            if getattr(msg, msgtype) is not None:
-                break
+    content_type = list(filter(lambda f: f in msg, types))
 
-        return (msgtype, msg.from_.id, msg.chat.id) if not long else (msgtype, msg.from_.id, msg.chat.id, msg.date, msg.message_id)
+    if len(content_type) > 1:
+        raise RuntimeError('Inferred multiple content types from message', msg)
+    elif len(content_type) < 1:
+        raise RuntimeError('Cannot infer content type from message', msg)
+
+    return content_type[0]
+
+
+def glance(msg, long=False):
+    content_type = _infer_content_type(msg)
+
+    if long:
+        return content_type, msg['from']['id'], msg['chat']['id'], msg['date'], msg['message_id']
     else:
-        for msgtype in types:
-            if msgtype in msg:
-                break
+        return content_type, msg['from']['id'], msg['chat']['id']
 
-        return (msgtype, msg['from']['id'], msg['chat']['id']) if not long else (msgtype, msg['from']['id'], msg['chat']['id'], msg['date'], msg['message_id'])
+
+def glance2(msg, long=False):
+    content_type = _infer_content_type(msg)
+
+    if long:
+        return content_type, msg['chat']['type'], msg['chat']['id'], msg['date'], msg['message_id']
+    else:
+        return content_type, msg['chat']['type'], msg['chat']['id']
 
 
 class TelepotException(Exception):
