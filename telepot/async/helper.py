@@ -1,6 +1,6 @@
 import asyncio
 import traceback
-import telepot.filter
+import telepot.filtering
 
 
 class Microphone(object):
@@ -31,7 +31,7 @@ class Listener(object):
     def wait(self, **kwargs):
         while 1:
             msg = yield from self._queue.get()
-            if telepot.filter.ok(msg, **kwargs):
+            if telepot.filtering.ok(msg, **kwargs):
                 return msg
     
     def __del__(self):

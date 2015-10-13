@@ -2,7 +2,7 @@ import time
 import traceback
 import threading
 import telepot
-import telepot.filter
+import telepot.filtering
 from functools import partial
 
 try:
@@ -55,7 +55,7 @@ class Listener(object):
             while 1:
                 msg = self._queue.get(block=True)
 
-                if telepot.filter.ok(msg, **kwargs):
+                if telepot.filtering.ok(msg, **kwargs):
                     return msg
         else:
             end = time.time() + self.timeout
@@ -71,7 +71,7 @@ class Listener(object):
                 except queue.Empty:
                     raise WaitTooLong()
 
-                if telepot.filter.ok(msg, **kwargs):
+                if telepot.filtering.ok(msg, **kwargs):
                     return msg
     
     def __del__(self):
