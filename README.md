@@ -2,6 +2,7 @@
 
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
+**[The Intermediate](#intermediate)**  
 **[The Advanced](#advanced)**  
 **[The Async Stuff](#async)** (Python 3.4.3 or newer)  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
@@ -136,13 +137,13 @@ while 1:
 
 #### Quickly `glance2()` a message
 
-When processing a message, a few pieces of information are so central that you almost always have to extract them. Use `glance2()` to extract a tuple of `(content_type, chat_type, chat_id)` from a message.
+When processing a message, a few pieces of information are so central that you almost always have to extract them. Use `glance2()` to extract a tuple of *(content_type, chat_type, chat_id)* from a message.
 
-`content_type` can be: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, or `group_chat_created`.
+*content_type* can be: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, or `group_chat_created`.
 
-`chat_type` can be: `private`, `group`, or `channel`.
+*chat_type* can be: `private`, `group`, or `channel`.
 
-It is a good habit to always check the `content_type` before further processing. Do not assume every message is a `text` message.
+It is a good habit to always check the *content_type* before further processing. Do not assume every message is a `text` message.
 
 *The old `glance()` function should not be used anymore. It relies on the `from` field, which becomes optional in the latest Bot API. The new `glance2()` will supercede it eventually. I keep it for now to maintain backward-compatibility.*
 
@@ -259,9 +260,39 @@ The server returns a number of `file_id`s, with various file sizes. These are th
 >>> bot.sendPhoto(999999999, u'JiLOABNODdbdPyNZjwa-sKYQW6TBqrWfsztABO2NukbYlhLYlREBAAEC')
 ```
 
-Besides `sendPhoto()`, you may also `sendAudio()`, `sendDocument()`, `sendSticker()`, `sendVideo()`, and `sendVoice()`. See [reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md) for details.
+Besides sending photos, you may also `sendAudio()`, `sendDocument()`, `sendSticker()`, `sendVideo()`, and `sendVoice()`.
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
+
+<a id="intermediate"></a>
+## The Intermediate
+
+Defining a global message handler may lead to the proliferation of global variables quickly. Encapsulation may be achieved by extending the `Bot` class, defining a `handle` method, then calling `notifyOnMessage()` with no callback function. This way, the object's `handle` method will be used as the callback.
+
+Here is a skeleton using this strategy:
+
+```python
+import sys
+import time
+import telepot
+
+class YourBot(telepot.Bot):
+    def handle(self, msg):
+        content_type, chat_type, chat_id = telepot.glance2(msg)
+        print content_type, chat_type, chat_id
+        # Do your stuff according to `content_type` ...
+
+
+TOKEN = sys.argv[1] # get token from command-line
+
+bot = YourBot(TOKEN)
+bot.notifyOnMessage()
+print 'Listening ...'
+
+# Keep the program running.
+while 1:
+    time.sleep(10)
+```
 
 <a id="advanced"></a>
 ## The Advanced
