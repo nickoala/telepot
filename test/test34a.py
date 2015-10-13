@@ -34,7 +34,7 @@ def examine(result, type):
         assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
 
         if type == 'Message':
-            print('Message glance: %s' % str(telepot.glance(nt, long=True)))
+            print('Message glance2: %s' % str(telepot.glance2(result, long=True)))
 
         pprint.pprint(result)
         pprint.pprint(nt)
@@ -48,13 +48,13 @@ def examine(result, type):
 
 @asyncio.coroutine
 def send_everything(msg):
-    msg_type, from_id, chat_id, msg_date, msg_id = telepot.glance(msg, long=True)
+    content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance2(msg, long=True)
 
-    if from_id != USER_ID:
-        print('Unauthorized user:', msg['from']['id'])
+    if chat_id != USER_ID:
+        print('Unauthorized user:', chat_id)
         exit(1)
 
-    print('Received message from ID: %d' % from_id)
+    print('Received message from ID: %d' % chat_id)
     print('Start sending various messages ...')
 
     ##### forwardMessage
@@ -220,30 +220,32 @@ def test_webhook_getupdates_exclusive():
     print('Fake webhook cancelled.')
 
 
-expected_msg_type = None
-msg_type_iterator = iter([
+expected_content_type = None
+content_type_iterator = iter([
     'text', 'voice', 'sticker', 'photo', 'audio' ,'document', 'video', 'contact', 'location',
     'new_chat_participant',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo', 'left_chat_participant'
 ])
 
 @asyncio.coroutine
-def see_every_msg_types(msg):
-    global expected_msg_type, msg_type_iterator
+def see_every_content_types(msg):
+    global expected_content_type, content_type_iterator
 
-    msg_type, from_id, chat_id = telepot.glance(msg)
+    content_type, chat_type, chat_id = telepot.glance2(msg)
+    from_id = msg['from']['id']
 
-    if from_id != USER_ID:
-        print('Unauthorized user:', from_id)
+    if chat_id != USER_ID and from_id != USER_ID:
+        print('Unauthorized user:', chat_id)
         return
 
     examine(msg, 'Message')
     try:
-        if msg_type == expected_msg_type:
-            expected_msg_type = next(msg_type_iterator)
-            yield from bot.sendMessage(from_id, 'Please give me a %s.' % expected_msg_type)
+        if content_type == expected_content_type:
+            expected_content_type = next(content_type_iterator)
+            yield from bot.sendMessage(chat_id, 'Please give me a %s.' % expected_content_type)
         else:
-            yield from bot.sendMessage(from_id, 'It is not a %s. Please give me a %s, please.' % (expected_msg_type, expected_msg_type))
+            yield from bot.sendMessage(chat_id, 'It is not a %s. Please give me a %s, please.' % (expected_content_type, expected_content_type))
     except StopIteration:
+        # reply to sender because I am kicked from group already
         yield from bot.sendMessage(from_id, 'Thank you. I am done.')
 
 
@@ -251,16 +253,16 @@ STEP = 1
 
 @asyncio.coroutine
 def handle(msg):
-    global STEP, expected_msg_type, msg_type_iterator
+    global STEP, expected_content_type, content_type_iterator
 
     if STEP == 1:
         yield from send_everything(msg)
 
         STEP = 2
-        expected_msg_type = next(msg_type_iterator)
-        yield from bot.sendMessage(USER_ID, 'Please give me a %s.' % expected_msg_type)
+        expected_content_type = next(content_type_iterator)
+        yield from bot.sendMessage(USER_ID, 'Please give me a %s.' % expected_content_type)
     elif STEP == 2:
-        yield from see_every_msg_types(msg)
+        yield from see_every_content_types(msg)
     else:
         print('Out of steps')
 

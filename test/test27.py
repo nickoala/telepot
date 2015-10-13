@@ -52,26 +52,25 @@ def examine(result, type):
         assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
 
         if type == 'Message':
-            print 'Message glance: %s' % str(telepot.glance(nt, long=True))
+            print 'Message glance2: %s' % str(telepot.glance2(result, long=True))
 
         pprint.pprint(result)
         pprint.pprint(nt)
         print
     except AssertionError:
         traceback.print_exc()
-        print 'Do you want to continue? [y]',
-        answer = raw_input()
+        answer = raw_input('Do you want to continue? [y] ')
         if answer != 'y':
             exit(1)
 
 def send_everything_on_contact(msg):
-    msg_type, from_id, chat_id, msg_date, msg_id = telepot.glance(msg, long=True)
+    content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance2(msg, long=True)
 
-    if from_id != USER_ID:
+    if chat_id != USER_ID:
         print 'Unauthorized user:', msg['from']['id']
         exit(1)
 
-    print 'Received message from ID: %d' % from_id
+    print 'Received message from ID: %d' % chat_id
     print 'Start sending various messages ...'
 
     ##### forwardMessage
@@ -264,10 +263,6 @@ def switch_msg_handlers():
     bot.notifyOnMessage(handle1)
     time.sleep(30)
 
-    print 'Stop listening for a while ...'
-    bot.notifyOnMessage(None)
-    time.sleep(30)
-
     print 'I am listening with handle2() ...'
     bot.notifyOnMessage(handle2, timeout=0)
     time.sleep(30)
@@ -276,46 +271,46 @@ def switch_msg_handlers():
     bot.notifyOnMessage(handle3)
     time.sleep(30)
 
-    print 'I am listening no more ...'
-    bot.notifyOnMessage(None)
     done.set()
 
     global keep_active_thread_counter
     keep_active_thread_counter = False
 
-expected_msg_type = None
-msg_type_iterator = iter([
+expected_content_type = None
+content_type_iterator = iter([
     'text', 'voice', 'sticker', 'photo', 'audio' ,'document', 'video', 'contact', 'location',
     'new_chat_participant',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo', 'left_chat_participant'
 ])
 
-def see_every_msg_types(msg):
-    global expected_msg_type, msg_type_iterator
+def see_every_content_types(msg):
+    global expected_content_type, content_type_iterator
 
-    msg_type, from_id, chat_id = telepot.glance(msg)
+    content_type, chat_type, chat_id = telepot.glance2(msg)
+    from_id = msg['from']['id']
 
-    if from_id != USER_ID:
-        print 'Unauthorized user:', from_id
+    if chat_id != USER_ID and from_id != USER_ID:
+        print 'Unauthorized user:', chat_id, from_id
         return
 
     examine(msg, 'Message')
     try:
-        if msg_type == expected_msg_type:
-            expected_msg_type = msg_type_iterator.next()
-            bot.sendMessage(from_id, 'Please give me a %s.' % expected_msg_type)
+        if content_type == expected_content_type:
+            expected_content_type = content_type_iterator.next()
+            bot.sendMessage(chat_id, 'Please give me a %s.' % expected_content_type)
         else:
-            bot.sendMessage(from_id, 'It is not a %s. Please give me a %s, please.' % (expected_msg_type, expected_msg_type))
+            bot.sendMessage(chat_id, 'It is not a %s. Please give me a %s, please.' % (expected_content_type, expected_content_type))
     except StopIteration:
+        # reply to sender because I am kicked from group already
         bot.sendMessage(from_id, 'Thank you. I am done.')
         done.set()
 
 def ask_for_various_messages():
-    bot.notifyOnMessage(see_every_msg_types)
+    bot.notifyOnMessage(see_every_content_types)
 
-    global expected_msg_type, msg_type_iterator
-    expected_msg_type = msg_type_iterator.next()
+    global expected_content_type, content_type_iterator
+    expected_content_type = content_type_iterator.next()
 
-    bot.sendMessage(USER_ID, 'Please give me a %s.' % expected_msg_type)
+    bot.sendMessage(USER_ID, 'Please give me a %s.' % expected_content_type)
 
 def test_webhook_getupdates_exclusive():
     bot.setWebhook('https://www.fake.com/fake', open('old.cert', 'rb'))
