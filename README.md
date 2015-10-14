@@ -504,7 +504,8 @@ print('Done.')
 
 A starting point for your telepot programs.
 
-**[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/skeleton.py)**   
+**[Traditional version 1 »](https://github.com/nickoala/telepot/blob/master/examples/skeleton.py)**   
+**[Traditional version 2 »](https://github.com/nickoala/telepot/blob/master/examples/skeleton_extend.py)**   
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)**
 
 #### Indoor climate monitor
@@ -537,6 +538,12 @@ Sooner or later, you want your bots to be able to send emoji. You may look up th
 I am running this bot on a CentOS server. You should be able to talk to it 24/7. Intended for multiple users, the async version is being run.
 
 By the way, I just discovered a Python **[emoji](https://pypi.python.org/pypi/emoji/)** package. Use it.
+
+#### Message Counter
+
+Count number of messages a user has sent the bot. It illustrates the basic use of `DelegateBot` and `ChatHandler`.
+
+**[Source »](https://github.com/nickoala/telepot/blob/master/examples/counter.py)**  
 
 <a id="guess-a-number"></a>
 #### Guess-a-number
