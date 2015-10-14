@@ -65,9 +65,9 @@ class OwnerHandler(telepot.helper.ChatHandler):
             self.sender.sendMessage(msg['text'])
 
     def _handle(self, msg):
-        msg_type, from_id, chat_id = telepot.glance(msg)
+        content_type, chat_type, chat_id = telepot.glance2(msg)
         
-        if msg_type != 'text':
+        if content_type != 'text':
             self.sender.sendMessage("I don't understand")
             return
 

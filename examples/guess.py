@@ -38,9 +38,9 @@ class Player(telepot.helper.ChatHandler):
             # wait for user's guess
             msg = self.listener.wait(chat__id=self.chat_id)
 
-            msg_type, from_id, chat_id = telepot.glance(msg)
+            content_type, chat_type, chat_id = telepot.glance2(msg)
 
-            if msg_type != 'text':
+            if content_type != 'text':
                 self.sender.sendMessage('Give me a number, please.')
                 continue
 
@@ -65,7 +65,7 @@ TOKEN = sys.argv[1]
 from telepot.delegate import per_chat_id, create_run
 
 bot = telepot.DelegatorBot(TOKEN, [
-                          # For each chat_id, create a Player and delegate to its `run()` method.
+                          # For each chat_id, create a Player and delegate to its `run` method.
                                (per_chat_id(), create_run(Player)),
                           ])
 bot.notifyOnMessage(run_forever=True)

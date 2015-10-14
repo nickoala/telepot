@@ -14,17 +14,17 @@ checking and substring-extraction below may not work as expected.
 """
 
 def handle(msg):
-    msg_type, from_id, chat_id = telepot.glance(msg)
+    content_type, chat_type, chat_id = telepot.glance2(msg)
     m = telepot.namedtuple(msg, 'Message')
 
     if chat_id < 0:
         # group message
-        print 'Received a %s from %s, by %s' % (msg_type, m.chat, m.from_)
+        print 'Received a %s from %s, by %s' % (content_type, m.chat, m.from_)
     else:
         # private message
-        print 'Received a %s from %s' % (msg_type, m.chat)  # m.chat == m.from_
+        print 'Received a %s from %s' % (content_type, m.chat)  # m.chat == m.from_
 
-    if msg_type == 'text':
+    if content_type == 'text':
         reply = ''
 
         # For long messages, only return the first 10 characters.

@@ -43,9 +43,9 @@ class Player(telepot.helper.ChatHandler):
                 # wait for user's guess
                 msg = yield from asyncio.wait_for(self.listener.wait(chat__id=self.chat_id), self.WAIT_TIMEOUT)
 
-                msg_type, from_id, chat_id = telepot.glance(msg)
+                content_type, chat_type, chat_id = telepot.glance2(msg)
 
-                if msg_type != 'text':
+                if content_type != 'text':
                     yield from self.sender.sendMessage('Give me a number, please.')
                     continue
 

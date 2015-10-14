@@ -9,9 +9,9 @@ A skeleton for your telepot programs.
 """
 
 def handle(msg):
-    msg_type, from_id, chat_id = telepot.glance(msg)
-    print msg_type, from_id, chat_id
-    # Do your stuff according to `msg_type` ...
+    content_type, chat_type, chat_id = telepot.glance2(msg)
+    print content_type, chat_type, chat_id
+    # Do your stuff according to `content_type` ...
 
 
 TOKEN = sys.argv[1]  # get token from command-line

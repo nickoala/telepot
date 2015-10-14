@@ -16,7 +16,7 @@ Ctrl-C to kill.
 """
 
 def handle(msg):
-    chat_id = msg['from']['id']
+    chat_id = msg['chat']['id']
     command = msg['text']
 
     print 'Got command: %s' % command
