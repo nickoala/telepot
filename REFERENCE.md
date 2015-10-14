@@ -1,17 +1,40 @@
 # telepot reference
 
-## Modules
+**[telepot](#telepot)**
+- [Bot](#telepot-Bot)
+- [SpeakerBot](#telepot-SpeakerBot)
+- [DelegatorBot](#telepot-DelegatorBot)
 
-**[telepot](#telepot)**  
-**[telepot.helper](#telepot-helper)**  
-**[telepot.delegate](#telepot-delegate)**  
-**[telepot.async](#telepot-async)**  
-**[telepot.async.helper](#telepot-async-helper)**  
-**[telepot.async.delegate](#telepot-async-delegate)**  
+**[telepot.helper](#telepot-helper)**
+- [Microphone](#telepot-helper-Microphone)
+- [Listener](#telepot-helper-Listener)
+- [Sender](#telepot-helper-Sender)
+- [ChatHandler](#telepot-helper-ChatHandler)
+
+**[telepot.delegate](#telepot-delegate)**
+- [per_chat_id](#telepot-delegate-per-chat-id)
+- [per_chat_id_in](#telepot-delegate-per-chat-id-in)
+- [per_chat_id_except](#telepot-delegate-per-chat-id-except)
+- [call](#telepot-delegate-call)
+- [create_run](#telepot-delegate-create-run)
+
+**[telepot.async](#telepot-async)**
+- [Bot](#telepot-async-Bot)
+- [SpeakerBot](#telepot-async-SpeakerBot)
+- [DelegatorBot](#telepot-async-DelegatorBot)
+
+**[telepot.async.helper](#telepot-async-helper)**
+- [Microphone](#telepot-async-helper-Microphone)
+- [Listener](#telepot-async-helper-Listener)
+
+**[telepot.async.delegate](#telepot-async-delegate)**
+- [call](#telepot-async-delegate-call)
+- [create_run](#telepot-async-delegate-create-run)
 
 <a id="telepot"></a>
-## telepot
+## `telepot` module
 
+<a id="telepot-Bot"></a>
 ### `telepot.Bot`
 
 Aside from `downloadFile()` and `notifyOnMessage()`, all methods are straight mappings from **[Telegram Bot API](https://core.telegram.org/bots/api)**. No point to duplicate all the details here. I only give brief descriptions below, and encourage you to visit the underlying API's documentations. Full power of the Bot API can be exploited only by understanding the API itself.
@@ -268,12 +291,7 @@ Parameters:
 - callback (function): a function to apply to every message received. If `None`, `self.handle` is assumed. 
 - relax (integer): seconds between each `getUpdates()`
 - timeout (integer): timeout supplied to `getUpdates()`, controlling how long to poll.
-- run_forever (boolean): append an infinite loop at the end, so this function never returns. Useful as the very last line in a program.
-
-This method allows you to change the callback function by `notifyOnMessage(new_callback)`. 
-If you don't want to receive messages anymore, cancel the callback by `notifyOnMessage(None)`. 
-After the callback is cancelled, the message-checking thread will terminate. 
-If a new callback is set later, a new thread will be spawned again.
+- run_forever (boolean): append an infinite loop at the end and never returns. Useful as the very last line in a program.
 
 This can be a skeleton for a lot of telepot programs:
 
@@ -283,9 +301,9 @@ import telepot
 
 class YourBot(telepot.Bot):
     def handle(self, msg):
-        msg_type, from_id, chat_id = telepot.glance(msg)
-        print msg_type, from_id, chat_id
-        # Do your stuff according to `msg_type` ...
+        content_type, chat_type, chat_id = telepot.glance2(msg)
+        print content_type, chat_type, chat_id
+        # Do your stuff according to `content_type` ...
 
 
 TOKEN = sys.argv[1]  # get token from command-line
@@ -294,7 +312,7 @@ bot = YourBot(TOKEN)
 bot.notifyOnMessage(run_forever=True)
 ```
 
-If you prefer defining a `handle(msg)` function externally, or want to have a custom infinite loop at the end, this skeleton may be for you:
+If you prefer defining a global handler, or want to have a custom infinite loop at the end, this skeleton may be for you:
 
 ```python
 import sys
@@ -302,9 +320,9 @@ import time
 import telepot
 
 def handle(msg):
-    msg_type, from_id, chat_id = telepot.glance(msg)
-    print msg_type, from_id, chat_id
-    # Do your stuff according to `msg_type` ...
+    content_type, chat_type, chat_id = telepot.glance2(msg)
+    print content_type, chat_type, chat_id
+    # Do your stuff according to `content_type` ...
 
 
 TOKEN = sys.argv[1]  # get token from command-line
@@ -318,23 +336,25 @@ while 1:
     time.sleep(10)
 ```
 
+<a id="telepot-SpeakerBot"></a>
 ### `telepot.SpeakerBot`
 
-Subclass of `telepot.Bot`
+Subclass of `Bot`. Exposes a `Microphone` and lets you create `Listener`s who listen for messages from that microphone. You don't have to deal with this class directly, if `DelegateBot` and `ChatHandler` satisfy your needs.
 
 **SpeakerBot(token)**
 
-**create_listener()**
-
-Returns a `telepot.helper.Listener` object, which you may use to listen for messages broadcast by `mic.send(msg)`.
-
 **mic**
 
-A `telepot.helper.Microphone` object. Used to broadcast messages to listeners obtained by `create_listener()`.
+A `Microphone` object. Used to broadcast messages to listeners obtained by `create_listener()`.
 
+**create_listener()**
+
+Returns a `Listener` object that listens to the `mic`.
+
+<a id="telepot-DelegatorBot"></a>
 ### `telepot.DelegatorBot`
 
-Subclass of `telepot.SpeakerBot`
+Subclass of `SpeakerBot`. Can spawn delegates according to *delegation patterns* specified in the constructor.
 
 **DelegatorBot(token, seed_delegates)**
 
