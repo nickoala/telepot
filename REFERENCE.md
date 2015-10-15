@@ -4,6 +4,7 @@
 - [Bot](#telepot-Bot)
 - [SpeakerBot](#telepot-SpeakerBot)
 - [DelegatorBot](#telepot-DelegatorBot)
+- [Functions](#telepot-functions)
 
 **[telepot.helper](#telepot-helper)**
 - [Microphone](#telepot-helper-Microphone)
@@ -426,6 +427,7 @@ bot = telepot.DelegatorBot(TOKEN, [
 bot.notifyOnMessage(run_forever=True)
 ```
 
+<a id="telepot-functions"></a>
 ### Functions in `telepot` module
 
 **glance2(msg, long=False)**
