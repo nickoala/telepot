@@ -915,4 +915,29 @@ Coming soon ...
 <a id="telepot-async-delegate"></a>
 ## `telepot.async.delegate` module (Python 3.4.3 or newer)
 
-Coming soon ...
+This module provides functions used in conjunction with `telepot.async.DelegatorBot` to specify delegation patterns. See `telepot.async.DelegatorBot` for more details.
+
+<a id="telepot-async-delegate-call"></a>
+**call(corofunc, \*args, \*\*kwargs)**
+
+Returns a coroutine-producing-function. `corofunc` should be a coroutine function that takes a *seed_tuple* as the first argument, followed by those explicitly supplied. Here is the source:
+
+```python
+def call(corofunc, *args, **kwargs):
+    def f(seed_tuple):
+        return corofunc(seed_tuple, *args, **kwargs)
+    return f
+```
+
+<a id="telepot-async-delegate-create-run"></a>
+**create_run(cls, \*args, \*\*kwargs)**
+
+Returns a coroutine-producing-function that creates an object of `cls` and returns a coroutine object by calling its `run()` method. The `cls` constructor should take a *seed_tuple* as the first argument, followed by those explicitly supplied. The `run` method should be a coroutine function that takes no argument. Here is the source:
+
+```python
+def create_run(cls, *args, **kwargs):
+    def f(seed_tuple):
+        j = cls(seed_tuple, *args, **kwargs)
+        return j.run()
+    return f
+```
