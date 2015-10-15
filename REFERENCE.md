@@ -339,7 +339,7 @@ while 1:
 <a id="telepot-SpeakerBot"></a>
 ### `telepot.SpeakerBot`
 
-Subclass of `Bot`. Exposes a `Microphone` and lets you create `Listener`s who listen for messages from that microphone. You don't have to deal with this class directly, if `DelegateBot` and `ChatHandler` satisfy your needs.
+Subclass of `Bot`. Exposes a `Microphone` and lets you create `Listener`s who listen to that microphone. You don't have to deal with this class directly, if `DelegateBot` and `ChatHandler` satisfy your needs.
 
 **SpeakerBot(token)**
 
@@ -356,36 +356,36 @@ Returns a `Listener` object that listens to the `mic`.
 
 Subclass of `SpeakerBot`. Can spawn delegates according to *delegation patterns* specified in the constructor.
 
-**DelegatorBot(token, seed_delegates)**
+**DelegatorBot(token, delegation_patterns)**
 
 Parameters:
 
-- token: self-explanatory
-- seed_delegates: a list of `(seed_calculating_func, delegate_producing_func)` tuples
+- token: the bot's token
+- delegation_patterns: a list of *(seed_calculating_function, delegate_producing_function)* tuples
 
-`seed_calculating_func` is a function that takes one argument - the message being processed - and returns a *seed*. The **type** and **value** of a seed determine whether and when the associated `delegate_producing_func` is called.
+*seed_calculating_function* is a function that takes one argument - the message being processed - and returns a *seed*. The seed determines whether and when the following *delegate_producing_function* is called.
 
 - If the seed is a *hashable* (e.g. number, string, tuple), the bot looks for a *delegate* associated with the seed.
   - If such a delegate exists and is alive, it is assumed that the message will be picked up by the delegate. The bot does nothing.
-  - If no delegate exists or that delegate is no longer alive, the bot spawns a new delegate by calling `delegate_producing_func` and associates the seed with the new delegate.
+  - If no delegate exists or that delegate is no longer alive, the bot spawns a new delegate by calling *delegate_producing_function* and associates the new delegate with the seed.
 
-- If the seed is a *non-hashable* (e.g. list), the bot always spawns a new delegate by calling `delegate_producing_func`. No seed-delegate association occurs.
+- If the seed is a *non-hashable* (e.g. list), the bot always spawns a new delegate by calling *delegate_producing_function*. No seed-delegate association occurs.
 
 - If the seed is `None`, nothing is done.
 
-`delegate_producing_func` is a function that takes one argument - a tuple of `(bot, msg, seed)` - and returns a *delegate*. A delegate can be one of the following:
+*delegate_producing_function* is a function that takes one argument - a tuple of *(bot, message, seed)* - and returns a *delegate*. A delegate can be one of the following:
 
 - an object that has a `start()` and `is_alive()` method. Therefore, a `threading.Thread` object is a natural delegate. Once the `object` is obtained, `object.start()` is called.
-- a `function`. In this case, it is wrapped by a `Thread(target=function)` and started.
-- a tuple of `(func, args, kwargs)`. In this case, it is wrapped by a `Thread(target=func, args=args, kwargs=kwargs)` and started.
+- a `function`, in which case it is wrapped by a `Thread(target=function)` and started.
+- a tuple of `(function, args, kwargs)`, in which case it is wrapped by a `Thread(target=function, args=args, kwargs=kwargs)` and started.
 
-All `seed_calculating_func`s are evaluated in order. One message may cause multiple delegates to be spawned.
+All *seed_calculating_functions* are evaluated in order. One message may cause multiple delegates to be spawned.
 
-This class implements the above logic in its `handle(msg)` method. Once you supply a list of `(seed_calculating_func, delegate_producing_func)` pairs to the constructor and invoke `notifyOnMessage()`, the above logic will be executed for each message received.
+This class implements the above logic in its `handle` method. Once you supply a list of *(seed_calculating_function, delegate_producing_function)* pairs to the constructor and invoke `notifyOnMessage()`, the above logic will be executed for every message received.
 
 Even if you use a webhook and don't need `notifyOnMessage()`, you may always call `bot.handle(msg)` directly to take advantage of the above logic, if you find it useful.
 
-The `telepot.delegate` module has a number of functions that make it very convenient to define `seed_calculating_func` and `delegate_producing_func`, as illustrated by the example below:
+The `telepot.delegate` module has a number of functions that make it very convenient to define *seed_calculating_functions* and *delegate_producing_functions*, as illustrated by the example below:
 
 ```python
 import sys
@@ -428,30 +428,38 @@ bot.notifyOnMessage(run_forever=True)
 
 ### Functions in `telepot` module
 
-**glance(msg, long=False)**
+**glance2(msg, long=False)**
 
-If `long` is `False`, extract a tuple of `(type, msg['from']['id'], msg['chat']['id'])`.
+If `long` is `False`, extract a tuple of *(content_type, chat_type, msg['chat']['id'])*.
 
-If `long` is `True`, extract a tuple of `(type, msg['from']['id'], msg['chat']['id'], msg['date'], msg['message_id'])`.
+If `long` is `True`, extract a tuple of *(content_type, chat_type, msg['chat']['id'], msg['date'], msg['message_id'])*.
 
-`type` indicates the content type of the message, can be one of:  `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, `group_chat_created`.
+*content_type* can be one of: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, or  `group_chat_created`.
+
+*chat_type* can be one of: `private`, `group`, or `channel`.
+
+*`glance2()` supercedes the old `glance()`, and will replace it eventually. You should not use `glance()` anymore.*
 
 Examples:
 
 ```python
 # Suppose `msg` is a message previously received.
 
-msg_type, from_id, chat_id = telepot.glance(msg)
-msg_type, from_id, chat_id, msg_date, msg_id = telepot.glance(msg, long=True)
+content_type, chat_type, chat_id = telepot.glance2(msg)
+content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance2(msg, long=True)
 ```
 
 **namedtuple(data, type)**
 
 Convert a dictionary to a namedtuple of a given object type.
 
-`type` can be: `Audio`, `Contact`, `Document`, `GroupChat`, `Location`, `Message`, `PhotoSize`, `PhotoSize[]`, `PhotoSize[][]`, `Sticker`, `Update`, `Update[]`, `User`, `User/GroupChat`, `UserProfilePhotos`, `Video`, `Voice`, `File`.
+*type* can be: `Audio`, `Chat`, `Contact`, `Document`, `File`, `Location`, `Message`, `PhotoSize`, `PhotoSize[]`, `PhotoSize[][]`, `Sticker`, `Update`, `Update[]`, `User`, `UserProfilePhotos`, `Video`, `Voice`.
 
-Namedtuple field names cannot be Python keywords, but the **[Message](https://core.telegram.org/bots/api#message)** object has a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `dict['from']` becomes `namedtuple.from_` when converted to a namedtuple.
+The returned namedtuples mirror the corresponding [Bot API objects](https://core.telegram.org/bots/api#available-types).
+
+The source dictionary may not contain all fields of the namedtuple. Absent fields are set to `None`.
+
+Namedtuple field names cannot be Python keywords, but the [Message](https://core.telegram.org/bots/api#message) object has a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `dict['from']` becomes `namedtuple.from_` when converted to a namedtuple.
 
 Examples:
 
@@ -464,21 +472,9 @@ m = telepot.namedtuple(msg, 'Message')
 print m.from_.id  # == msg['from']['id']
 print m.chat.id   # == msg['chat']['id']
 
-# Turn only the 'from' field to a User namedtuple
-u = telepot.namedtuple(msg['from'], 'User')
-
-# 'chat' field can be either a User or GroupChat
-chat = telepot.namedtuple(msg['chat'], 'User/GroupChat')
-
-if type(chat) == telepot.User:
-    print 'A private conversation'
-elif type(chat) == telepot.GroupChat:
-    print 'An open discussion'
-else:
-    print 'Impossible!'
-
-# Actually, you can check more efficiently by looking at the chat ID.
-# A negative ID indicates a GroupChat; a positive ID indicates a User.
+# Convert only part of the message
+user = telepot.namedtuple(msg['from'], 'User')
+chat = telepot.namedtuple(msg['chat'], 'Chat')
 ```
 
 `namedtuple()` is just a convenience function. *Frankly, you can do without it.*
