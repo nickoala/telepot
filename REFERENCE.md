@@ -360,8 +360,8 @@ Subclass of `SpeakerBot`. Can spawn delegates according to *delegation patterns*
 
 Parameters:
 
-- token: the bot's token
-- delegation_patterns: a list of *(seed_calculating_function, delegate_producing_function)* tuples
+- **token**: the bot's token
+- **delegation_patterns**: a list of *(seed_calculating_function, delegate_producing_function)* tuples
 
 *seed_calculating_function* is a function that takes one argument - the message being processed - and returns a *seed*. The seed determines whether and when the following *delegate_producing_function* is called.
 
@@ -453,7 +453,7 @@ content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance2(msg, long=T
 
 Convert a dictionary to a namedtuple of a given object type.
 
-*type* can be: `Audio`, `Chat`, `Contact`, `Document`, `File`, `Location`, `Message`, `PhotoSize`, `PhotoSize[]`, `PhotoSize[][]`, `Sticker`, `Update`, `Update[]`, `User`, `UserProfilePhotos`, `Video`, `Voice`.
+**type** can be: `Audio`, `Chat`, `Contact`, `Document`, `File`, `Location`, `Message`, `PhotoSize`, `PhotoSize[]`, `PhotoSize[][]`, `Sticker`, `Update`, `Update[]`, `User`, `UserProfilePhotos`, `Video`, `Voice`.
 
 The returned namedtuples mirror the corresponding [Bot API objects](https://core.telegram.org/bots/api#available-types).
 
