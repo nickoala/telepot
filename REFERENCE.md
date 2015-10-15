@@ -422,7 +422,7 @@ bot = telepot.DelegatorBot(TOKEN, [
 
 # Spawn only per selected chat id
 (per_chat_id_in([12345678, 999999999]), create_run(Handler)),
-      ])
+])
 
 bot.notifyOnMessage(run_forever=True)
 ```
@@ -451,7 +451,7 @@ content_type, chat_type, chat_id = telepot.glance2(msg)
 content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance2(msg, long=True)
 ```
 
-**namedtuple(data, type)**
+**namedtuple(dictionary, type)**
 
 Convert a dictionary to a namedtuple of a given object type.
 
@@ -459,7 +459,7 @@ Convert a dictionary to a namedtuple of a given object type.
 
 The returned namedtuples mirror the corresponding [Bot API objects](https://core.telegram.org/bots/api#available-types).
 
-The source dictionary may not contain all fields of the namedtuple. Absent fields are set to `None`.
+The source dictionary may not contain all necessary fields. Absent fields are set to `None`.
 
 Namedtuple field names cannot be Python keywords, but the [Message](https://core.telegram.org/bots/api#message) object has a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `dict['from']` becomes `namedtuple.from_` when converted to a namedtuple.
 
@@ -482,37 +482,43 @@ chat = telepot.namedtuple(msg['chat'], 'Chat')
 `namedtuple()` is just a convenience function. *Frankly, you can do without it.*
 
 <a id="telepot-helper"></a>
-## telepot.helper
+## `telepot.helper` module
 
+<a id="telepot-helper-Microphone"></a>
 ### `telepot.helper.Microphone`
 
-One `Microphone` broadcasts to many `Listener`s. Each listener has a queue. Microphone puts messages into the queues, listeners get from them. Adding a queue to a microphone essentially adds a listener to its audience.
+A `Microphone`, when the `send()` method is called, puts messages into each `Listener`'s message queue.
+
+Normally, you should not need to create this object, but obtain it using `SpeakerBot.mic`.
 
 **Microphone()**
 
 **add(queue)**
 
-Add a listener's queue.
+Add a listener's message queue.
 
 **remove(queue)**
 
-Remove a listener's queue.
+Remove a listener's message queue.
 
 **send(msg)**
 
-Broadcast to all listeners by putting `msg` to each queue.
+Puts `msg` into each listener's message queue.
 
+<a id="telepot-helper-Listener"></a>
 ### `telepot.helper.Listener`
 
-This class is supposed to be used inside a delegate to suspend execution and wait for a message with certain characteristics to appear. Most commonly, it is used within a `telepot.helper.ChatHandler` to suspend execution until a user's reply arrives.
+Used to suspend execution until a certain message appears.
+
+Normally, you should not need to create this object, but obtain it using `SpeakerBot.create_listener()` or access it with `ChatHandler.listener`.
 
 **Listener(microphone, queue)**
 
 **wait(\*\*kwargs)**
 
-Blocks until a "matched" message is encountered.
+Blocks until a "matched" message appears, and returns that message.
 
-`kwargs` is used to select parts of message to match against. It is best to illustrate with some examples.
+**kwargs** is used to select parts of message to match against. It is best to illustrate with some examples.
 
 ```python
 # Blocks until a message whose `msg['chat']['id']` equals `12345678` appears
@@ -545,22 +551,33 @@ listener.wait(_={'chat':{'id': 12345678}})
 listener.wait(_=check_entire_message, chat__id=12345678)
 ```
 
-- each **key** is used to select a part of message
-  - use a double__underscore to "get down a level", e.g. `chat__id` selects `msg['chat']['id']`
+For each keyword arguments:
+
+- the **key** is used to select a part of message
+  - use a double__underscore to "get down a level", e.g. `from` selects `msg['from']`, `chat__id` selects `msg['chat']['id']`
   - use a `_` to select the entire message
 
-- each **value** may be one of the following:
+- the **value** is a "template", may be one of the following:
   - a simple value
-  - a function that performs the match. Returns `True` to indicate a match.
-  - a dict to further select parts of message
+  - a function that performs the match
+    - takes one argument - the part of message selected by the key
+    - returns `True` to indicate a match
+  - a dictionary to further select parts of message
 
 Thanks to [Django](https://www.djangoproject.com/) for inspiration.
 
+<a id="telepot-helper-Sender"></a>
 ### `telepot.helper.Sender`
 
 A proxy to a bot's `sendZZZ()` and `forwardMessage()` methods, with a fixed `chat_id` to save having to supply it every time.
 
+Normally, you should not need to create this object, but access it with `ChatHandler.sender`.
+
 **Sender(bot, chat_id)**
+
+Parameters:
+- **bot** - the parent bot
+- **chat_id** - the default chat id. All messages will be aimed at this chat id.
 
 **sendMessage(text, parse_mode=None, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None)**
 
@@ -582,38 +599,83 @@ A proxy to a bot's `sendZZZ()` and `forwardMessage()` methods, with a fixed `cha
 
 **sendChatAction(action)**
 
+<a id="telepot-helper-ChatHandler"></a>
 ### `telepot.helper.ChatHandler`
 
-Provides facilities for an ongoing chat.
+Provides facilities to deal with a particular chat.
 
 **ChatHandler(bot, initial_message, *args)**
 
-Note: Extra arguments are allowed (but ignored) to make it easy for users to call with `ChatHandler(*seed_tuple)`, where `seed_tuple` is `(bot, msg, seed)`. See `telepot.DelegatorBot` for what `seed` means.
+Parameters:
+- **bot** - the parent bot. Should be a `SpeakerBot` or one of its subclasses.
+- **initial_message** - the initial message that initiates this chat
+- **any extra arguments** - ignored. This is to make it easy to create this object by calling `ChatHandler(*seed_tuple)`, where *seed_tuple* is *(bot, message, seed)*, as generated by the delegation mechanism. See `DelegatorBot` for more details.
 
-Here are the public properties:
-
-**chat_id**
-
-**initial_message**
+These properties are exposed:
 
 **bot**
 
-**listener**
+**initial_message**
 
-**sender**
+**chat_id** - the target chat
+
+**listener** - a `Listener` object
+
+**sender** - a `Sender` object
 
 <a id="telepot-delegate"></a>
-## telepot.delegate
+## `telepot.delegate` module
 
-This module provides functions to be used in conjunction with `telepot.DelegatorBot`.
+This module provides functions used in conjunction with `DelegatorBot` to specify delegation patterns. See `DelegatorBot` for more details.
 
+<a id="telepot-delegate-per-chat-id"></a>
 **per_chat_id()**
 
-**per_chat_id_in(s)**
+Returns a seed-calculating-function that returns the chat id as the seed, equivalent to:
+```python
+lambda msg: msg['chat']['id']
+```
 
+<a id="telepot-delegate-per-chat-id-in"></a>
+**per_chat_id_in(set)**
+
+Returns a seed-calculating-function that returns the chat id as the seed if the chat id is in the `set`, equivalent to:
+```python
+lambda msg: msg['chat']['id'] if msg['chat']['id'] in set else None
+```
+
+<a id="telepot-delegate-per-chat-id-except"></a>
+**per_chat_id_except(set)**
+
+Returns a seed-calculating-function that returns the chat id as the seed if the chat id is *not* in the `set`, equivalent to:
+```python
+lambda msg: msg['chat']['id'] if msg['chat']['id'] not in set else None
+```
+
+<a id="telepot-delegate-call"></a>
 **call(func, \*args, \*\*kwargs)**
 
+Returns a delegate-producing-function that returns a tuple of `(func, (seed_tuple,)+args, kwargs)`, causing `DelegatorBot` to spawn a thread around that function and those arguments. `func` should take a *seed_tuple* as the first argument, followed by those explicitly supplied. Here is the source:
+
+```python
+def call(func, *args, **kwargs):
+    def f(seed_tuple):
+        return func, (seed_tuple,)+args, kwargs
+    return f
+```
+
+<a id="telepot-delegate-create-run"></a>
 **create_run(cls, \*args, \*\*kwargs)**
+
+Returns a delegate-producing-function that creates an object of `cls` and returns its `run` method, causing `DelegatorBot` to spawn a thread around its `run` method. The `cls` constructor should take a *seed_tuple* as the first argument, followed by those explicitly supplied. The `run` method should take no argument. Here is the source:
+
+```python
+def create_run(cls, *args, **kwargs):
+    def f(seed_tuple):
+        j = cls(seed_tuple, *args, **kwargs)
+        return j.run
+    return f
+```
 
 <a id="telepot-async"></a>
 ## telepot.async (Python 3.4.3 or newer)
