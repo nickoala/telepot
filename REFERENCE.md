@@ -910,7 +910,45 @@ The `telepot.async.delegate` module has a number of functions that help you defi
 <a id="telepot-async-helper"></a>
 ## `telepot.async.helper` module (Python 3.4.3 or newer)
 
-Coming soon ...
+<a id="telepot-async-helper-Microphone"></a>
+### `telepot.async.helper.Microphone`
+
+A `Microphone`, when the `send()` method is called, puts messages into each `Listener`'s message queue.
+
+Normally, you should not need to create this object, but access it using `SpeakerBot.mic`.
+
+The only difference with traditional `telepot.helper.Microphone` is that it uses `asyncio.Queue` instead of the concurrent `Queue`.
+
+**Microphone()**
+
+**add(queue)**
+
+Add a listener's message queue.
+
+**remove(queue)**
+
+Remove a listener's message queue.
+
+**send(msg)**
+
+Puts `msg` into each listener's message queue.
+
+<a id="telepot-async-helper-Listener"></a>
+### `telepot.async.helper.Listener`
+
+Used to suspend execution until a certain message appears.
+
+Normally, you should not need to create this object, but obtain it using `SpeakerBot.create_listener()` or access it with `ChatHandler.listener`.
+
+The only difference with traditional `telepot.helper.Listener` is that it uses `asyncio.Queue` instead of the concurrent `Queue`, and the `wait` method becomes a coroutine.
+
+**Listener(microphone, queue)**
+
+*coroutine* **wait(\*\*kwargs)**
+
+Wait for a "matched" message, and returns that message.
+
+**kwargs** is used to select parts of message to match against. See `telepot.helper.Listener` for syntax.
 
 <a id="telepot-async-delegate"></a>
 ## `telepot.async.delegate` module (Python 3.4.3 or newer)
