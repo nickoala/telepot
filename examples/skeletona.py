@@ -9,8 +9,7 @@ $ python3.4 skeletona.py <token>
 A skeleton for your **async** telepot programs.
 """
 
-# Add this decorator if you have `yield from` inside the function.
-# @asyncio.coroutine
+@asyncio.coroutine
 def handle(msg):
     content_type, chat_type, chat_id = telepot.glance2(msg)
     print(content_type, chat_type, chat_id)
