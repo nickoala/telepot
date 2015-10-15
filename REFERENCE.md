@@ -19,16 +19,16 @@
 - [call](#telepot-delegate-call)
 - [create_run](#telepot-delegate-create-run)
 
-**[telepot.async](#telepot-async)**
+**[telepot.async](#telepot-async)** (Python 3.4.3 or newer)
 - [Bot](#telepot-async-Bot)
 - [SpeakerBot](#telepot-async-SpeakerBot)
 - [DelegatorBot](#telepot-async-DelegatorBot)
 
-**[telepot.async.helper](#telepot-async-helper)**
+**[telepot.async.helper](#telepot-async-helper)** (Python 3.4.3 or newer)
 - [Microphone](#telepot-async-helper-Microphone)
 - [Listener](#telepot-async-helper-Listener)
 
-**[telepot.async.delegate](#telepot-async-delegate)**
+**[telepot.async.delegate](#telepot-async-delegate)**  (Python 3.4.3 or newer)
 - [call](#telepot-async-delegate-call)
 - [create_run](#telepot-async-delegate-create-run)
 
@@ -37,6 +37,8 @@
 
 <a id="telepot-Bot"></a>
 ### `telepot.Bot`
+
+This class is mostly a wrapper around Telegram Bot API methods, and is the most ancient part of telepot.
 
 Aside from `downloadFile()` and `notifyOnMessage()`, all methods are straight mappings from **[Telegram Bot API](https://core.telegram.org/bots/api)**. No point to duplicate all the details here. I only give brief descriptions below, and encourage you to visit the underlying API's documentations. Full power of the Bot API can be exploited only by understanding the API itself.
 
@@ -678,25 +680,118 @@ def create_run(cls, *args, **kwargs):
 ```
 
 <a id="telepot-async"></a>
-## telepot.async (Python 3.4.3 or newer)
+## `telepot.async` module (Python 3.4.3 or newer)
 
+This package mirrors the traditional version of telepot to make use of the `asyncio` module of Python 3.4. Nearly all methods share identical signatures with their traditional siblings, except that blocking methods now become **coroutines** and are often called with `yield from`.
+
+If you find this part of documentations wanting, always refer back to the traditional counterparts. It is easy to adapt examples from there to here - just remember to `yield from` coroutines.
+
+<a id="telepot-async-Bot"></a>
 ### `telepot.async.Bot`
-
-This class makes use of the `asyncio` module of Python 3.4.3. Nearly all methods share identical signatures with its traditional sibling, `telepot.Bot`, with one important difference - they are **coroutines** and are often "called" with `yield from`.
-
-Notable differences are given below.
 
 **Bot(token, loop=None)**
 
 Use the token to specify the bot. If no `loop` is given, it uses `asyncio.get_event_loop()` to get the default event loop.
 
-Examples:
-```python
-import telepot.async
-bot = telepot.async.Bot('123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ')
-```
+**loop**
 
-**messageLoop(handler)**
+This bot's event loop.
+
+*coroutine* **getMe()**
+
+Returns basic information about the bot in form of a [User](https://core.telegram.org/bots/api#user) object.
+
+See: https://core.telegram.org/bots/api#getme
+
+*coroutine* **sendMessage(chat_id, text, parse_mode=None, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None)**
+
+Send text messages.
+
+See: https://core.telegram.org/bots/api#sendmessage
+
+*coroutine* **forwardMessage(chat_id, from_chat_id, message_id)**
+
+Forward messages of any kind.
+
+See: https://core.telegram.org/bots/api#forwardmessage
+
+*coroutine* **sendPhoto(chat_id, photo, caption=None, reply_to_message_id=None, reply_markup=None)**
+
+Send photos.
+
+See: https://core.telegram.org/bots/api#sendphoto
+
+*coroutine* **sendAudio(chat_id, audio, duration=None, performer=None, title=None, reply_to_message_id=None, reply_markup=None)**
+
+Send audio files, if you want Telegram clients to display them in the music player. Your audio must be in the .mp3 format. For sending voice messages, use `sendVoice()` instead. 
+
+See: https://core.telegram.org/bots/api#sendaudio
+
+*coroutine* **sendDocument(chat_id, document, reply_to_message_id=None, reply_markup=None)**
+
+Send general files.
+
+See: https://core.telegram.org/bots/api#senddocument
+
+*coroutine* **sendSticker(chat_id, sticker, reply_to_message_id=None, reply_markup=None)**
+
+Send .webp stickers.
+
+See: https://core.telegram.org/bots/api#sendsticker
+
+*coroutine* **sendVideo(chat_id, video, duration=None, caption=None, reply_to_message_id=None, reply_markup=None)**
+
+Send video files. Telegram clients support mp4 videos. Other formats may be sent using `sendDocument()`.
+
+See: https://core.telegram.org/bots/api#sendvideo
+
+*coroutine* **sendVoice(chat_id, audio, duration=None, reply_to_message_id=None, reply_markup=None)**
+
+Send audio files, if you want Telegram clients to display the file as a playable voice message. For this to work, your audio must be in an .ogg file encoded with OPUS. Other formats may be sent using `sendAudio()` or `sendDocument()`.
+
+See: https://core.telegram.org/bots/api#sendvoice
+
+*coroutine* **sendLocation(chat_id, latitude, longitude, reply_to_message_id=None, reply_markup=None)**
+
+Send point on the map.
+
+See: https://core.telegram.org/bots/api#sendlocation
+
+*coroutine* **sendChatAction(chat_id, action)**
+
+Tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status).
+
+See: https://core.telegram.org/bots/api#sendchataction
+
+*coroutine* **getUserProfilePhotos(user_id, offset=None, limit=None)**
+
+Get a list of profile pictures for a user.
+
+See: https://core.telegram.org/bots/api#getuserprofilephotos
+
+*coroutine* **getFile(file_id)**
+
+Get a [File](https://core.telegram.org/bots/api#file) object, usually as a prelude to downloading a file. If you just want to download a file, call `downloadFile()` instead.
+
+See: https://core.telegram.org/bots/api#getfile
+
+*coroutine* **getUpdates(offset=None, limit=None, timeout=None)**
+
+Receive incoming updates.
+
+See: https://core.telegram.org/bots/api#getupdates
+
+*coroutine* **setWebhook(url=None, certificate=None)**
+
+Specify a url and receive incoming updates via an outgoing webhook.
+
+See: https://core.telegram.org/bots/api#setwebhook
+
+*coroutine* **downloadFile(file_id, dest)**
+
+Download a file. `dest` can be a path (string) or a Python file object.
+
+*coroutine* **messageLoop(handler=None)**
 
 Functionally equivalent to `notifyOnMessage()`, this method constantly `getUpdates()` and applies `handler` to each message received.
 
@@ -706,7 +801,9 @@ If `handler` is a regular function, it is called directly from within `messageLo
 
 If `handler` is a coroutine, it is allocated a task using `BaseEventLoop.create_task()`.
 
-An async skeleton:
+If `handler` is `None`, `self.handle` is assumed to be the handler function. In other words, a bot must have the method, `handle(msg)`, defined if `messageLoop()` is called without the `handler` argument.
+
+This can be a skeleton for a lot of telepot programs:
 
 ```python
 import sys
@@ -714,12 +811,38 @@ import asyncio
 import telepot
 import telepot.async
 
-# Add this decorator if you have `yield from` inside the function.
-# @asyncio.coroutine
+class YourBot(telepot.async.Bot):
+    @asyncio.coroutine
+    def handle(self, msg):
+        content_type, chat_type, chat_id = telepot.glance2(msg)
+        print(content_type, chat_type, chat_id)
+        # Do your stuff according to `content_type` ...
+
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = YourBot(TOKEN)
+loop = asyncio.get_event_loop()
+
+loop.create_task(bot.messageLoop())
+print('Listening ...')
+
+loop.run_forever()
+```
+
+Or, if you prefer a global handler:
+
+```python
+import sys
+import asyncio
+import telepot
+import telepot.async
+
+@asyncio.coroutine
 def handle(msg):
-    msg_type, from_id, chat_id = telepot.glance(msg)
-    print(msg_type, from_id, chat_id)
-    # Do your stuff according to `msg_type` ...
+    content_type, chat_type, chat_id = telepot.glance2(msg)
+    print(content_type, chat_type, chat_id)
+    # Do your stuff according to `content_type` ...
 
 
 TOKEN = sys.argv[1]  # get token from command-line
