@@ -856,12 +856,63 @@ print('Listening ...')
 loop.run_forever()
 ```
 
+<a id="telepot-async-SpeakerBot"></a>
+### `telepot.async.SpeakerBot`
+
+Subclass of `telepot.async.Bot`. Exposes a `Microphone` and lets you create `Listener`s who listen to that microphone. You don't have to deal with this class directly, if `DelegateBot` and `ChatHandler` satisfy your needs.
+
+**SpeakerBot(token)**
+
+**mic**
+
+A `Microphone` object. Used to broadcast messages to listeners obtained by `create_listener()`.
+
+**create_listener()**
+
+Returns a `Listener` object that listens to the `mic`.
+
+<a id="telepot-async-DelegatorBot"></a>
+### `telepot.async.DelegatorBot`
+
+Subclass of `telepot.async.SpeakerBot`. Can create tasks according to *delegation patterns* specified in the constructor.
+
+Unlike its traditional counterpart, this class uses **coroutine** and **task** to achieve delegation. To understand the remaining discussions, you have to understand asyncio's [tasks and coroutines](https://docs.python.org/3/library/asyncio-task.html), especially the difference between a *coroutine function* and a *coroutine object*.
+
+**DelegatorBot(token, delegation_patterns)**
+
+Parameters:
+
+- **token**: the bot's token
+- **delegation_patterns**: a list of *(seed_calculating_function, coroutine_producing_function)* tuples
+
+*seed_calculating_function* is a function that takes one argument - the message being processed - and returns a *seed*. The seed determines whether and when the following *coroutine_producing_function* is called.
+
+- If the seed is a *hashable* (e.g. number, string, tuple), the bot looks for a task associated with the seed.
+  - If such a task exists and is not done, it is assumed that the message will be picked up by the task. The bot does nothing.
+  - If no task exists or that task is done, the bot calls *coroutine_producing_function*, use the returned coroutine object to create a task, and associates the new task with the seed.
+
+- If the seed is a *non-hashable* (e.g. list), the bot always calls *coroutine_producing_function*, and use the returned coroutine object to create a task. No seed-task association occurs.
+
+- If the seed is `None`, nothing is done.
+
+*coroutine_producing_function* is a function that takes one argument - a tuple of *(bot, message, seed)* - and returns a *coroutine object*, which will be used to create a task.
+
+All *seed_calculating_functions* are evaluated in order. One message may cause multiple tasks to be created.
+
+This class implements the above logic in its `handle` method. Once you supply a list of *(seed_calculating_function, coroutine_producing_function)* pairs to the constructor and invoke `messageLoop()`, the above logic will be executed for every message received.
+
+Even if you use a webhook and don't need `messageLoop()`, you may always call `bot.handle(msg)` directly to take advantage of the above logic, if you find it useful.
+
+The `telepot.delegate` module has a number of functions that help you define *seed_calculating_functions*.
+
+The `telepot.async.delegate` module has a number of functions that help you define *coroutine_producing_functions*.
+
 <a id="telepot-async-helper"></a>
-## telepot.async.helper (Python 3.4.3 or newer)
+## `telepot.async.helper` module (Python 3.4.3 or newer)
 
 Coming soon ...
 
 <a id="telepot-async-delegate"></a>
-## telepot.async.delegate (Python 3.4.3 or newer)
+## `telepot.async.delegate` module (Python 3.4.3 or newer)
 
 Coming soon ...
