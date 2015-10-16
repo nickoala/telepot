@@ -379,7 +379,7 @@ I hope this architecture makes harder programs easier. Thanks to **[Django](http
 <a id="async"></a>
 ## Async Version (Python 3.4.3 or newer)
 
-Everything discussed so far assumes the traditional paradigm of Python programming. That is, network operations are blocking; if you want to serve many users at the same time, some kind of threads are usually needed. Another option is to use an asynchronous or event-driven framework, such as [Twisted](http://twistedmatrix.com/).
+Everything discussed so far assumes traditional Python. That is, network operations are blocking; if you want to serve many users at the same time, some kind of threads are usually needed. Another option is to use an asynchronous or event-driven framework, such as [Twisted](http://twistedmatrix.com/).
 
 Python 3.4 introduces its own asynchronous architecture, the `asyncio` module. Telepot supports that, too. If your bot is to serve many people, I strongly recommend doing it asynchronously. Threads, in my opinion, is a thing of yesteryears.
 
@@ -431,7 +431,7 @@ The async version of `Bot`, `SpeakerBot`, and `DelegatorBot` basically mirror th
 - blocking methods (e.g. `sendMessage()`) are now coroutines, and should be called with `yield from`
 - delegation is achieved by coroutine and task
 
-Because of that (and this is true for asynchronous Python in general), a lot of methods will not work in the interactive Python interpreter like regular functions would. They will have to be driven by an event loop.
+Because of that (and this is true of asynchronous Python in general), a lot of methods will not work in the interactive Python interpreter like regular functions would. They will have to be driven by an event loop.
 
 #### Skeleton, by extending the basic `Bot`
 
