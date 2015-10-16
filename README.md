@@ -4,7 +4,7 @@
 **[The Basics](#basics)**  
 **[The Intermediate](#intermediate)**  
 **[The Advanced](#advanced)**  
-**[The Async Stuff](#async)** (Python 3.4.3 or newer)  
+**[Async Version](#async)** (Python 3.4.3 or newer)  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
 **[Examples](#examples)**  
 **[Mailing List](https://groups.google.com/forum/#!forum/telepot)**
@@ -377,9 +377,11 @@ I hope this architecture makes harder programs easier. Thanks to **[Django](http
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
 <a id="async"></a>
-## The Async Stuff (Python 3.4.3 or newer)
+## Async Version (Python 3.4.3 or newer)
 
-*Since 2.0*, I introduced an async version of `Bot` that makes use of the `asyncio` module of **Python 3.4.3**. All async stuff described in this section would not work on earlier versions of Python.
+Everything discussed so far assumes the traditional paradigm of Python programming. That is, network operations are blocking; if you want to serve many users at the same time, some kind of threads are usually needed. Another option is to use an asynchronous or event-driven framework, such as [Twisted](http://twistedmatrix.com/).
+
+Python 3.4 introduces its own asynchronous architecture, the `asyncio` module. Telepot supports that, too. If your bot is to serve many people, I strongly recommend doing it asynchronously. Threads, in my opinion, is a thing of yesteryears.
 
 Raspbian does not come with Python 3.4. You have to compile it yourself.
 
@@ -423,14 +425,15 @@ In case you are not familiar with asynchronous programming, let's start by learn
 - [Event loop examples](https://docs.python.org/3/library/asyncio-eventloop.html#event-loop-examples)
 - [HTTP server and client](http://aiohttp.readthedocs.org/en/stable/)
 
-#### Create an async `Bot`
+#### Very similar to the traditional, but different
 
-```python
-import telepot.async
-bot = telepot.async.Bot('TOKEN')
-```
+The async version of `Bot`, `SpeakerBot`, and `DelegatorBot` basically mirror the traditional version's. Main differences are:
+- blocking methods (e.g. `sendMessage()`) are now coroutines, and should be called with `yield from`
+- delegation is achieved by coroutine and task
 
-#### An async skeleton
+Because of that (and this is true for asynchronous Python in general), a lot of methods will not work in the interactive Python interpreter like regular functions would. They will have to be driven by an event loop.
+
+#### Skeleton, by extending the basic `Bot`
 
 ```python
 import sys
@@ -438,12 +441,38 @@ import asyncio
 import telepot
 import telepot.async
 
-# Add this decorator if you have `yield from` inside the function.
-# @asyncio.coroutine
+class YourBot(telepot.async.Bot):
+    @asyncio.coroutine
+    def handle(self, msg):
+        content_type, chat_type, chat_id = telepot.glance2(msg)
+        print(content_type, chat_type, chat_id)
+        # Do your stuff according to `content_type` ...
+
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = YourBot(TOKEN)
+loop = asyncio.get_event_loop()
+
+loop.create_task(bot.messageLoop())
+print('Listening ...')
+
+loop.run_forever()
+```
+
+#### Skeleton, by defining a global hander
+
+```python
+import sys
+import asyncio
+import telepot
+import telepot.async
+
+@asyncio.coroutine
 def handle(msg):
-    msg_type, from_id, chat_id = telepot.glance(msg)
-    print(msg_type, from_id, chat_id)
-    # Do your stuff according to `msg_type` ...
+    content_type, chat_type, chat_id = telepot.glance2(msg)
+    print(content_type, chat_type, chat_id)
+    # Do your stuff according to `content_type` ...
 
 
 TOKEN = sys.argv[1]  # get token from command-line
@@ -451,40 +480,15 @@ TOKEN = sys.argv[1]  # get token from command-line
 bot = telepot.async.Bot(TOKEN)
 loop = asyncio.get_event_loop()
 
-loop.create_task(bot.messageLoop(handle))  # kind of like notifyOnMessage()
+loop.create_task(bot.messageLoop(handle))
 print('Listening ...')
 
 loop.run_forever()
 ```
 
-Note the (superficial) similarities with the traditional skeleton, although the underlying concepts are quite different.
+#### How about `DelegatorBot`?
 
-#### Send asynchronously
-
-The async `Bot` has all the `sendZZZ()` methods seen in the traditional `Bot`. Unlike the traditional, however, these methods are now **coroutines**, and will not work in the interactive python interpreter like regular functions would. They will have to be driven by an event loop.
-
-Supply the bot token and your own user ID on the command-line:
-
-```python
-import sys
-import asyncio
-import telepot.async
-
-@asyncio.coroutine
-def textme():
-    print('Sending a text ...')
-    yield from bot.sendMessage(USER_ID, 'Good morning!')
-
-
-TOKEN = sys.argv[1]         # get token from command-line
-USER_ID = int(sys.argv[2])  # get user id from command-line
-
-bot = telepot.async.Bot(TOKEN)
-
-loop = asyncio.get_event_loop()
-loop.run_until_complete(textme())
-print('Done.')
-```
+Again, it is very similar to the traditional version. Please refer to the examples: **[Guess-a-number](#guess-a-number)**, and **[Chatbox](#chatbox)**.
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
@@ -506,7 +510,8 @@ A starting point for your telepot programs.
 
 **[Traditional version 1 »](https://github.com/nickoala/telepot/blob/master/examples/skeleton.py)**   
 **[Traditional version 2 »](https://github.com/nickoala/telepot/blob/master/examples/skeleton_extend.py)**   
-**[Async version »](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)**
+**[Async version 1 »](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)**  
+**[Async version 2 »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_extend.py)**
 
 #### Indoor climate monitor
 
