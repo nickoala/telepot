@@ -11,6 +11,11 @@
 
 ### Recent changes
 
+**4.0 (2015-10-29)**
+
+- Revamped `Listener` and `ChatHandler` architecture
+- Added `create_open()`
+
 **3.2 (2015-10-13)**
 
 - Conforms to latest Telegram Bot API as of [October 8, 2015](https://core.telegram.org/bots/api-changelog)
@@ -21,10 +26,6 @@
 
 - Added `per_chat_id_except()`
 - Added lock to `Microphone`, make it thread-safe
-
-**3.0 (2015-10-05)**
-
-- Added listener and delegation mechanism
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
