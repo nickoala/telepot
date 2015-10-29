@@ -48,17 +48,51 @@ class Listener(object):
         self._mic = mic
         self._queue = q
 
-        self.timeout = None
+        self._criteria = []
 
-    def wait(self, **kwargs):
-        if self.timeout is None:
+        self._options = {
+            'timeout': None,
+        }
+
+    def __del__(self):
+        self._mic.remove(self._queue)
+
+    def set_options(self, **name_values):
+        self._options.update(name_values)
+
+    def get_options(self, *names):
+        return tuple(map(lambda n: self._options[n], names))
+
+    def capture(self, **criteria):
+        self._criteria.append(criteria)
+
+    def cancel_capture(self, **criteria):
+        # remove duplicates
+        self._criteria = list(filter(lambda c: c != criteria, self._criteria))
+
+    def clear_captures(self):
+        del self._criteria[:]
+
+    def list_captures(self):
+        return self._criteria
+
+    def wait(self):
+        if not self._criteria:
+            raise RuntimeError('Listener has no capture criteria, will wait forever.')
+
+        def meet_some_criteria(msg):
+            return any(map(lambda c: telepot.filtering.ok(msg, **c), self._criteria))
+
+        timeout, = self.get_options('timeout')
+
+        if timeout is None:
             while 1:
                 msg = self._queue.get(block=True)
 
-                if telepot.filtering.ok(msg, **kwargs):
+                if meet_some_criteria(msg):
                     return msg
         else:
-            end = time.time() + self.timeout
+            end = time.time() + timeout
 
             while 1:
                 timeleft = end - time.time()
@@ -71,11 +105,8 @@ class Listener(object):
                 except queue.Empty:
                     raise WaitTooLong()
 
-                if telepot.filtering.ok(msg, **kwargs):
+                if meet_some_criteria(msg):
                     return msg
-    
-    def __del__(self):
-        self._mic.remove(self._queue)
 
 
 class Sender(object):
@@ -95,30 +126,89 @@ class Sender(object):
             #   self.sendMessage = partial(bot.sendMessage, chat_id)
 
 
-class ChatHandler(object):
-    def __init__(self, bot, msg, *args):
+class ListenerContext(object):
+    def __init__(self, bot, context_id):
         self._bot = bot
-        self._initial_msg = msg
-        self._chat_id = msg['chat']['id']
+        self._id = context_id
         self._listener = bot.create_listener()
-        self._sender = Sender(bot, self._chat_id)
-
-    @property
-    def chat_id(self):
-        return self._chat_id
-
-    @property
-    def initial_message(self):
-        return self._initial_msg
 
     @property
     def bot(self):
         return self._bot
 
     @property
+    def id(self):
+        return self._id
+
+    @property
     def listener(self):
         return self._listener
+
+
+class ChatContext(ListenerContext):
+    def __init__(self, bot, context_id, chat_id):
+        super(ChatContext, self).__init__(bot, context_id)
+        self._chat_id = chat_id
+        self._sender = Sender(bot, chat_id)
+
+    @property
+    def chat_id(self):
+        return self._chat_id
 
     @property
     def sender(self):
         return self._sender
+
+
+class StopListening(telepot.TelepotException):
+    def __init__(self, code=None, reason=None):
+        super(StopListening, self).__init__(code, reason)
+
+    @property
+    def code(self):
+        return self.args[0]
+
+    @property
+    def reason(self):
+        return self.args[1]
+
+
+class Monitor(ListenerContext):
+    def __init__(self, seed_tuple, capture):
+        bot, initial_msg, seed = seed_tuple
+        super(Monitor, self).__init__(bot, seed)
+
+        for c in capture:
+            self.listener.capture(**c)
+
+    def open(self, initial_msg, seed):
+        pass
+
+    def on_message(self, msg):
+        raise NotImplementedError()
+
+    def on_close(self, exception):
+        pass
+
+    def close(self, code=None, reason=None):
+        raise StopListening(code, reason)
+
+
+class ChatHandler(ChatContext):
+    def __init__(self, seed_tuple, timeout):
+        bot, initial_msg, seed = seed_tuple
+        super(ChatHandler, self).__init__(bot, seed, initial_msg['chat']['id'])
+        self.listener.set_options(timeout=timeout)
+        self.listener.capture(chat__id=self.chat_id)
+
+    def open(self, initial_msg, seed):
+        pass
+
+    def on_message(self, msg):
+        raise NotImplementedError()
+
+    def on_close(self, exception):
+        pass
+
+    def close(self, code=None, reason=None):
+        raise StopListening(code, reason)

@@ -1,5 +1,7 @@
 import asyncio
 import traceback
+import time
+import telepot.helper
 import telepot.filtering
 
 
@@ -22,17 +24,36 @@ class Microphone(object):
                 pass
 
 
-class Listener(object):
-    def __init__(self, mic, queue):
-        self._mic = mic
-        self._queue = queue
-
+class Listener(telepot.helper.Listener):
     @asyncio.coroutine
-    def wait(self, **kwargs):
-        while 1:
-            msg = yield from self._queue.get()
-            if telepot.filtering.ok(msg, **kwargs):
-                return msg
-    
-    def __del__(self):
-        self._mic.remove(self._queue)
+    def wait(self):
+        if not self._criteria:
+            raise RuntimeError('Listener has no capture criteria, will wait forever.')
+
+        def meet_some_criteria(msg):
+            return any(map(lambda c: telepot.filtering.ok(msg, **c), self._criteria))
+
+        timeout, = self.get_options('timeout')
+
+        if timeout is None:
+            while 1:
+                msg = yield from self._queue.get()
+
+                if meet_some_criteria(msg):
+                    return msg
+        else:
+            end = time.time() + timeout
+
+            while 1:
+                timeleft = end - time.time()
+
+                if timeleft < 0:
+                    raise telepot.helper.WaitTooLong()
+
+                try:
+                    msg = yield from asyncio.wait_for(self._queue.get(), timeleft)
+                except asyncio.TimeoutError:
+                    raise telepot.helper.WaitTooLong()
+
+                if meet_some_criteria(msg):
+                    return msg
