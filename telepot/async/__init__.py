@@ -236,6 +236,10 @@ class DelegatorBot(SpeakerBot):
             elif isinstance(id, collections.Hashable):
                 if id not in dict or dict[id].done():
                     c = make_coroutine_obj((self, msg, id))
+
+                    if not asyncio.iscoroutine(c):
+                        raise RuntimeError('You must produce a coroutine *object* as delegate.')
+
                     dict[id] = self._loop.create_task(c)
             else:
                 c = make_coroutine_obj((self, msg, id))
