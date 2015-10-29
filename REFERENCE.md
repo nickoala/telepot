@@ -10,6 +10,9 @@
 - [Microphone](#telepot-helper-Microphone)
 - [Listener](#telepot-helper-Listener)
 - [Sender](#telepot-helper-Sender)
+- [ListenerContext](#telepot-helper-ListenerContext)
+- [ChatContext](#telepot-helper-ChatContext)
+- [Monitor](#telepot-helper-Monitor)
 - [ChatHandler](#telepot-helper-ChatHandler)
 
 **[telepot.delegate](#telepot-delegate)**
@@ -18,6 +21,7 @@
 - [per_chat_id_except](#telepot-delegate-per-chat-id-except)
 - [call](#telepot-delegate-call)
 - [create_run](#telepot-delegate-create-run)
+- [create_open](#telepot-delegate-create-open)
 
 **[telepot.async](#telepot-async)** (Python 3.4.3 or newer)
 - [Bot](#telepot-async-Bot)
@@ -31,6 +35,7 @@
 **[telepot.async.delegate](#telepot-async-delegate)**  (Python 3.4.3 or newer)
 - [call](#telepot-async-delegate-call)
 - [create_run](#telepot-async-delegate-create-run)
+- [create_open](#telepot-async-delegate-create-open)
 
 <a id="telepot"></a>
 ## `telepot` module
@@ -376,6 +381,8 @@ Parameters:
 
 - If the seed is `None`, nothing is done.
 
+**In essence, only one delegate is running for a given seed, if that seed is a hashable.**
+
 *delegate_producing_function* is a function that takes one argument - a tuple of *(bot, message, seed)* - and returns a *delegate*. A delegate can be one of the following:
 
 - an object that has a `start()` and `is_alive()` method. Therefore, a `threading.Thread` object is a natural delegate. Once the `object` is obtained, `object.start()` is called.
@@ -388,44 +395,29 @@ This class implements the above logic in its `handle` method. Once you supply a 
 
 Even if you use a webhook and don't need `notifyOnMessage()`, you may always call `bot.handle(msg)` directly to take advantage of the above logic, if you find it useful.
 
-The `telepot.delegate` module has a number of functions that make it very convenient to define *seed_calculating_functions* and *delegate_producing_functions*, as illustrated by the example below:
+The power of delegation is most easily exploited when used in combination with the `telepot.delegate` module (which contains a number of ready-made *seed_calculating_functions* and *delegate_producing_functions*) and the `ChatHandler` class (which provides a connection-like interface to deal with an individual chat).
+
+Here is a bot that counts how many messages it has received in a chat. If no message is received after 10 seconds, it starts over. The counting is done *per chat* - that's the important point.
 
 ```python
 import sys
 import telepot
-from telepot.delegate import per_chat_id, per_chat_id_in, call, create_run
+from telepot.delegate import per_chat_id, create_open
 
-class Handler(object):
-    # a tuple of `(bot, msg, seed)` is always the first argument
-    def __init__(self, seed_tuple):
-        print('In Handler constructor ...')
-        print(seed_tuple)
+class MessageCounter(telepot.helper.ChatHandler):
+    def __init__(self, seed_tuple, timeout):
+        super(MessageCounter, self).__init__(seed_tuple, timeout)
+        self._count = 0
 
-    def run(self):
-        print('In Handler.run() ...')
-
-# a tuple of `(bot, msg, seed)` is always the first argument
-def delegate_func(seed_tuple):
-    print('In delegate_func() ...')
-    print(seed_tuple)
+    def on_message(self, msg):
+        self._count += 1
+        self.sender.sendMessage(self._count)
 
 TOKEN = sys.argv[1]  # get token from command-line
 
 bot = telepot.DelegatorBot(TOKEN, [
-
-# Per each chat id --> spawn a thread around `delegate_func` and supplied arguments
-(lambda msg: msg['chat']['id'], lambda seed_tuple: (delegate_func, [seed_tuple], {})),
-
-# Achieve exactly the same thing as above, but easier to understand
-(per_chat_id(), call(delegate_func)),
-
-# Per each chat id --> create a `Handler` object and spawn a thread around its `run()` method
-(per_chat_id(), create_run(Handler)),
-
-# Spawn only per selected chat id
-(per_chat_id_in([12345678, 999999999]), create_run(Handler)),
+    (per_chat_id(), create_open(MessageCounter, timeout=10)),
 ])
-
 bot.notifyOnMessage(run_forever=True)
 ```
 
@@ -510,47 +502,78 @@ Puts `msg` into each listener's message queue.
 <a id="telepot-helper-Listener"></a>
 ### `telepot.helper.Listener`
 
-Used to suspend execution until a certain message appears.
+Used to suspend execution until a certain message appears. Users can specify how to "match" for messages in the `capture()` method.
 
 Normally, you should not need to create this object, but obtain it using `SpeakerBot.create_listener()` or access it with `ChatHandler.listener`.
 
 **Listener(microphone, queue)**
 
-**wait(\*\*kwargs)**
+**wait()**
 
-Blocks until a "matched" message appears, and returns that message.
+Blocks until a "matched" message appears, and returns that message. See `capture()` for how to specify match conditions.
 
-**kwargs** is used to select parts of message to match against. It is best to illustrate with some examples.
+If the *timeout* option is set, it will raise a `WaitTooLong` exception after that many seconds.
+
+If the *timeout* option is not set or is `None` (default), it will wait forever.
+
+**set_options(\*\*name_values)**
+
+Available options:
+- timeout - how many seconds to `wait` for a matched message
+
+Example:
+```python
+listener.set_options(timeout=10)
+```
+
+**get_options(\*names)**
+
+Returns a tuple of values of those option names.
+
+Example:
+```python
+timeout, = listener.get_options('timeout')
+```
+
+**capture(\*\*criteria)**
+
+Add a capture criteria.
+
+When the `wait()` method sees a message that matches the *criteria*, it returns that message.
+
+The `capture()` method may be called multiple times, resulting in a *list of criteria*. A message is considered a match if **any one of the those criteria** is satisfied.
+
+The format of *criteria* is best illustrated with some examples:
 
 ```python
-# Blocks until a message whose `msg['chat']['id']` equals `12345678` appears
-listener.wait(chat__id=12345678)
-# `chat__id` selects `msg['chat']['id']` to match against
-# Double-underscore is used to indicate "get down a level"
+# look for messages whose `message['chat']['id']` equals `12345678`
+listener.capture(chat__id=12345678)
 
-# Besides simple values, a function may be used to perform the match.
-# A match occurs if the function returns true.
-def certain_chat_ids(id):
-    return id in [12345678, 99999999]
+# equivalent to above
+listener.capture(chat={'id': 12345678})
 
-listener.wait(chat__id=certain_chat_ids)
+def looks_like_integer(s):
+    try:
+        int(s)
+        return True
+    except:
+        return False
 
-# Equivalent to `listener.wait(chat__id=12345678)`
-listener.wait(chat={'id': 12345678})
-# Besides using double-underscore, a dict may be used to "get down a level".
+# look for messages where `looks_like_integer(message['text'])` returns true
+listener.capture(text=looks_like_integer)
 
-def check_entire_message(msg):
-    # is this a text message?
-    return 'text' in msg
+# could be done more simply as ...
+listener.capture(text=lambda s: s.isdigit())
 
-# Use a single underscore to match against the entire message
-listener.wait(_=check_entire_message)
+# look for messages that satisfy BOTH conditions
+listener.capture(text=lambda s: s.isdigit(), chat__id=12345678)
 
-# Equivalent to `listener.wait(chat__id=12345678)`
-listener.wait(_={'chat':{'id': 12345678}})
+def sender_sounds_like_me(msg):
+    return msg['from']['first_name'].startswith('Nick') and msg['from']['last_name'].startswith('Lee')
 
-# Blocks until all conditions are satisfied
-listener.wait(_=check_entire_message, chat__id=12345678)
+# looks for messages where `sender_sounds_like_me(message)` returns true
+# use '_' to select the entire message
+listener.capture(_=sender_sounds_like_me)
 ```
 
 For each keyword arguments:
@@ -561,12 +584,26 @@ For each keyword arguments:
 
 - the **value** is a "template", may be one of the following:
   - a simple value
-  - a function that performs the match
+  - a function that checks the match
     - takes one argument - the part of message selected by the key
     - returns `True` to indicate a match
   - a dictionary to further select parts of message
 
-Thanks to [Django](https://www.djangoproject.com/) for inspiration.
+When more than one keyword argument are given, all conditions have to be satisfied.
+
+Thanks to **[Django](https://www.djangoproject.com/)** for inspiration.
+
+**cancel_capture(\*\*criteria)**
+
+Remove a capture criteria. To remove a previously added criteria, the form of *criteria* given here must be exactly the same as that given to `capture()` previously.
+
+**clear_captures()**
+
+Remove all capture criteria.
+
+**list_captures()**
+
+List all capture criteria.
 
 <a id="telepot-helper-Sender"></a>
 ### `telepot.helper.Sender`
@@ -601,29 +638,43 @@ Parameters:
 
 **sendChatAction(action)**
 
-<a id="telepot-helper-ChatHandler"></a>
-### `telepot.helper.ChatHandler`
+<a id="telepot-helper-ListenerContext"></a>
+### `telepot.helper.ListenerContext`
 
-Provides facilities to deal with a particular chat.
-
-**ChatHandler(bot, initial_message, *args)**
+**ListenerContext(bot, context_id)**
 
 Parameters:
 - **bot** - the parent bot. Should be a `SpeakerBot` or one of its subclasses.
-- **initial_message** - the initial message that initiates this chat
-- **any extra arguments** - ignored. This is to make it easy to create this object by calling `ChatHandler(*seed_tuple)`, where *seed_tuple* is *(bot, message, seed)*, as generated by the delegation mechanism. See `DelegatorBot` for more details.
+- **context_id** - this ID's purpose and uniqueness to up to the user.
 
-These properties are exposed:
+This object exposes these properties:
+- **bot**
+- **id** - the context ID
+- **listener** - a `Listener` object
 
-**bot**
+<a id="telepot-helper-ChatContext"></a>
+### `telepot.helper.ChatContext`
 
-**initial_message**
+**ChatContext(bot, context_id, chat_id)**
 
-**chat_id** - the target chat
+Parameters:
+- **bot** - the parent bot. Should be a `SpeakerBot` or one of its subclasses.
+- **context_id** - this ID's purpose and uniqueness to up to the user.
+- **chat_id** - the target chat
 
-**listener** - a `Listener` object
+This object exposes these properties:
+- **chat_id**
+- **sender** - a `Sender` object aimed at the target chat
 
-**sender** - a `Sender` object
+<a id="telepot-helper-Monitor"></a>
+### `telepot.helper.Monitor`
+
+Coming ...
+
+<a id="telepot-helper-ChatHandler"></a>
+### `telepot.helper.ChatHandler`
+
+Coming ...
 
 <a id="telepot-delegate"></a>
 ## `telepot.delegate` module
@@ -678,6 +729,11 @@ def create_run(cls, *args, **kwargs):
         return j.run
     return f
 ```
+
+<a id="telepot-delegate-create-open"></a>
+**create_open(cls, \*args, \*\*kwargs)**
+
+Coming ...
 
 <a id="telepot-async"></a>
 ## `telepot.async` module (Python 3.4.3 or newer)
