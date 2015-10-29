@@ -1,4 +1,4 @@
-# telepot - a Python framework for Telegram Bot API
+# telepot - Python framework for Telegram Bot API
 
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
