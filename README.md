@@ -300,6 +300,8 @@ while 1:
 <a id="advanced"></a>
 ## The Advanced
 
+**This section is outdated. I will be updating it very soon!**
+
 Having a single message handler is adequate for simple programs. For more sophisticated programs where states need to be maintained across messages, a better approach is needed.
 
 Consider this scenario. A bot wants to have an intelligent conversation with a lot of users, and if we could only use a single message-handling function, we would have to maintain some state variables about each conversation *outside* the function. On receiving each message, we first have to check whether the user already has a conversation started, and if so, what we have been talking about. There has to be a better way.
