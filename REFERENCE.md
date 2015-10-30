@@ -1104,7 +1104,7 @@ Returns a `Listener` object that listens to the `mic`.
 
 Can create tasks according to *delegation patterns* specified in the constructor.
 
-Unlike its traditional counterpart, this class uses **coroutine** and **task** to achieve delegation. To understand the remaining discussions, you have to understand asyncio's [tasks and coroutines](https://docs.python.org/3/library/asyncio-task.html), especially the difference between a *coroutine function* and a *coroutine object*.
+Unlike its traditional counterpart, this class uses **coroutine** and **task** to achieve delegation. To understand the remaining discussions, you have to understand asyncio's [tasks and coroutines](https://docs.python.org/3/library/asyncio-task.html), especially the difference between a coroutine *function* and a coroutine *object*.
 
 **DelegatorBot(token, delegation_patterns)**
 
