@@ -300,7 +300,52 @@ while 1:
 <a id="advanced"></a>
 ## The Advanced
 
-**This section has been outdated. I will be updating it very soon!**
+Having a single message handler is adequate for simple programs. For more sophisticated programs where states need to be maintained across messages, a better approach is needed.
+
+Consider this scenario. A bot wants to have an intelligent conversation with a lot of users, and if we could only use a single message-handling function, we would have to maintain some state variables about each conversation *outside* the function. On receiving each message, we first have to check whether the user already has a conversation started, and if so, what we have been talking about. There has to be a better way.
+
+Let's look at my solution. Here, I implement a bot that counts how many messages have been sent by an individual user. If no message is received after 10 seconds, it starts over (timeout). The counting is done *per chat* - that's the important point.
+
+```python
+import sys
+import telepot
+from telepot.delegate import per_chat_id, create_open
+
+class MessageCounter(telepot.helper.ChatHandler):
+    def __init__(self, seed_tuple, timeout):
+        super(MessageCounter, self).__init__(seed_tuple, timeout)
+        self._count = 0
+
+    def on_message(self, msg):
+        self._count += 1
+        self.sender.sendMessage(self._count)
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.DelegatorBot(TOKEN, [
+    (per_chat_id(), create_open(MessageCounter, timeout=10)),
+])
+bot.notifyOnMessage(run_forever=True)
+```
+
+Noteworthy are two classes: `DelegatorBot` and `MessageCounter`. Let me explain one by one.
+
+#### `DelegatorBot`
+
+It is a `Bot` with the newfound ability to spawn *delegates*. Its constructor takes a list of tuples telling it when and how to spawn delegates. In the example above, it is spawning one `MessageCounter` *per chat id*.
+
+Technically, the function `per_chat_id()` is called a *seed-calculating-function*, and `create_open()` is called a *delegate-producing-function*. I won't get into details here. You can [read the reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md#telepot-delegate) for that.
+
+In plain English, `per_chat_id()` (or a *seed-calculating-function*) determines **when** to spawn a delegate, while `create_open()` (or a *delegate-producing-function*) determines **how** to spawn one.
+
+#### `MessageCounter`, extending from `ChatHandler`
+
+This is the class that deals with an individual chat. Being a subclass of `ChatHandler` offers a few benefits:
+
+- inherits utilities for dealing with a chat, e.g. a `sender` object that makes it easy to send messages to a chat (as demonstrated above), a `listener` object that waits for messages from the chat (implicitly done, not shown above).
+- inherits most methods and attributes required by `create_open()`. Just implement `on_message()` and you are done.
+
+`on_message()` is called whenever a chat message arrives. How messages are distributed to the correct object is done by the library. You don't have to worry about it.
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
@@ -414,9 +459,39 @@ print('Listening ...')
 loop.run_forever()
 ```
 
-#### How about `DelegatorBot`?
+#### Skeleton for `DelegatorBot`
 
-Again, it is very similar to the traditional version. Please refer to the examples: **[Guess-a-number](#guess-a-number)**, and **[Chatbox](#chatbox)**.
+I have re-done the `MessageCounter` example here. Again, it is very similar to the [traditional version](#advanced).
+
+```python
+import sys
+import asyncio
+import telepot
+from telepot.delegate import per_chat_id
+from telepot.async.delegate import create_open
+
+class MessageCounter(telepot.helper.ChatHandler):
+    def __init__(self, seed_tuple, timeout):
+        super(MessageCounter, self).__init__(seed_tuple, timeout)
+        self._count = 0
+
+    @asyncio.coroutine
+    def on_message(self, msg):
+        self._count += 1
+        yield from self.sender.sendMessage(self._count)
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.async.DelegatorBot(TOKEN, [
+    (per_chat_id(), create_open(MessageCounter, timeout=10)),
+])
+
+loop = asyncio.get_event_loop()
+loop.create_task(bot.messageLoop())
+print('Listening ...')
+
+loop.run_forever()
+```
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
