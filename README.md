@@ -549,19 +549,21 @@ By the way, I just discovered a Python **[emoji](https://pypi.python.org/pypi/em
 
 #### Message Counter
 
-Count number of messages a user has sent the bot. It illustrates the basic use of `DelegateBot` and `ChatHandler`.
+Counts number of messages a user has sent. Illustrates the basic usage of `DelegateBot` and `ChatHandler`.
 
-**[Source »](https://github.com/nickoala/telepot/blob/master/examples/counter.py)**  
+**[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/counter.py)**  
+**[Async version »](https://github.com/nickoala/telepot/blob/master/examples/countera.py)**
 
 <a id="guess-a-number"></a>
 #### Guess-a-number
 
-1. The bot randomly picks an integer between 0-100. 
-2. You make a guess. 
-3. The bot tells you to go higher or lower.
-4. Repeat step 2 and 3, until guess is correct.
+1. Send the bot anything to start a game.
+2. The bot randomly picks an integer between 0-99.
+3. You make a guess.
+4. The bot tells you to go higher or lower.
+5. Repeat step 3 and 4, until guess is correct.
 
-This example is able to serve many players at once. It illustrates the use of `DelegateBot` and how to subclass from `ChatHandler`, two very useful techniques beyond simple programs.
+This example is able to serve many players at once. It illustrates the usage of `DelegateBot` and `ChatHandle`.
 
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/guess.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/guessa.py)**
