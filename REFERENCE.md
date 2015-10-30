@@ -43,6 +43,8 @@
 <a id="telepot-Bot"></a>
 ### `telepot.Bot`
 
+*Subclass:* [`telepot.SpeakerBot`](#telepot-SpeakerBot)
+
 This class is mostly a wrapper around Telegram Bot API methods, and is the most ancient part of telepot.
 
 Aside from `downloadFile()` and `notifyOnMessage()`, all methods are straight mappings from **[Telegram Bot API](https://core.telegram.org/bots/api)**. No point to duplicate all the details here. I only give brief descriptions below, and encourage you to visit the underlying API's documentations. Full power of the Bot API can be exploited only by understanding the API itself.
@@ -347,7 +349,10 @@ while 1:
 <a id="telepot-SpeakerBot"></a>
 ### `telepot.SpeakerBot`
 
-Subclass of `Bot`. Exposes a `Microphone` and lets you create `Listener`s who listen to that microphone. You don't have to deal with this class directly, if `DelegateBot` and `ChatHandler` satisfy your needs.
+*Superclass:* [`telepot.Bot`](#telepot-Bot)  
+*Subclass:* [`telepot.DelegatorBot`](#telepot-DelegatorBot)
+
+Exposes a `Microphone` and lets you create `Listener`s who listen to that microphone. You don't have to deal with this class directly, if `DelegateBot` satisfies your needs.
 
 **SpeakerBot(token)**
 
@@ -362,7 +367,9 @@ Returns a `Listener` object that listens to the `mic`.
 <a id="telepot-DelegatorBot"></a>
 ### `telepot.DelegatorBot`
 
-Subclass of `SpeakerBot`. Can spawn delegates according to *delegation patterns* specified in the constructor.
+*Superclass:* [`telepot.SpeakerBot`](#telepot-SpeakerBot)
+
+Can spawn delegates according to *delegation patterns* specified in the constructor.
 
 **DelegatorBot(token, delegation_patterns)**
 
@@ -420,6 +427,8 @@ bot = telepot.DelegatorBot(TOKEN, [
 ])
 bot.notifyOnMessage(run_forever=True)
 ```
+
+Thanks to **[Tornado](http://www.tornadoweb.org/)** for inspiration.
 
 <a id="telepot-functions"></a>
 ### Functions in `telepot` module
@@ -501,6 +510,8 @@ Puts `msg` into each listener's message queue.
 
 <a id="telepot-helper-Listener"></a>
 ### `telepot.helper.Listener`
+
+*Subclass:* [`telepot.async.helper.Listener`](#telepot-async-helper-Listener)
 
 Used to suspend execution until a certain message appears. Users can specify how to "match" for messages in the `capture()` method.
 
@@ -641,6 +652,8 @@ Parameters:
 <a id="telepot-helper-ListenerContext"></a>
 ### `telepot.helper.ListenerContext`
 
+*Subclass:* [`telepot.helper.ChatContext`](#telepot-helper-ChatContext) [`telepot.helper.Monitor`](#telepot-helper-Monitor)
+
 **ListenerContext(bot, context_id)**
 
 Parameters:
@@ -655,6 +668,9 @@ This object exposes these properties:
 <a id="telepot-helper-ChatContext"></a>
 ### `telepot.helper.ChatContext`
 
+*Superclass:* [`telepot.helper.ListenerContext`](#telepot-helper-ListenerContext)  
+*Subclass:* [`telepot.helper.ChatHandler`](#telepot-helper-ChatHandler)
+
 **ChatContext(bot, context_id, chat_id)**
 
 Parameters:
@@ -668,6 +684,8 @@ This object exposes these properties:
 
 <a id="telepot-helper-Monitor"></a>
 ### `telepot.helper.Monitor`
+
+*Superclass:* [`telepot.helper.ListenerContext`](#telepot-helper-ListenerContext)
 
 How to use this class:
 
@@ -727,6 +745,8 @@ Raises a `StopListening` exception, causing this object to exit.
 
 <a id="telepot-helper-ChatHandler"></a>
 ### `telepot.helper.ChatHandler`
+
+*Superclass:* [`telepot.helper.ChatContext`](#telepot-helper-ChatContext)
 
 How to use this class:
 
@@ -889,6 +909,8 @@ If you find this part of documentations wanting, always refer back to the tradit
 
 <a id="telepot-async-Bot"></a>
 ### `telepot.async.Bot`
+
+*Subclass:* [`telepot.async.SpeakerBot`](#telepot-async-SpeakerBot)
 
 **Bot(token, loop=None)**
 
@@ -1060,7 +1082,10 @@ loop.run_forever()
 <a id="telepot-async-SpeakerBot"></a>
 ### `telepot.async.SpeakerBot`
 
-Subclass of `telepot.async.Bot`. Exposes a `Microphone` and lets you create `Listener`s who listen to that microphone. You don't have to deal with this class directly, if `DelegateBot` and `ChatHandler` satisfy your needs.
+*Superclass:* [`telepot.async.Bot`](#telepot-async-Bot)  
+*Subclass:* [`telepot.async.DelegatorBot`](#telepot-async-DelegatorBot)
+
+Exposes a `Microphone` and lets you create `Listener`s who listen to that microphone. You don't have to deal with this class directly, if `DelegateBot` and `ChatHandler` satisfy your needs.
 
 **SpeakerBot(token)**
 
@@ -1075,7 +1100,9 @@ Returns a `Listener` object that listens to the `mic`.
 <a id="telepot-async-DelegatorBot"></a>
 ### `telepot.async.DelegatorBot`
 
-Subclass of `telepot.async.SpeakerBot`. Can create tasks according to *delegation patterns* specified in the constructor.
+*Superclass:* [`telepot.async.SpeakerBot`](#telepot-async-SpeakerBot)
+
+Can create tasks according to *delegation patterns* specified in the constructor.
 
 Unlike its traditional counterpart, this class uses **coroutine** and **task** to achieve delegation. To understand the remaining discussions, you have to understand asyncio's [tasks and coroutines](https://docs.python.org/3/library/asyncio-task.html), especially the difference between a *coroutine function* and a *coroutine object*.
 
@@ -1168,6 +1195,8 @@ Puts `msg` into each listener's message queue.
 
 <a id="telepot-async-helper-Listener"></a>
 ### `telepot.async.helper.Listener`
+
+*Superclass:* [`telepot.helper.Listener`](#telepot-helper-Listener)
 
 Used to suspend execution until a certain message appears. Users can specify how to "match" for messages in the `capture()` method. See `telepot.helper.Listener` for details.
 
