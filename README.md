@@ -6,8 +6,16 @@
 **[The Advanced](#advanced)**  
 **[Async Version](#async)** (Python 3.4.3 or newer)  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
+**[Mailing List](https://groups.google.com/forum/#!forum/telepot)**  
 **[Examples](#examples)**  
-**[Mailing List](https://groups.google.com/forum/#!forum/telepot)**
+- [Dicey Clock](#examples-dicey-clock)
+- [Skeletons](#examples-skeletons)
+- [Indoor climate monitor](#examples-indoor)
+- [IP Cam using Telegram as DDNS](#examples-ipcam)
+- [Emodi - an Emoji Unicode Decoder](#examples-emodi)
+- [Message Counter](#examples-message-counter)
+- [Guess-a-number](#examples-guess-a-number)
+- [Chatbox - a Mailbox for Chats](#examples-chatbox)
 
 ### Recent changes
 
@@ -498,6 +506,7 @@ loop.run_forever()
 <a id="examples"></a>
 ## Examples
 
+<a id="examples-dicey-clock"></a>
 #### Dicey Clock
 
 [Here is a tutorial](http://www.instructables.com/id/Set-up-Telegram-Bot-on-Raspberry-Pi/) teaching you how to setup a bot on Raspberry Pi. This simple bot does nothing much but accepts two commands:
@@ -507,7 +516,8 @@ loop.run_forever()
 
 **[Source »](https://github.com/nickoala/telepot/blob/master/examples/diceyclock.py)**
 
-#### Skeleton
+<a id="examples-skeletons"></a>
+#### Skeletons
 
 A starting point for your telepot programs.
 
@@ -516,6 +526,7 @@ A starting point for your telepot programs.
 **[Async version 1 »](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)**  
 **[Async version 2 »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_extend.py)**
 
+<a id="examples-indoor"></a>
 #### Indoor climate monitor
 
 Running on a Raspberry Pi with a few sensors attached, this bot accepts these commands:
@@ -527,6 +538,7 @@ Running on a Raspberry Pi with a few sensors attached, this bot accepts these co
 
 **[Source »](https://github.com/nickoala/sensor/blob/master/examples/indoor.py)**
 
+<a id="examples-ipcam"></a>
 #### IP Cam using Telegram as DDNS
 
 Running on a Raspberry Pi with a camera module attached, this bot accepts these commands:
@@ -536,6 +548,7 @@ Running on a Raspberry Pi with a camera module attached, this bot accepts these 
 
 **[Project page »](https://github.com/nickoala/ipcam)**
 
+<a id="examples-emodi"></a>
 #### Emodi - an Emoji Unicode Decoder
 
 Sooner or later, you want your bots to be able to send emoji. You may look up the unicode on the web, or from now on, you may just fire up Telegram and ask **[Emodi :blush:](https://telegram.me/emodibot)**
@@ -547,6 +560,7 @@ I am running this bot on a CentOS server. You should be able to talk to it 24/7.
 
 By the way, I just discovered a Python **[emoji](https://pypi.python.org/pypi/emoji/)** package. Use it.
 
+<a id="examples-message-counter"></a>
 #### Message Counter
 
 Counts number of messages a user has sent. Illustrates the basic usage of `DelegateBot` and `ChatHandler`.
@@ -554,7 +568,7 @@ Counts number of messages a user has sent. Illustrates the basic usage of `Deleg
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/counter.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/countera.py)**
 
-<a id="guess-a-number"></a>
+<a id="examples-guess-a-number"></a>
 #### Guess-a-number
 
 1. Send the bot anything to start a game.
@@ -568,7 +582,7 @@ This example is able to serve many players at once. It illustrates the usage of 
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/guess.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/guessa.py)**
 
-<a id="chatbox"></a>
+<a id="examples-chatbox"></a>
 #### Chatbox - a Mailbox for Chats
 
 1. People send messages to your bot.
