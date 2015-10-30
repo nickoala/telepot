@@ -4,6 +4,12 @@ import telepot
 from telepot.delegate import per_chat_id
 from telepot.async.delegate import create_open
 
+"""
+$ python3.4 countera.py <token>
+
+Count number of messages. Start over if silent for 10 seconds.
+"""
+
 class MessageCounter(telepot.helper.ChatHandler):
     def __init__(self, seed_tuple, timeout):
         super(MessageCounter, self).__init__(seed_tuple, timeout)
@@ -25,4 +31,3 @@ loop.create_task(bot.messageLoop())
 print('Listening ...')
 
 loop.run_forever()
-
