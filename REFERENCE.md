@@ -395,7 +395,7 @@ This class implements the above logic in its `handle` method. Once you supply a 
 
 Even if you use a webhook and don't need `notifyOnMessage()`, you may always call `bot.handle(msg)` directly to take advantage of the above logic, if you find it useful.
 
-The power of delegation is most easily exploited when used in combination with the `telepot.delegate` module (which contains a number of ready-made *seed_calculating_functions* and *delegate_producing_functions*) and the `ChatHandler` class (which provides a connection-like interface to deal with an individual chat).
+The power of delegation is most easily exploited when used in combination with the `telepot.delegate` module (which contains a number of ready-made *seed_calculating_functions* and *delegate_producing_functions*) and the `ChatHandler` class (which provides a connection-like interface to deal with individual chats).
 
 Here is a bot that counts how many messages it has received in a chat. If no message is received after 10 seconds, it starts over. The counting is done *per chat* - that's the important point.
 
@@ -853,7 +853,7 @@ The object of `cls` must have these defined:
 - method `on_close(exception)`
 - attribute `listener` which is a `Listener` object
 
-An easy way to fulfilled these conditions is to extend from `Monitor` or `ChatHandler`. See these two classes for examples.
+An easy way to fulfilled these requirements is to extend from `Monitor` or `ChatHandler`. See these two classes for examples.
 
 Here is the source for reference:
 
@@ -1096,7 +1096,9 @@ Parameters:
 
 - If the seed is `None`, nothing is done.
 
-*coroutine_producing_function* is a function that takes one argument - a tuple of *(bot, message, seed)* - and returns a *coroutine object*, which will be used to create a task.
+**In essence, only one task is running for a given seed, if that seed is a hashable.**
+
+*coroutine_producing_function* is a function that takes one argument - a tuple of *(bot, message, seed)* - and returns a coroutine *object*, which will be used to create a task.
 
 All *seed_calculating_functions* are evaluated in order. One message may cause multiple tasks to be created.
 
@@ -1104,9 +1106,39 @@ This class implements the above logic in its `handle` method. Once you supply a 
 
 Even if you use a webhook and don't need `messageLoop()`, you may always call `bot.handle(msg)` directly to take advantage of the above logic, if you find it useful.
 
-The `telepot.delegate` module has a number of functions that help you define *seed_calculating_functions*.
+The power of delegation is most easily exploited when used in combination with the `telepot.delegate` module (which contains a number of ready-made *seed_calculating_functions*), the `telepot.async.delegate` module (which contains a number of ready-made *coroutine_producing_functions*), and the `ChatHandler` class (which provides a connection-like interface to deal with individual chats).
 
-The `telepot.async.delegate` module has a number of functions that help you define *coroutine_producing_functions*.
+Here is a bot that counts how many messages it has received in a chat. If no message is received after 10 seconds, it starts over. The counting is done *per chat* - that's the important point.
+
+```python
+import sys
+import asyncio
+import telepot
+from telepot.delegate import per_chat_id
+from telepot.async.delegate import create_open
+
+class MessageCounter(telepot.helper.ChatHandler):
+    def __init__(self, seed_tuple, timeout):
+        super(MessageCounter, self).__init__(seed_tuple, timeout)
+        self._count = 0
+
+    @asyncio.coroutine
+    def on_message(self, msg):
+        self._count += 1
+        yield from self.sender.sendMessage(self._count)
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.async.DelegatorBot(TOKEN, [
+    (per_chat_id(), create_open(MessageCounter, timeout=10)),
+])
+
+loop = asyncio.get_event_loop()
+loop.create_task(bot.messageLoop())
+print('Listening ...')
+
+loop.run_forever()
+```
 
 <a id="telepot-async-helper"></a>
 ## `telepot.async.helper` module (Python 3.4.3 or newer)
@@ -1137,7 +1169,7 @@ Puts `msg` into each listener's message queue.
 <a id="telepot-async-helper-Listener"></a>
 ### `telepot.async.helper.Listener`
 
-Used to suspend execution until a certain message appears.
+Used to suspend execution until a certain message appears. Users can specify how to "match" for messages in the `capture()` method. See `telepot.helper.Listener` for details.
 
 Normally, you should not need to create this object, but obtain it using `SpeakerBot.create_listener()` or access it with `ChatHandler.listener`.
 
@@ -1145,11 +1177,7 @@ The only difference with traditional `telepot.helper.Listener` is that it uses `
 
 **Listener(microphone, queue)**
 
-*coroutine* **wait(\*\*kwargs)**
-
-Wait for a "matched" message, and returns that message.
-
-**kwargs** is used to select parts of message to match against. See `telepot.helper.Listener` for syntax.
+*coroutine* **wait()**
 
 <a id="telepot-async-delegate"></a>
 ## `telepot.async.delegate` module (Python 3.4.3 or newer)
@@ -1180,3 +1208,22 @@ def create_run(cls, *args, **kwargs):
         return j.run()
     return f
 ```
+
+<a id="telepot-async-delegate-create-open"></a>
+**create_open(cls, \*args, \*\*kwargs)**
+
+Returns a coroutine-producing-function that creates an object of `cls`, then engages it in the following manner:
+- call its `open(initial_msg, seed)` method
+- in an infinite loop:
+  - call its `listener.wait()`, suspended until the next message captured
+  - call its `on_message(msg)` method
+- if any exception is raised, call its `close(exception)` method, then exit
+
+The object of `cls` must have these defined:
+- a constructor that takes a *seed_tuple* as the first argument, followed by those explicitly supplied in the `create_open()` call
+- method (regular or coroutine) `open(initial_msg, seed)`
+- method (regular or coroutine) `on_message(msg)`
+- method (regular or coroutine) `on_close(exception)`
+- attribute `listener` which is a `Listener` object
+
+An easy way to fulfilled these requirements is to extend from `Monitor` or `ChatHandler`. See these two classes for examples.
