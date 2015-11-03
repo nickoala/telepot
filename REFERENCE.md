@@ -379,7 +379,7 @@ Parameters:
 - **token**: the bot's token
 - **delegation_patterns**: a list of *(seed_calculating_function, delegate_producing_function)* tuples
 
-*seed_calculating_function* is a function that takes one argument - the message being processed - and returns a *seed*. The seed determines whether and when the following *delegate_producing_function* is called.
+*seed_calculating_function* is a function that takes one argument - the message being processed - and returns a *seed*. The seed determines whether the following *delegate_producing_function* is called.
 
 - If the seed is a *hashable* (e.g. number, string, tuple), the bot looks for a *delegate* associated with the seed.
   - If such a delegate exists and is alive, it is assumed that the message will be picked up by the delegate. The bot does nothing.
@@ -401,7 +401,7 @@ All *seed_calculating_functions* are evaluated in order. One message may cause m
 
 This class implements the above logic in its `handle` method. Once you supply a list of *(seed_calculating_function, delegate_producing_function)* pairs to the constructor and invoke `notifyOnMessage()`, the above logic will be executed for every message received.
 
-Even if you use a webhook and don't need `notifyOnMessage()`, you may always call `bot.handle(msg)` directly to take advantage of the above logic, if you find it useful.
+**Even if you use a webhook** and don't need `notifyOnMessage()`, you may always call `bot.handle(msg)` directly to take advantage of the above logic, if you find it useful.
 
 The power of delegation is most easily exploited when used in combination with the `telepot.delegate` module (which contains a number of ready-made *seed_calculating_functions* and *delegate_producing_functions*) and the `ChatHandler` class (which provides a connection-like interface to deal with individual chats).
 
@@ -1144,7 +1144,7 @@ Parameters:
 - **delegation_patterns**: a list of *(seed_calculating_function, coroutine_producing_function)* tuples
 - **loop**: the event loop
 
-*seed_calculating_function* is a function that takes one argument - the message being processed - and returns a *seed*. The seed determines whether and when the following *coroutine_producing_function* is called.
+*seed_calculating_function* is a function that takes one argument - the message being processed - and returns a *seed*. The seed determines whether the following *coroutine_producing_function* is called.
 
 - If the seed is a *hashable* (e.g. number, string, tuple), the bot looks for a task associated with the seed.
   - If such a task exists and is not done, it is assumed that the message will be picked up by the task. The bot does nothing.
@@ -1162,7 +1162,7 @@ All *seed_calculating_functions* are evaluated in order. One message may cause m
 
 This class implements the above logic in its `handle` method. Once you supply a list of *(seed_calculating_function, coroutine_producing_function)* pairs to the constructor and invoke `messageLoop()`, the above logic will be executed for every message received.
 
-Even if you use a webhook and don't need `messageLoop()`, you may always call `bot.handle(msg)` directly to take advantage of the above logic, if you find it useful.
+**Even if you use a webhook** and don't need `messageLoop()`, you may always call `bot.handle(msg)` directly to take advantage of the above logic, if you find it useful.
 
 The power of delegation is most easily exploited when used in combination with the `telepot.delegate` module (which contains a number of ready-made *seed_calculating_functions*), the `telepot.async.delegate` module (which contains a number of ready-made *coroutine_producing_functions*), and the `ChatHandler` class (which provides a connection-like interface to deal with individual chats).
 
