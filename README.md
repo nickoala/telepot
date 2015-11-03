@@ -349,7 +349,7 @@ Noteworthy are two classes: `DelegatorBot` and `MessageCounter`. Let me explain 
 
 It is a `Bot` with the newfound ability to spawn *delegates*. Its constructor takes a list of tuples telling it when and how to spawn delegates. In the example above, it is spawning one `MessageCounter` *per chat id*.
 
-Technically, `per_chat_id()` returns a *seed-calculating-function*, and `create_open()` returns a *delegate-producing-function*. I won't get into details here. You can [read the reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md#telepot-delegate) for that.
+Technically, `per_chat_id()` returns a *seed-calculating-function*, and `create_open()` returns a *delegate-producing-function*. I won't get into details here. You can [read the reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md#telepot-DelegatorBot) for that.
 
 Simply put, a *seed-calculating-function* determines **when** to spawn a delegate, while a *delegate-producing-function* determines **how** to spawn one. The default manifestation of a delegate is a thread, although you can override that.
 
