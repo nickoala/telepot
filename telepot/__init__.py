@@ -489,9 +489,9 @@ class SpeakerBot(Bot):
 
 
 class DelegatorBot(SpeakerBot):
-    def __init__(self, token, seed_delegates):
+    def __init__(self, token, delegation_patterns):
         super(DelegatorBot, self).__init__(token)
-        self._delegate_records = [s+({},) for s in seed_delegates]
+        self._delegate_records = [p+({},) for p in delegation_patterns]
 
     def _startable(self, delegate):
         return ((hasattr(delegate, 'start') and inspect.ismethod(delegate.start)) and

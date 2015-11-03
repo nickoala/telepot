@@ -205,8 +205,8 @@ class Bot(object):
 
 
 class SpeakerBot(Bot):
-    def __init__(self, token):
-        super(SpeakerBot, self).__init__(token)
+    def __init__(self, token, loop=None):
+        super(SpeakerBot, self).__init__(token, loop)
         self._mic = telepot.async.helper.Microphone()
 
     @property
@@ -221,9 +221,9 @@ class SpeakerBot(Bot):
 
 
 class DelegatorBot(SpeakerBot):
-    def __init__(self, token, seed_delegates):
-        super(DelegatorBot, self).__init__(token)
-        self._delegate_records = [s+({},) for s in seed_delegates]
+    def __init__(self, token, delegation_patterns, loop=None):
+        super(DelegatorBot, self).__init__(token, loop)
+        self._delegate_records = [p+({},) for p in delegation_patterns]
 
     def handle(self, msg):
         self._mic.send(msg)

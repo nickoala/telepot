@@ -1,6 +1,7 @@
 import time
 import traceback
 import threading
+import logging
 import telepot
 import telepot.filtering
 from functools import partial
@@ -173,6 +174,38 @@ class StopListening(telepot.TelepotException):
         return self.args[1]
 
 
+def openable(cls):
+    def open(self, *arg, **kwargs):
+        pass
+
+    def on_message(self, *arg, **kwargs):
+        raise NotImplementedError()
+
+    def on_close(self, exception):
+        logging.error('on_close() called due to %s: %s', type(exception).__name__, exception)
+
+    def close(self, code=None, reason=None):
+        raise StopListening(code, reason)
+
+    @property
+    def listener(self):
+        raise NotImplementedError()
+
+    def ensure_method(name, fn):
+        if getattr(cls, name, None) is None:
+            setattr(cls, name, fn)
+
+    # set attribute if no such attribute
+    ensure_method('open', open)
+    ensure_method('on_message', on_message)
+    ensure_method('on_close', on_close)
+    ensure_method('close', close)
+    ensure_method('listener', listener)
+
+    return cls
+
+
+@openable
 class Monitor(ListenerContext):
     def __init__(self, seed_tuple, capture):
         bot, initial_msg, seed = seed_tuple
@@ -181,34 +214,11 @@ class Monitor(ListenerContext):
         for c in capture:
             self.listener.capture(**c)
 
-    def open(self, initial_msg, seed):
-        pass
 
-    def on_message(self, msg):
-        raise NotImplementedError()
-
-    def on_close(self, exception):
-        pass
-
-    def close(self, code=None, reason=None):
-        raise StopListening(code, reason)
-
-
+@openable
 class ChatHandler(ChatContext):
     def __init__(self, seed_tuple, timeout):
         bot, initial_msg, seed = seed_tuple
         super(ChatHandler, self).__init__(bot, seed, initial_msg['chat']['id'])
         self.listener.set_options(timeout=timeout)
         self.listener.capture(chat__id=self.chat_id)
-
-    def open(self, initial_msg, seed):
-        pass
-
-    def on_message(self, msg):
-        raise NotImplementedError()
-
-    def on_close(self, exception):
-        pass
-
-    def close(self, code=None, reason=None):
-        raise StopListening(code, reason)
