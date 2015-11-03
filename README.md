@@ -584,7 +584,7 @@ Counts number of messages a user has sent. Illustrates the basic usage of `Deleg
 4. The bot tells you to go higher or lower.
 5. Repeat step 3 and 4, until guess is correct.
 
-This example is able to serve many players at once. It illustrates the usage of `DelegateBot` and `ChatHandle`.
+This example is able to serve many players at once. It illustrates the usage of `DelegateBot` and `ChatHandler`.
 
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/guess.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/guessa.py)**
