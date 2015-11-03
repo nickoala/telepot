@@ -19,6 +19,12 @@
 
 ### Recent changes
 
+**4.1 (2015-11-03)**
+
+- Added `openable()` class decorator
+- Default `on_close()` prints out exception
+- Async `SpeakerBot` and `DelegatorBot` constructor accepts `loop` parameter
+
 **4.0 (2015-10-29)**
 
 - Revamped `Listener` and `ChatHandler` architecture
@@ -29,11 +35,6 @@
 - Conforms to latest Telegram Bot API as of [October 8, 2015](https://core.telegram.org/bots/api-changelog)
 - Added `Chat` class, removed `GroupChat`
 - Added `glance2()`
-
-**3.1 (2015-10-08)**
-
-- Added `per_chat_id_except()`
-- Added lock to `Microphone`, make it thread-safe
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
@@ -219,6 +220,12 @@ Enough about receiving messages. Sooner or later, your bot will want to send *yo
 
 ```python
 >>> bot.sendMessage(999999999, 'Good morning!')
+```
+
+After being added as an **administrator** to a channel, the bot can send messages to the channel:
+
+```python
+>>> bot.sendMessage('@channelusername', 'Hi, everybody!')
 ```
 
 #### Send a custom keyboard
