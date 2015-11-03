@@ -14,6 +14,7 @@
 - [ChatContext](#telepot-helper-ChatContext)
 - [Monitor](#telepot-helper-Monitor)
 - [ChatHandler](#telepot-helper-ChatHandler)
+- [@openable](#telepot-helper-openable)
 
 **[telepot.delegate](#telepot-delegate)**
 - [per_chat_id](#telepot-delegate-per-chat-id)
@@ -733,7 +734,7 @@ Called when initially spawned.
 
 **on_message(msg)**
 
-Called when a message is captured by this object's `listener`.
+Called when a message is captured by this object's `listener`. Subclass must implement.
 
 **on_close(exception)**
 
@@ -792,7 +793,7 @@ Called when initially spawned.
 
 **on_message(msg)**
 
-Called when a message is captured by this object's `listener`.
+Called when a message is captured by this object's `listener`. Subclass must implement.
 
 **on_close(exception)**
 
@@ -801,6 +802,35 @@ Called just before this object is about to exit.
 **close(code=None, reason=None)**
 
 Raises a `StopListening` exception, causing this object to exit.
+
+<a id="telepot-helper-openable"></a>
+### `telepot.helper.openable` class decorator
+
+This class decorator supplies methods required by [`create_open()`](#telepot-delegate-create-open), if they are not defined by the class. It simplifies efforts to create a class to be used with `create_open()`.
+
+The following methods (and their contents) are supplied, if they are not defined by the class already:
+
+- method **open(initial_msg, seed)** - empty
+- method **on_message(msg)** - raise a `NotImplementedError`
+- method **on_close(exception)** - log the exception (default: print to `stderr`), better for development because the exception would not be swallowed silently.
+- method **close(code=None, reason=None)** - raise a `StopListening` exception, causing exit.
+- property **listener** - raise a `NotImplementedError`
+
+In other words, a class decorated by `@openable` still has to implement the method `on_message(msg)` and the property `listener`.
+
+The best demonstration of using `@openable` is actually the `Monitor` and `ChatHandler` class themselves. They inherit a `listener` property from their superclasses; the use of `@openable` fills in other methods, but leaves the `listener` property alone. Defining the class is only a matter of giving it a constructor.
+
+```python
+@openable
+class Monitor(ListenerContext):
+    def __init__(...):
+        ...
+
+@openable
+class ChatHandler(ChatContext):
+    def __init__(...):
+        ...
+```
 
 <a id="telepot-delegate"></a>
 ## `telepot.delegate` module
@@ -871,9 +901,9 @@ The object of `cls` must have these defined:
 - method `open(initial_msg, seed)`
 - method `on_message(msg)`
 - method `on_close(exception)`
-- attribute `listener` which is a `Listener` object
+- property `listener` which returns a `Listener` object
 
-An easy way to fulfilled these requirements is to extend from `Monitor` or `ChatHandler`. See these two classes for examples.
+An easy way to fulfilled these requirements is to extend from [`Monitor`](#telepot-helper-Monitor) or [`ChatHandler`](#telepot-helper-ChatHandler), or decorating a class with the [`@openable`](#telepot-helper-openable) class decorator.
 
 Here is the source for reference:
 
@@ -1253,6 +1283,6 @@ The object of `cls` must have these defined:
 - method (regular or coroutine) `open(initial_msg, seed)`
 - method (regular or coroutine) `on_message(msg)`
 - method (regular or coroutine) `on_close(exception)`
-- attribute `listener` which is a `Listener` object
+- property `listener` which returns a `Listener` object
 
-An easy way to fulfilled these requirements is to extend from `Monitor` or `ChatHandler`. See these two classes for examples.
+An easy way to fulfilled these requirements is to extend from [`Monitor`](#telepot-helper-Monitor) or [`ChatHandler`](#telepot-helper-ChatHandler), or decorating a class with the [`@openable`](#telepot-helper-openable) class decorator.
