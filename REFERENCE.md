@@ -1117,7 +1117,7 @@ loop.run_forever()
 
 Exposes a `Microphone` and lets you create `Listener`s who listen to that microphone. You don't have to deal with this class directly, if `DelegateBot` and `ChatHandler` satisfy your needs.
 
-**SpeakerBot(token)**
+**SpeakerBot(token, loop=None)**
 
 **mic**
 
@@ -1136,12 +1136,13 @@ Can create tasks according to *delegation patterns* specified in the constructor
 
 Unlike its traditional counterpart, this class uses **coroutine** and **task** to achieve delegation. To understand the remaining discussions, you have to understand asyncio's [tasks and coroutines](https://docs.python.org/3/library/asyncio-task.html), especially the difference between a coroutine *function* and a coroutine *object*.
 
-**DelegatorBot(token, delegation_patterns)**
+**DelegatorBot(token, delegation_patterns, loop=None)**
 
 Parameters:
 
 - **token**: the bot's token
 - **delegation_patterns**: a list of *(seed_calculating_function, coroutine_producing_function)* tuples
+- **loop**: the event loop
 
 *seed_calculating_function* is a function that takes one argument - the message being processed - and returns a *seed*. The seed determines whether and when the following *coroutine_producing_function* is called.
 
