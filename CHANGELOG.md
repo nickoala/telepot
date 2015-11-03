@@ -1,5 +1,11 @@
 # telepot changelog
 
+## 4.1 (2015-11-03)
+
+- Added `openable()` class decorator
+- Default `on_close()` prints out exception
+- Async `SpeakerBot` and `DelegatorBot` constructor accepts `loop` parameter
+
 ## 4.0 (2015-10-29)
 
 - Revamped `Listener` and `ChatHandler` architecture
