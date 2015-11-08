@@ -376,7 +376,7 @@ Raspbian does not come with Python 3.4. You have to compile it yourself.
 ```
 $ sudo apt-get update
 $ sudo apt-get upgrade
-$ sudo apt-get install libssl-dev openssl
+$ sudo apt-get install libssl-dev openssl libreadline-dev
 $ cd ~
 $ wget https://www.python.org/ftp/python/3.4.3/Python-3.4.3.tgz
 $ tar zxf Python-3.4.3.tgz
