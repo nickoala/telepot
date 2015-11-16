@@ -56,7 +56,7 @@ $ sudo pip install telepot
 $ sudo pip install telepot --upgrade  # UPGRADE
 ```
 
-If, for any reason, `pip` is not available, you may try the following:
+If `pip` is not available, try the following:
 
 ```
 $ wget https://pypi.python.org/packages/source/t/telepot/telepot-4.1.zip
