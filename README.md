@@ -49,11 +49,21 @@ Telepot has been tested on **Raspbian** and **CentOS**, using **Python 2.7 - 3.4
 <a id="installation"></a>
 ## Installation
 
-`sudo apt-get install python-pip` to install the Python package manager.
+```
+$ sudo apt-get install python-pip
+$ sudo pip install telepot
 
-`sudo pip install telepot` to install the telepot library.
+$ sudo pip install telepot --upgrade  # UPGRADE
+```
 
-`sudo pip install telepot --upgrade` to upgrade.
+If, for any reason, `pip` is not available, you may try the following:
+
+```
+$ wget https://pypi.python.org/packages/source/t/telepot/telepot-4.1.zip
+$ unzip telepot-4.1.zip
+$ cd telepot-4.1
+$ python setup.py install
+```
 
 <a id="basics"></a>
 ## The Basics
