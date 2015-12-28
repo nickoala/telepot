@@ -1,5 +1,9 @@
 # telepot changelog
 
+## 5.0 (2015-12-28)
+
+- Added webhook interface
+
 ## 4.1 (2015-11-03)
 
 - Added `openable()` class decorator
