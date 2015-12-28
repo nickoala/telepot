@@ -5,6 +5,7 @@
 **[The Intermediate](#intermediate)**  
 **[The Advanced](#advanced)**  
 **[Async Version](#async)** (Python 3.4.3 or newer)  
+**[Webhook Interface](#webhook)**  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
 **[Mailing List](https://groups.google.com/forum/#!forum/telepot)**  
 **[Examples](#examples)**  
@@ -16,25 +17,19 @@
 - [Message Counter](#examples-message-counter)
 - [Guess-a-number](#examples-guess-a-number)
 - [Chatbox - a Mailbox for Chats](#examples-chatbox)
+- [Webhooks](#examples-webhooks)
 
 ### Recent changes
+
+**5.0 (2015-12-28)**
+
+- Added webhook interface
 
 **4.1 (2015-11-03)**
 
 - Added `openable()` class decorator
 - Default `on_close()` prints out exception
 - Async `SpeakerBot` and `DelegatorBot` constructor accepts `loop` parameter
-
-**4.0 (2015-10-29)**
-
-- Revamped `Listener` and `ChatHandler` architecture
-- Added `create_open()`
-
-**3.2 (2015-10-13)**
-
-- Conforms to latest Telegram Bot API as of [October 8, 2015](https://core.telegram.org/bots/api-changelog)
-- Added `Chat` class, removed `GroupChat`
-- Added `glance2()`
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
@@ -520,6 +515,11 @@ loop.run_forever()
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
+<a id="webhook"></a>
+## Webhook Interface
+
+Coming soon ...
+
 <a id="examples"></a>
 ## Examples
 
@@ -619,3 +619,13 @@ This example only handles text messages and stores messages in memory. If the bo
 
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/chatbox_nodb.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/chatboxa_nodb.py)**
+
+<a id="examples-webhooks"></a>
+#### Webhooks
+
+A few examples from above are duplicated, by using webhooks. For traditional Python, the web frontend used is **[Flask](http://flask.pocoo.org/)**. For asynchronous Python, **[aiohttp](http://aiohttp.readthedocs.org/en/stable/)**.
+
+**[Skeleton + Flask](https://github.com/nickoala/telepot/blob/master/examples/webhook_flask_skeleton.py)**  
+**[Message Counter + Flask](https://github.com/nickoala/telepot/blob/master/examples/webhook_flask_counter.py)**  
+**[Async Skeleton + aiohttp](https://github.com/nickoala/telepot/blob/master/examples/webhook_aiohttp_skeletona.py)**  
+**[Async Message Counter + aiohttp](https://github.com/nickoala/telepot/blob/master/examples/webhook_aiohttp_countera.py)**  
