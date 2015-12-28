@@ -8,15 +8,13 @@ import traceback
 import telepot
 
 """
-This script tests these, in sequence:
+This script tests:
 - setWebhook() and getUpdates(), and make sure they are exclusive
 - sendZZZ() and sendChatAction() methods
 - getUserProfilePhotos()
-- switching message handlers by calling notifyOnMessage() a few times
-- receiving all types of messages, by asking user to produce each
 
 Run it by:
-$ python test.py <token> <user_id>
+$ python3.X test3.py <token> <user_id>
 
 It will assume the bot identified by <token>, and only communicate with the user identified by <user_id>.
 
@@ -29,14 +27,14 @@ Ctrl-C to kill it, then run the proper command again.
 
 def equivalent(data, nt):
     if type(data) is dict:
-        keys = data.keys()
+        keys = list(data.keys())
 
         # number of dictionary keys == number of non-None values in namedtuple?        
         if len(keys) != len([f for f in nt._fields if getattr(nt, f) is not None]):
             return False
 
         # map `from` to `from_`
-        fields = list(map(lambda k: k+'_' if k in ['from'] else k, keys))
+        fields = list([k+'_' if k in ['from'] else k for k in keys])
         
         return all(map(equivalent, [data[k] for k in keys], [getattr(nt, f) for f in fields]))
     elif type(data) is list:
@@ -46,20 +44,20 @@ def equivalent(data, nt):
 
 def examine(result, type):
     try:
-        print 'Examining %s ......' % type
+        print('Examining %s ......' % type)
 
         nt = telepot.namedtuple(result, type)
         assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
 
         if type == 'Message':
-            print 'Message glance2: %s' % str(telepot.glance2(result, long=True))
+            print('Message glance2: %s' % str(telepot.glance2(result, long=True)))
 
         pprint.pprint(result)
         pprint.pprint(nt)
-        print
+        print()
     except AssertionError:
         traceback.print_exc()
-        answer = raw_input('Do you want to continue? [y] ')
+        answer = input('Do you want to continue? [y] ')
         if answer != 'y':
             exit(1)
 
@@ -67,11 +65,11 @@ def send_everything_on_contact(msg):
     content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance2(msg, long=True)
 
     if chat_id != USER_ID:
-        print 'Unauthorized user:', msg['from']['id']
+        print('Unauthorized user:', msg['from']['id'])
         exit(1)
 
-    print 'Received message from ID: %d' % chat_id
-    print 'Start sending various messages ...'
+    print('Received message from ID: %d' % chat_id)
+    print('Start sending various messages ...')
 
     ##### forwardMessage
     
@@ -83,7 +81,7 @@ def send_everything_on_contact(msg):
     r = bot.sendMessage(chat_id, 'Hello, I am going to send you a lot of things.', reply_to_message_id=msg_id)
     examine(r, 'Message')
 
-    r = bot.sendMessage(chat_id, u'中文')
+    r = bot.sendMessage(chat_id, '中文')
     examine(r, 'Message')
 
     r = bot.sendMessage(chat_id, '*bold text*\n_italic text_\n[link](http://www.google.com)', parse_mode='Markdown')
@@ -124,15 +122,15 @@ def send_everything_on_contact(msg):
     ##### downloadFile, smaller than one chunk (65K)
     
     try:
-        print 'Downloading file to non-existent directory ...'
+        print('Downloading file to non-existent directory ...')
         bot.downloadFile(file_id, 'non-existent-dir/file')
     except:
-        print 'Error: as expected'
+        print('Error: as expected')
 
-    print 'Downloading file to down.1 ...'
+    print('Downloading file to down.1 ...')
     bot.downloadFile(file_id, 'down.1')
 
-    print 'Open down.2 and download to it ...'
+    print('Open down.2 and download to it ...')
     with open('down.2', 'wb') as down:
         bot.downloadFile(file_id, down)
 
@@ -186,7 +184,7 @@ def send_everything_on_contact(msg):
 
     ##### downloadFile, multiple chunks
 
-    print 'Downloading file to down.3 ...'
+    print('Downloading file to down.3 ...')
     bot.downloadFile(file_id, 'down.3')
 
     ##### sendVoice
@@ -213,68 +211,12 @@ def send_everything_on_contact(msg):
     ##### Done sending messages
 
     bot.sendMessage(chat_id, 'I am done.')
-    done.set()
 
 def get_user_profile_photos():
-    print 'Getting user profile photos ...'
+    print('Getting user profile photos ...')
 
     r = bot.getUserProfilePhotos(USER_ID)
     examine(r, 'UserProfilePhotos')
-
-def handle1(msg):
-    if msg['from']['id'] != USER_ID:
-        print 'Unauthorized user:', msg['from']['id']
-        return
-
-    print '1. Received message from ID: %d' % msg['from']['id']
-    print 'Content:', msg['text']
-
-def handle2(msg):
-    if msg['from']['id'] != USER_ID:
-        print 'Unauthorized user:', msg['from']['id']
-        return
-
-    print '^^2^^ Received message from ID: %d' % msg['from']['id']
-    print 'Content:', msg['text']
-
-def handle3(msg):
-    if msg['from']['id'] != USER_ID:
-        print 'Unauthorized user:', msg['from']['id']
-        return
-
-    print '-----3----- Received message from ID: %d' % msg['from']['id']
-    print 'Content:', msg['text']
-
-keep_active_thread_counter = True
-
-def print_active_thread_count():
-    global keep_active_thread_counter
-
-    while keep_active_thread_counter:
-        print 'Number of active threads: %d' % threading.active_count()
-        time.sleep(5)
-
-def switch_msg_handlers():
-    t = threading.Thread(target=print_active_thread_count)
-    t.daemon = True
-    t.start()
-
-    print 'I am listening with handle1() ...'
-    bot.notifyOnMessage(handle1)
-    time.sleep(30)
-
-    print 'I am listening with handle2() ...'
-    bot.notifyOnMessage(handle2, timeout=0)
-    time.sleep(30)
-
-    print 'I am listening with handle3() ...'
-    bot.notifyOnMessage(handle3)
-    time.sleep(30)
-
-    done.set()
-
-    global keep_active_thread_counter
-    keep_active_thread_counter = False
 
 expected_content_type = None
 content_type_iterator = iter([
@@ -289,63 +231,49 @@ def see_every_content_types(msg):
     from_id = msg['from']['id']
 
     if chat_id != USER_ID and from_id != USER_ID:
-        print 'Unauthorized user:', chat_id, from_id
+        print('Unauthorized user:', chat_id, from_id)
         return
 
     examine(msg, 'Message')
     try:
         if content_type == expected_content_type:
-            expected_content_type = content_type_iterator.next()
+            expected_content_type = next(content_type_iterator)
             bot.sendMessage(chat_id, 'Please give me a %s.' % expected_content_type)
         else:
             bot.sendMessage(chat_id, 'It is not a %s. Please give me a %s, please.' % (expected_content_type, expected_content_type))
     except StopIteration:
         # reply to sender because I am kicked from group already
         bot.sendMessage(from_id, 'Thank you. I am done.')
-        done.set()
 
 def ask_for_various_messages():
     bot.notifyOnMessage(see_every_content_types)
 
     global expected_content_type, content_type_iterator
-    expected_content_type = content_type_iterator.next()
+    expected_content_type = next(content_type_iterator)
 
     bot.sendMessage(USER_ID, 'Please give me a %s.' % expected_content_type)
 
 def test_webhook_getupdates_exclusive():
     bot.setWebhook('https://www.fake.com/fake', open('old.cert', 'rb'))
-    print 'Fake webhook set.'
+    print('Fake webhook set.')
     
     try:
         bot.getUpdates()
     except telepot.TelegramError as e:
-        print "%d: %s" % (e.error_code, e.description)
-        print 'As expected, getUpdates() produces an error.'
+        print("%d: %s" % (e.error_code, e.description))
+        print('As expected, getUpdates() produces an error.')
 
     bot.setWebhook()
-    print 'Fake webhook cancelled.'
+    print('Fake webhook cancelled.')
 
 
 TOKEN = sys.argv[1]
-USER_ID = long(sys.argv[2])
+USER_ID = int(sys.argv[2])
 
 bot = telepot.Bot(TOKEN)
 
 test_webhook_getupdates_exclusive()
-
-print 'Text me to start.'
-done = threading.Event()
-bot.notifyOnMessage(send_everything_on_contact)
-done.wait()
-
 get_user_profile_photos()
 
-done.clear()
-switch_msg_handlers()
-done.wait()
-
-done.clear()
-ask_for_various_messages()
-done.wait()
-
-print 'Test finished. Exit.'
+print('Text me to start.')
+bot.notifyOnMessage(send_everything_on_contact, run_forever=True)
