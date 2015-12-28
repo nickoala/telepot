@@ -526,7 +526,51 @@ loop.run_forever()
 <a id="webhook"></a>
 ## Webhook Interface
 
-Coming soon ...
+So far, we have been using `getUpdates()` to obtain new messages from Telegram servers - both `notifyOnMessage()` and `messageLoop()` call `getUpdates()` constantly under the hood. Another way to obtain new messages is through **[webhooks](https://core.telegram.org/bots/api#setwebhook)**, in which case Telegram servers will send an HTTPS POST request to an URL you specify, containing a JSON-serialized [Update](https://core.telegram.org/bots/api#update) object, whenever there is an update for the bot.
+
+Setting up a webhook is more complicated than using `getUpdates()` because:
+
+1. You have to obtain an URL
+2. You have to obtain and set up an SSL certificate for the URL
+3. You have to set up a web server to handle the POST requests coming from Telegram servers
+
+For a simple bot application, it is easy to use telepot directly from the web application. To make a smarter bot where you want to leverage telepot's more advanced features (e.g. to maintain separate "threads" of conversation using `DelegatorBot` and `ChatHandler`), we need a structured way to bring the web application and telepot together.
+
+Webhook also presents a subtle problem: closely bunched updates may arrive out of order. That is, update_id `1000` may arrive ahead of update_id `999`, if the two are issued by Telegram servers very closely. Unless a bot absolutely doesn't care about update order, it will have to re-order them in some way.
+
+*Since 5.0*, telepot has a mechanism for web applications to interface with easily, and it takes care of re-ordering for you. The mechanism is simple: you call `notifyOnMessage()` or `messageLoop()` to initiate the bot's message handling as usual, but with an additional parameter `source`, which is a queue. 
+
+```python
+# for Python 2 and 3
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
+
+def handle(msg):
+    ......
+
+bot = telepot.Bot(TOKEN)
+update_queue = Queue()
+
+# get updates from queue, not from Telegram servers
+bot.notifyOnMessage(handle, source=update_queue)
+```
+
+The web application, upon receiving a POST request, dumps the data onto the queue, for the bot to retrieve at the other end. The bot will re-order the updates if necessary. Assuming [Flask](http://flask.pocoo.org/) as the web application framework:
+
+```python
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route('/webhook_path', methods=['GET', 'POST'])
+def pass_update():
+    update_queue.put(request.data)
+    return 'OK'
+```
+
+It is beyond the scope of this document to detail the usage of web frameworks. Please look at the **[webhook examples](#examples-webhooks)** for full demonstrations. Remember, you will have to set up the webhook URL, SSL certificate, and web server on your own.
 
 <a id="examples"></a>
 ## Examples
