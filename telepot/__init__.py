@@ -9,9 +9,9 @@ import collections
 import warnings
 
 try:
-    from Queue import Queue
+    import Queue as queue
 except ImportError:
-    from queue import Queue
+    import queue
 
 # Suppress InsecurePlatformWarning
 requests.packages.urllib3.disable_warnings()
@@ -129,6 +129,10 @@ Message = _create_class('Message', [
               ('new_chat_photo', PhotoSizeArray),
               'delete_chat_photo',
               'group_chat_created',
+              'supergroup_chat_created', 
+              'channel_chat_created', 
+              'migrate_to_chat_id', 
+              'migrate_from_chat_id',
           ])
 
 Update = _create_class('Update', ['update_id', ('message', Message)])
@@ -157,6 +161,7 @@ def _infer_content_type(msg):
     types = [
         'text', 'voice', 'sticker', 'photo', 'audio' ,'document', 'video', 'contact', 'location',
         'new_chat_participant', 'left_chat_participant',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo', 'group_chat_created', 
+        'supergroup_chat_created', 'channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id',
     ]
 
     content_type = list(filter(lambda f: f in msg, types))
@@ -365,103 +370,158 @@ class Bot(object):
             if 'r' in locals():
                 r.close()
 
-    def notifyOnMessage(self, callback=None, relax=0.1, timeout=20, run_forever=False):
+    def notifyOnMessage(self, callback=None, relax=0.1, timeout=20, source=None, ordered=True, maxhold=3, run_forever=False):
         if callback is None:
             callback = self.handle
 
-        # For MessageThread to call outer class getUpdates()
-        def get_updates(offset, timeout):
-            return self.getUpdates(offset=offset, timeout=timeout)
+        def handle(update):
+            try:
+                callback(update['message'])
+            except:
+                # Localize the error so message thread can keep going.
+                traceback.print_exc()
+            finally:
+                return update['update_id']
 
-        # This is the thread that constantly calls getUpdates() and applies callback function
-        # to messages. The main thread sets the params (callback, relax, timeout), and this
-        # thread just applies those params.
-        #
-        # A Bot has at most one MessageThread. If `callback` is set to None (cancelled), 
-        # the MessageThread will die. If `callback` is then set to non-None, a new MessageThread 
-        # will be spawned. Main thread may modify MessageThread's params (callback, relax, timeout)
-        # at any time.
-        #
-        # The two threads use a `lock` to coordinate their actions.
-        # Scroll down to see their designed interactions.
-
-        class MessageThread(threading.Thread):
-            def __init__(self, callback, relax, timeout):
-                super(MessageThread, self).__init__()
-                self.set(callback, relax, timeout)
-                self.lock = threading.Lock()
-                self.dying = False
-
-            def set(self, callback, relax, timeout):
-                self.callback, self.relax, self.timeout = callback, relax, timeout
-
-            def handle(self, update):
+        def get_from_telegram_server():
+            offset = None  # running offset
+            while 1:
                 try:
-                    self.callback(update['message'])
+                    result = self.getUpdates(offset=offset, timeout=timeout)
+
+                    if len(result) > 0:
+                        # No sort. Trust server to give messages in correct order.
+                        # Update offset to max(update_id) + 1
+                        offset = max([handle(update) for update in result]) + 1
                 except:
-                    # Localize the error so message thread can keep going.
                     traceback.print_exc()
                 finally:
-                    return update['update_id']
+                    time.sleep(relax)
 
-            def run(self):
-                offset = None  # running offset
-                while 1:
+        def dictify3(data):
+            if type(data) is bytes:
+                return json.loads(data.decode('utf-8'))
+            elif type(data) is str:
+                return json.loads(data)
+            elif type(data) is dict:
+                return data
+            else:
+                raise ValueError()
+
+        def dictify27(data):
+            if type(data) in [str, unicode]:
+                return json.loads(data)
+            elif type(data) is dict:
+                return data
+            else:
+                raise ValueError()
+
+        def get_from_queue_unordered(qu):
+            dictify = dictify3 if sys.version_info >= (3,) else dictify27
+            while 1:
+                try:
+                    data = qu.get(block=True)
+                    update = dictify(data)
+                    handle(update)
+                except:
+                    traceback.print_exc()
+
+        def get_from_queue(qu):
+            dictify = dictify3 if sys.version_info >= (3,) else dictify27
+
+            # Here is the re-ordering mechanism, ensuring in-order delivery of updates.
+            max_id = None                 # max update_id passed to callback
+            buffer = collections.deque()  # keep those updates which skip some update_id
+            qwait = None                  # how long to wait for updates,
+                                          # because buffer's content has to be returned in time.
+
+            while 1:
+                try:
+                    data = qu.get(block=True, timeout=qwait)
+                    update = dictify(data)
+
+                    if max_id is None:
+                        # First message received, handle regardless.
+                        max_id = handle(update)
+
+                    elif update['update_id'] == max_id + 1:
+                        # No update_id skipped, handle naturally.
+                        max_id = handle(update)
+
+                        # clear contagious updates in buffer
+                        if len(buffer) > 0:
+                            buffer.popleft()  # first element belongs to update just received, useless now.
+                            while 1:
+                                try:
+                                    if type(buffer[0]) is dict:
+                                        max_id = handle(buffer.popleft())  # updates that arrived earlier, handle them.
+                                    else:
+                                        break  # gap, no more contagious updates
+                                except IndexError:
+                                    break  # buffer empty
+
+                    elif update['update_id'] > max_id + 1:
+                        # Update arrives pre-maturely, insert to buffer.
+                        nbuf = len(buffer)
+                        if update['update_id'] <= max_id + nbuf:
+                            # buffer long enough, put update at position
+                            buffer[update['update_id'] - max_id - 1] = update
+                        else:
+                            # buffer too short, lengthen it
+                            expire = time.time() + maxhold
+                            for a in range(nbuf, update['update_id']-max_id-1):
+                                buffer.append(expire)  # put expiry time in gaps
+                            buffer.append(update)
+
+                    else:
+                        pass  # discard
+
+                except queue.Empty:
+                    # debug message
+                    # print('Timeout')
+
+                    # some buffer contents have to be handled
+                    # flush buffer until a non-expired time is encountered
+                    while 1:
+                        try:
+                            if type(buffer[0]) is dict:
+                                max_id = handle(buffer.popleft())
+                            else:
+                                expire = buffer[0]
+                                if expire <= time.time():
+                                    max_id += 1
+                                    buffer.popleft()
+                                else:
+                                    break  # non-expired
+                        except IndexError:
+                            break  # buffer empty
+                except:
+                    traceback.print_exc()
+                finally:
                     try:
-                        with self.lock:
-                            if not self.callback:
-                                self.dying = True
-                                return
+                        # don't wait longer than next expiry time
+                        qwait = buffer[0] - time.time()
+                        if qwait < 0:
+                            qwait = 0
+                    except IndexError:
+                        # buffer empty, can wait forever
+                        qwait = None
 
-                                # Ideally, I should call getUpdates() once more with the latest `offset`
-                                # to acknowledge receiving those messages. But, because main thread may
-                                # spawn a new MessageThread after seeing this one is `dying`, two
-                                # getUpdates() will collide. Solution is, either to put getUpdates()
-                                # within the lock (which causes main thread to block a little bit),
-                                # or make the old and new MessageThread coordinate in some ways.
-                                #
-                                # As of now, some messages may be received twice (if callback is set,
-                                # unset, then set again). Since this usage is not frequent and the problem
-                                # is minor, I decide to leave it for now.
+                    # debug message
+                    # print ('Buffer:', str(buffer), ', To Wait:', qwait, ', Max ID:', max_id)
 
-                        result = get_updates(offset=offset, timeout=self.timeout)
+        if source is None:
+            t = threading.Thread(target=get_from_telegram_server)
+        elif isinstance(source, queue.Queue):
+            if ordered:
+                t = threading.Thread(target=get_from_queue, args=(source,))
+            else:
+                t = threading.Thread(target=get_from_queue_unordered, args=(source,))
+        else:
+            raise ValueError('Invalid source')
 
-                        with self.lock:
-                            if not self.callback:
-                                self.dying = True
-                                return
-
-                            if len(result) > 0:
-                                # No sort. Trust server to give messages in correct order.
-                                # Update offset to max(update_id) + 1
-                                offset = max([self.handle(update) for update in result]) + 1
-                    except:
-                        traceback.print_exc()
-                    finally:
-                        if not self.dying:
-                            time.sleep(self.relax)
-
-        # Interaction between main thread and message thread
-        # - Message thread: check `callback` to determine `dying` (No callback leads to death)
-        # - Main thread: check `dying` to determine whether to spawn a new thread or modify existing thread's `callback`
-        #
-        # MessageThread's `lock` is used to ensure checking/modifying `callback` and `dying` is done atomically.
-
-        if self._msg_thread:
-            with self._msg_thread.lock:
-                if callback and self._msg_thread.dying:
-                    # Spawn new message thread
-                    self._msg_thread = MessageThread(callback, relax, timeout)
-                    self._msg_thread.daemon = True
-                    self._msg_thread.start()
-                else:
-                    # Modify existing message thread's params
-                    self._msg_thread.set(callback, relax, timeout)
-        elif callback:
-            # Spawn new message thread
-            self._msg_thread = MessageThread(callback, relax, timeout)
-            self._msg_thread.daemon = True
-            self._msg_thread.start()
+        t.daemon = True  # need this for main thread to be killable by Ctrl-C
+        t.start()
 
         if run_forever:
             while 1:
@@ -482,7 +542,7 @@ class SpeakerBot(Bot):
         return self._mic
 
     def create_listener(self):
-        q = Queue()
+        q = queue.Queue()
         self._mic.add(q)
         ln = telepot.helper.Listener(self._mic, q)
         return ln

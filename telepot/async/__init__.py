@@ -1,5 +1,6 @@
 import io
 import json
+import time
 import asyncio
 import aiohttp
 import traceback
@@ -143,7 +144,7 @@ class Bot(object):
 
         if certificate:
             files = {'certificate': certificate}
-            r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('setWebhook'), params=self._rectify(p), files=files), self._http_timeout)
+            r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('setWebhook'), params=self._rectify(p), data=files), self._http_timeout)
         else:
             r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('setWebhook'), params=self._rectify(p)), self._http_timeout)
 
@@ -174,34 +175,160 @@ class Bot(object):
 
             if 'r' in locals():
                 r.close()
-
+                
     @asyncio.coroutine
-    def messageLoop(self, handler=None):
+    def messageLoop(self, handler=None, source=None, ordered=True, maxhold=3):
         if handler is None:
             handler = self.handle
 
-        offset = None  # running offset
-        while 1:
+        def create_task_for(msg):
+            self.loop.create_task(handler(msg))
+
+        if asyncio.iscoroutinefunction(handler):
+            callback = create_task_for
+        else:
+            callback = handler
+
+        def handle(update):
             try:
-                updates = yield from self.getUpdates(offset=offset, timeout=20)
-
-                if len(updates) > 0:
-                    # Update offset to max(update_id) + 1
-                    offset = max([u['update_id'] for u in updates]) + 1
-
-                    for u in updates:
-                        if asyncio.iscoroutinefunction(handler):
-                            self._loop.create_task(handler(u['message']))
-                        else:
-                            handler(u['message'])
-
-            except CancelledError:
-                raise  # Stop if cancelled
+                callback(update['message'])
             except:
-                traceback.print_exc()  # Keep running on other errors
-                yield from asyncio.sleep(0.1)
+                # Localize the error so message thread can keep going.
+                traceback.print_exc()
+            finally:
+                return update['update_id']
+
+        @asyncio.coroutine
+        def get_from_telegram_server():
+            offset = None  # running offset
+            while 1:
+                try:
+                    result = yield from self.getUpdates(offset=offset, timeout=20)
+
+                    if len(result) > 0:
+                        # No sort. Trust server to give messages in correct order.
+                        # Update offset to max(update_id) + 1
+                        offset = max([handle(update) for update in result]) + 1
+                except CancelledError:
+                    raise
+                except:
+                    traceback.print_exc()
+                    yield from asyncio.sleep(0.1)
+                else:
+                    yield from asyncio.sleep(0.1)
+
+        def dictify(data):
+            if type(data) is bytes:
+                return json.loads(data.decode('utf-8'))
+            elif type(data) is str:
+                return json.loads(data)
+            elif type(data) is dict:
+                return data
             else:
-                yield from asyncio.sleep(0.1)
+                raise ValueError()
+
+        @asyncio.coroutine
+        def get_from_queue_unordered(qu):
+            while 1:
+                try:
+                    data = yield from qu.get()
+                    update = dictify(data)
+                    handle(update)
+                except:
+                    traceback.print_exc()
+
+        @asyncio.coroutine
+        def get_from_queue(qu):
+            # Here is the re-ordering mechanism, ensuring in-order delivery of updates.
+            max_id = None                 # max update_id passed to callback
+            buffer = collections.deque()  # keep those updates which skip some update_id
+            qwait = None                  # how long to wait for updates,
+                                          # because buffer's content has to be returned in time.
+
+            while 1:
+                try:
+                    data = yield from asyncio.wait_for(qu.get(), qwait)
+                    update = dictify(data)
+
+                    if max_id is None:
+                        # First message received, handle regardless.
+                        max_id = handle(update)
+
+                    elif update['update_id'] == max_id + 1:
+                        # No update_id skipped, handle naturally.
+                        max_id = handle(update)
+
+                        # clear contagious updates in buffer
+                        if len(buffer) > 0:
+                            buffer.popleft()  # first element belongs to update just received, useless now.
+                            while 1:
+                                try:
+                                    if type(buffer[0]) is dict:
+                                        max_id = handle(buffer.popleft())  # updates that arrived earlier, handle them.
+                                    else:
+                                        break  # gap, no more contagious updates
+                                except IndexError:
+                                    break  # buffer empty
+
+                    elif update['update_id'] > max_id + 1:
+                        # Update arrives pre-maturely, insert to buffer.
+                        nbuf = len(buffer)
+                        if update['update_id'] <= max_id + nbuf:
+                            # buffer long enough, put update at position
+                            buffer[update['update_id'] - max_id - 1] = update
+                        else:
+                            # buffer too short, lengthen it
+                            expire = time.time() + maxhold
+                            for a in range(nbuf, update['update_id']-max_id-1):
+                                buffer.append(expire)  # put expiry time in gaps
+                            buffer.append(update)
+
+                    else:
+                        pass  # discard
+
+                except asyncio.TimeoutError:
+                    # debug message
+                    # print('Timeout')
+
+                    # some buffer contents have to be handled
+                    # flush buffer until a non-expired time is encountered
+                    while 1:
+                        try:
+                            if type(buffer[0]) is dict:
+                                max_id = handle(buffer.popleft())
+                            else:
+                                expire = buffer[0]
+                                if expire <= time.time():
+                                    max_id += 1
+                                    buffer.popleft()
+                                else:
+                                    break  # non-expired
+                        except IndexError:
+                            break  # buffer empty
+                except:
+                    traceback.print_exc()
+                finally:
+                    try:
+                        # don't wait longer than next expiry time
+                        qwait = buffer[0] - time.time()
+                        if qwait < 0:
+                            qwait = 0
+                    except IndexError:
+                        # buffer empty, can wait forever
+                        qwait = None
+
+                    # debug message
+                    # print ('Buffer:', str(buffer), ', To Wait:', qwait, ', Max ID:', max_id)
+
+        if source is None:
+            yield from get_from_telegram_server()
+        elif isinstance(source, asyncio.Queue):
+            if ordered:
+                yield from get_from_queue(source)
+            else:
+                yield from get_from_queue_unordered(source)
+        else:
+            raise ValueError('Invalid source')
 
 
 class SpeakerBot(Bot):
