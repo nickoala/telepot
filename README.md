@@ -566,7 +566,7 @@ app = Flask(__name__)
 
 @app.route('/webhook_path', methods=['GET', 'POST'])
 def pass_update():
-    update_queue.put(request.data)
+    update_queue.put(request.data)  # dump data to queue
     return 'OK'
 ```
 
