@@ -44,6 +44,7 @@ Telepot has been tested on **Raspbian** and **CentOS**, using **Python 2.7 - 3.4
 <a id="installation"></a>
 ## Installation
 
+Using pip:
 ```
 $ sudo apt-get install python-pip
 $ sudo pip install telepot
@@ -51,12 +52,19 @@ $ sudo pip install telepot
 $ sudo pip install telepot --upgrade  # UPGRADE
 ```
 
-If `pip` is not available, try the following:
+Using easy_install:
 
 ```
-$ wget https://pypi.python.org/packages/source/t/telepot/telepot-4.1.zip
-$ unzip telepot-4.1.zip
-$ cd telepot-4.1
+$ easy_install telepot
+$ easy_install --upgrade telepot  # UPGRADE
+```
+
+Download and setup manually:
+
+```
+$ wget https://pypi.python.org/packages/source/t/telepot/telepot-5.0.zip
+$ unzip telepot-5.0.zip
+$ cd telepot-5.0
 $ python setup.py install
 ```
 
