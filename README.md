@@ -572,6 +572,8 @@ def pass_update():
 
 It is beyond the scope of this document to detail the usage of web frameworks. Please look at the **[webhook examples](#examples-webhooks)** for full demonstrations. Remember, you will have to set up the webhook URL, SSL certificate, and web server on your own.
 
+**[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
+
 <a id="examples"></a>
 ## Examples
 
