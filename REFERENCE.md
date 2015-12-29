@@ -292,17 +292,29 @@ with open('save/to/path', 'wb') as f:
     bot.downloadFile('ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJ', f)
 ```
 
-**notifyOnMessage(callback=None, relax=0.1, timeout=20, run_forever=False)**
+**notifyOnMessage(callback=None, relax=0.1, timeout=20, source=None, ordered=True, maxhold=3, run_forever=False)**
 
-Spawn a thread to constantly `getUpdates()`. Apply `callback` to every message received. `callback` must take one argument, which is the message.
+Spawn a thread to constantly check for updates. Apply `callback` to every message received. `callback` must take one argument, which is the message.
 
 If `callback` is not supplied, `self.handle` is assumed. In other words, a bot must have the method, `handle(msg)`, defined if `notifyOnMessage()` is called without the `callback` argument.
 
+If `source` is `None` (default), `getUpdates()` is used to obtain updates from Telegram servers. If `source` is a synchronized queue (`Queue.Queue` in Python 2.7 or `queue.Queue` in Python 3), updates are obtained from the queue. In normal scenarios, a web application implementing a webhook dumps updates into the queue, while the bot pulls updates from it. 
+
 Parameters:
 - callback (function): a function to apply to every message received. If `None`, `self.handle` is assumed. 
-- relax (integer): seconds between each `getUpdates()`
-- timeout (integer): timeout supplied to `getUpdates()`, controlling how long to poll.
+- relax (float): seconds between each `getUpdates()`. Applies only when `source` is `None`.
+- timeout (integer): timeout supplied to `getUpdates()`, controlling how long to poll. Applies only when `source` is `None`.
+- source (Queue): source of updates
+    - If `None`, use `getUpdates()` to obtain updates from Telegram servers.
+    - If a `Queue` (`Queue.Queue` in Python 2.7 or `queue.Queue` in Python 3), updates are pulled from the queue.
+- ordered (boolean): applied only when `source` is a `Queue`
+    - If `True`, ensure in-order delivery of updates to `callback` (i.e. updates with a smaller `update_id` always come before those with a larger `update_id`). 
+    - If `False`, no re-ordering is done. `callback` is applied to messages as soon as they are pulled from queue.
+- maxhold (float): applied only when `source` is a `Queue` and `ordered` is `True`
+    - the maximum number of seconds an update is held waiting for a not-yet-arrived smaller `update_id`. When this number of seconds is up, the update is delivered to `callback` even if some smaller `update_id`s have not yet arrived. If those smaller `update_id`s arrive at some later time, they are discarded.
 - run_forever (boolean): append an infinite loop at the end and never returns. Useful as the very last line in a program.
+
+Note: `source`, `ordered`, and `maxhold` are relevant *only if you use webhook*.
 
 This can be a skeleton for a lot of telepot programs:
 
@@ -440,9 +452,9 @@ If `long` is `False`, extract a tuple of *(content_type, chat_type, msg['chat'][
 
 If `long` is `True`, extract a tuple of *(content_type, chat_type, msg['chat']['id'], msg['date'], msg['message_id'])*.
 
-*content_type* can be one of: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, or  `group_chat_created`.
+*content_type* can be one of: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, `group_chat_created`, `supergroup_chat_created`, `migrate_to_chat_id`, `migrate_from_chat_id`, or `channel_chat_created`.
 
-*chat_type* can be one of: `private`, `group`, or `channel`.
+*chat_type* can be one of: `private`, `group`, `supergroup`, or `channel`.
 
 *`glance2()` supercedes the old `glance()`, and will replace it eventually. You should not use `glance()` anymore.*
 
@@ -1044,17 +1056,28 @@ See: https://core.telegram.org/bots/api#setwebhook
 
 Download a file. `dest` can be a path (string) or a Python file object.
 
-*coroutine* **messageLoop(handler=None)**
+*coroutine* **messageLoop(handler=None, source=None, ordered=True, maxhold=3)**
 
-Functionally equivalent to `notifyOnMessage()`, this method constantly `getUpdates()` and applies `handler` to each message received.
-
-`handler` must take one argument, which is the message.
-
-If `handler` is a regular function, it is called directly from within `messageLoop()`.
-
-If `handler` is a coroutine, it is allocated a task using `BaseEventLoop.create_task()`.
+Functionally equivalent to `notifyOnMessage()`, this method constantly checks for updates and applies `handler` to each message received. `handler` must take one argument, which is the message.
 
 If `handler` is `None`, `self.handle` is assumed to be the handler function. In other words, a bot must have the method, `handle(msg)`, defined if `messageLoop()` is called without the `handler` argument.
+
+If `source` is `None` (default), `getUpdates()` is used to obtain updates from Telegram servers. If `source` is an `asyncio.Queue`, updates are obtained from the queue. In normal scenarios, a web application implementing a webhook dumps updates into the queue, while the bot pulls updates from it. 
+
+Parameters:
+- handler: a function or coroutine to apply to every message received. If `None`, `self.handle` is assumed.
+    - If a regular function, it is called directly.
+    - If a coroutine, it is allocated a task using `BaseEventLoop.create_task()`.
+- source (Queue): source of updates
+    - If `None`, use `getUpdates()` to obtain updates from Telegram servers.
+    - If an `asyncio.Queue`, updates are pulled from the queue.
+- ordered (boolean): applied only when `source` is a queue
+    - If `True`, ensure in-order delivery of updates to `handler` (i.e. updates with a smaller `update_id` always come before those with a larger `update_id`). 
+    - If `False`, no re-ordering is done. `handler` is applied to messages as soon as they are pulled from queue.
+- maxhold (float): applied only when `source` is a queue and `ordered` is `True`
+    - the maximum number of seconds an update is held waiting for a not-yet-arrived smaller `update_id`. When this number of seconds is up, the update is delivered to `handler` even if some smaller `update_id`s have not yet arrived. If those smaller `update_id`s arrive at some later time, they are discarded.
+
+Note: `source`, `ordered`, and `maxhold` are relevant *only if you use webhook*.
 
 This can be a skeleton for a lot of telepot programs:
 
