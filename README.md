@@ -36,10 +36,6 @@
 
 ------
 
-Because things are rapidly evolving, instead of sprinkling "since version N.n" all over the place, **all documentations aim at the latest version.**
-
-If you are an existing user, don't worry. Most of the changes are backward-compatible. Where changes are needed in your code, they should not be hard to fix. Feel free to bug me at **lee1nick@yahoo.ca**
-
 Telepot has been tested on **Raspbian** and **CentOS**, using **Python 2.7 - 3.4**. Below discussions are based on Raspbian and Python 2.7, except noted otherwise.
 
 <a id="installation"></a>
