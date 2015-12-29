@@ -307,6 +307,9 @@ Parameters:
 - source (Queue): source of updates
     - If `None`, use `getUpdates()` to obtain updates from Telegram servers.
     - If a `Queue` (`Queue.Queue` in Python 2.7 or `queue.Queue` in Python 3), updates are pulled from the queue.
+    - Acceptable contents in queue:
+        - `str`, `unicode` (Python 2.7), or `bytes` (Python 3, decoded using UTF-8) representing a JSON-serialized Update object.
+        - `dict` representing an Update object.
 - ordered (boolean): applied only when `source` is a `Queue`
     - If `True`, ensure in-order delivery of updates to `callback` (i.e. updates with a smaller `update_id` always come before those with a larger `update_id`). 
     - If `False`, no re-ordering is done. `callback` is applied to messages as soon as they are pulled from queue.
@@ -1071,6 +1074,9 @@ Parameters:
 - source (Queue): source of updates
     - If `None`, use `getUpdates()` to obtain updates from Telegram servers.
     - If an `asyncio.Queue`, updates are pulled from the queue.
+    - Acceptable contents in queue:
+        - `str` or `bytes` (decoded using UTF-8) representing a JSON-serialized Update object.
+        - `dict` representing an Update object.
 - ordered (boolean): applied only when `source` is a queue
     - If `True`, ensure in-order delivery of updates to `handler` (i.e. updates with a smaller `update_id` always come before those with a larger `update_id`). 
     - If `False`, no re-ordering is done. `handler` is applied to messages as soon as they are pulled from queue.
