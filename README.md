@@ -24,7 +24,7 @@
 **5.0 (2015-12-28)**
 
 - Added webhook interface
-- Added `supergroup_chat_created`, `migrate_to_chat_id`, `migrate_from_chat_id`, and `channel_chat_created` fields to Message.
+- Added `supergroup_chat_created`, `migrate_to_chat_id`, `migrate_from_chat_id`, and `channel_chat_created` fields to Message
 
 **4.1 (2015-11-03)**
 
