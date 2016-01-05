@@ -30,7 +30,7 @@ PY_34 = sys.version_info >= (3,4)
 
 here = path.abspath(path.dirname(__file__))
 
-install_requires = ['requests']
+install_requires = ['requests>=2.4.0']
 cmdclass = {}
 
 if PY_34:
