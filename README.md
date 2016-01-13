@@ -329,19 +329,91 @@ elif flavor == 'inline_query':
 
 #### You may `glance2()` an inline query too
 
-Supply the correct `flavor`, and it gives you some "headline" info about the inline query:
+An inline query has this structure:
+
+```python
+{u'from': {u'first_name': u'Nick', u'id': 999999999},
+ u'id': u'414251975480905552',
+ u'offset': u'',
+ u'query': u'abc'}
+```
+
+Supply the correct `flavor`, and `glance2()` extracts some "headline" info about the inline query:
 
 ```python
 query_id, from_user_id, query_string = telepot.glance2(msg, flavor='inline_query')
 ```
 
-#### `answerInlineQuery()`
+#### Answer the query
 
-Coming soon ...
+The only way to respond to an inline query is to `answerInlineQuery()`. There are many types of answers you may give back:
+- [InlineQueryResultArticle](https://core.telegram.org/bots/api#inlinequeryresultarticle)
+- [InlineQueryResultPhoto](https://core.telegram.org/bots/api#inlinequeryresultphoto)
+- [InlineQueryResultGif](https://core.telegram.org/bots/api#inlinequeryresultgif)
+- [InlineQueryResultMpeg4Gif](https://core.telegram.org/bots/api#inlinequeryresultmpeg4gif)
+- [InlineQueryResultVideo](https://core.telegram.org/bots/api#inlinequeryresultvideo)
+
+These objects include a variety of fields with various meanings, most of them optional. It is beyond the scope of this document to discuss the effects of those fields.
+
+As is the custom in telepot, you may construct these results using dictionaries. An alternative is to use the namedtuple classes provided by `telepot.namedtuple` module.
+
+```python
+from telepot.namedtuple import InlineQueryResultArticle
+
+articles = [InlineQueryResultArticle(
+                id='greeting1', title='Morning', message_text='Good morning'),
+            {'type': 'article',
+                'id': 'greeting2', 'title': 'Afternoon', 'message_text': 'Good afternoon'}]
+
+bot.answerInlineQuery(query_id, articles)
+```
+
+```python
+from telepot.namedtuple import InlineQueryResultPhoto
+
+photos = [InlineQueryResultPhoto(
+              id='123', photo_url='...', thumb_url='...'),
+          {'type': 'photo',
+              'id': '345', 'photo_url': '...', 'thumb_url': '...'}]
+
+bot.answerInlineQuery(query_id, photos)
+```
 
 #### A skeleton that deals with inline query
 
-Coming soon ...
+```python
+import sys
+import time
+import telepot
+
+def handle(msg):
+    flavor = telepot.flavor(msg)
+
+    # normal message
+    if flavor == 'normal':
+        content_type, chat_type, chat_id = telepot.glance2(msg)
+        print content_type, chat_type, chat_id
+
+        # Do your stuff according to `content_type` ...
+
+    # inline query
+    elif flavor == 'inline_query':
+        query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+        print query_id, from_id, query_string
+
+        # bot.answerInlineQuery(...)
+
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.Bot(TOKEN)
+bot.notifyOnMessage(handle)
+print 'Listening ...'
+
+# Keep the program running.
+while 1:
+    time.sleep(10)
+```
 
 <a id="intermediate"></a>
 ## The Intermediate
