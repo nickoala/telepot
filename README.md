@@ -71,9 +71,9 @@ $ easy_install --upgrade telepot  # UPGRADE
 Download manually:
 
 ```
-$ wget https://pypi.python.org/packages/source/t/telepot/telepot-5.0.zip
-$ unzip telepot-5.0.zip
-$ cd telepot-5.0
+$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.0.zip
+$ unzip telepot-6.0.zip
+$ cd telepot-6.0
 $ python setup.py install
 ```
 
