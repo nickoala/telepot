@@ -21,8 +21,8 @@ class YourBot(telepot.Bot):
 
         # an inline query - possible only AFTER `/setinline` has been done for the bot.
         elif flavor == 'inline_query':
-            query_id, from_id, query_srting = telepot.glance2(msg, flavor=flavor)
-            print(query_id, from_id, query_srting)
+            query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            print(query_id, from_id, query_string)
 
             # bot.answerInlineQuery(...)
 
