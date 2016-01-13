@@ -71,7 +71,7 @@ def see_every_content_types(msg):
 
     flavor = telepot.flavor(msg)
     
-    if flavor == 'message':
+    if flavor == 'normal':
         content_type, chat_type, chat_id = telepot.glance2(msg)
         from_id = msg['from']['id']
 

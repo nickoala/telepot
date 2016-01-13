@@ -15,7 +15,7 @@ class YourBot(telepot.async.Bot):
         flavor = telepot.flavor(msg)
 
         # a normal message
-        if flavor == 'message':
+        if flavor == 'normal':
             content_type, chat_type, chat_id = telepot.glance2(msg)
             print(content_type, chat_type, chat_id)
 
