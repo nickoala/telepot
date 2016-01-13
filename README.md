@@ -31,6 +31,8 @@
 - Added `UserHandler`
 - `reply_markup` parameter can accept namedtuples `ReplyKeyboardMarkup`, `ReplyKeyboardHide`, `ForceReply` as values
 
+**As you can see, 6.0 has just come out. Below documentations are not entirely up-to-date, although most of the stuff still applies. I will update them as soon as I can.**
+
 **5.0 (2015-12-28)**
 
 - Added webhook interface
