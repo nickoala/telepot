@@ -6,6 +6,7 @@ import pprint
 import sys
 import traceback
 import telepot
+import telepot.namedtuple
 
 """
 This script tests:
@@ -27,7 +28,7 @@ def equivalent(data, nt):
     if type(data) is dict:
         keys = data.keys()
 
-        # number of dictionary keys == number of non-None values in namedtuple?        
+        # number of dictionary keys == number of non-None values in namedtuple?
         if len(keys) != len([f for f in nt._fields if getattr(nt, f) is not None]):
             return False
 
@@ -44,7 +45,7 @@ def examine(result, type):
     try:
         print 'Examining %s ......' % type
 
-        nt = telepot.namedtuple(result, type)
+        nt = telepot.namedtuple.namedtuple(result, type)
         assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
 
         if type == 'Message':
@@ -68,23 +69,30 @@ content_type_iterator = iter([
 def see_every_content_types(msg):
     global expected_content_type, content_type_iterator
 
-    content_type, chat_type, chat_id = telepot.glance2(msg)
-    from_id = msg['from']['id']
+    flavor = telepot.flavor(msg)
+    
+    if flavor == 'message':
+        content_type, chat_type, chat_id = telepot.glance2(msg)
+        from_id = msg['from']['id']
 
-    if chat_id != USER_ID and from_id != USER_ID:
-        print 'Unauthorized user:', chat_id, from_id
-        return
+        if chat_id != USER_ID and from_id != USER_ID:
+            print 'Unauthorized user:', chat_id, from_id
+            return
 
-    examine(msg, 'Message')
-    try:
-        if content_type == expected_content_type:
-            expected_content_type = content_type_iterator.next()
-            bot.sendMessage(chat_id, 'Please give me a %s.' % expected_content_type)
-        else:
-            bot.sendMessage(chat_id, 'It is not a %s. Please give me a %s, please.' % (expected_content_type, expected_content_type))
-    except StopIteration:
-        # reply to sender because I am kicked from group already
-        bot.sendMessage(from_id, 'Thank you. I am done.')
+        examine(msg, 'Message')
+        try:
+            if content_type == expected_content_type:
+                expected_content_type = content_type_iterator.next()
+                bot.sendMessage(chat_id, 'Please give me a %s.' % expected_content_type)
+            else:
+                bot.sendMessage(chat_id, 'It is not a %s. Please give me a %s, please.' % (expected_content_type, expected_content_type))
+        except StopIteration:
+            # reply to sender because I am kicked from group already
+            bot.sendMessage(from_id, 'Thank you. I am done.')
+
+    else:
+        raise telepot.BadFlavor(msg)
+
 
 TOKEN = sys.argv[1]
 USER_ID = long(sys.argv[2])

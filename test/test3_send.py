@@ -6,6 +6,7 @@ import pprint
 import sys
 import traceback
 import telepot
+import telepot.namedtuple
 
 """
 This script tests:
@@ -46,7 +47,7 @@ def examine(result, type):
     try:
         print('Examining %s ......' % type)
 
-        nt = telepot.namedtuple(result, type)
+        nt = telepot.namedtuple.namedtuple(result, type)
         assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
 
         if type == 'Message':
@@ -92,15 +93,20 @@ def send_everything_on_contact(msg):
     bot.sendMessage(chat_id, 'http://www.yahoo.com\nno web page preview', disable_web_page_preview=True)
 
     show_keyboard = {'keyboard': [['Yes', 'No'], ['Maybe', 'Maybe not']]}
+    hide_keyboard = {'hide_keyboard': True}
+    force_reply = {'force_reply': True}
+
+    nt_show_keyboard = telepot.namedtuple.ReplyKeyboardMarkup(**show_keyboard)
+    nt_hide_keyboard = telepot.namedtuple.ReplyKeyboardHide(**hide_keyboard)
+    nt_force_reply = telepot.namedtuple.ForceReply(**force_reply)
+
     bot.sendMessage(chat_id, 'Here is a custom keyboard', reply_markup=show_keyboard)
 
     time.sleep(2)
 
-    hide_keyboard = {'hide_keyboard': True}
-    bot.sendMessage(chat_id, 'Hiding it now.', reply_markup=hide_keyboard)
+    bot.sendMessage(chat_id, 'Hiding it now.', reply_markup=nt_hide_keyboard)
 
-    force_reply = {'force_reply': True}
-    bot.sendMessage(chat_id, 'Force reply', reply_markup=force_reply)
+    bot.sendMessage(chat_id, 'Force reply', reply_markup=nt_force_reply)
 
     ##### sendPhoto
 
@@ -110,7 +116,7 @@ def send_everything_on_contact(msg):
 
     file_id = r['photo'][0]['file_id']
 
-    bot.sendPhoto(chat_id, file_id, caption='Show original message and keyboard', reply_to_message_id=msg_id, reply_markup=show_keyboard)
+    bot.sendPhoto(chat_id, file_id, caption='Show original message and keyboard', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
 
     bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=hide_keyboard)
 
@@ -145,7 +151,7 @@ def send_everything_on_contact(msg):
 
     bot.sendAudio(chat_id, file_id, duration=6, performer='Ding Dong', title='Ringtone', reply_to_message_id=msg_id, reply_markup=show_keyboard)
 
-    bot.sendAudio(chat_id, file_id, performer='Ding Dong', reply_markup=hide_keyboard)
+    bot.sendAudio(chat_id, file_id, performer='Ding Dong', reply_markup=nt_hide_keyboard)
 
     ##### sendDocument
 
@@ -155,7 +161,7 @@ def send_everything_on_contact(msg):
 
     file_id = r['document']['file_id']
 
-    bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=show_keyboard)
+    bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
 
     bot.sendDocument(chat_id, file_id, reply_markup=hide_keyboard)
 
@@ -168,7 +174,7 @@ def send_everything_on_contact(msg):
 
     bot.sendSticker(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=show_keyboard)
 
-    bot.sendSticker(chat_id, file_id, reply_markup=hide_keyboard)
+    bot.sendSticker(chat_id, file_id, reply_markup=nt_hide_keyboard)
 
     ##### sendVideo
 
@@ -178,7 +184,7 @@ def send_everything_on_contact(msg):
 
     file_id = r['video']['file_id']
 
-    bot.sendVideo(chat_id, file_id, duration=5, caption='Hong Kong traffic', reply_to_message_id=msg_id, reply_markup=show_keyboard)
+    bot.sendVideo(chat_id, file_id, duration=5, caption='Hong Kong traffic', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
 
     bot.sendVideo(chat_id, file_id, reply_markup=hide_keyboard)
 
@@ -196,7 +202,7 @@ def send_everything_on_contact(msg):
 
     bot.sendVoice(chat_id, file_id, duration=6, reply_to_message_id=msg_id, reply_markup=show_keyboard)
 
-    bot.sendVoice(chat_id, file_id, reply_markup=hide_keyboard)
+    bot.sendVoice(chat_id, file_id, reply_markup=nt_hide_keyboard)
 
     ##### sendLocation
 
@@ -204,7 +210,7 @@ def send_everything_on_contact(msg):
     r = bot.sendLocation(chat_id, 22.33, 114.18)  # Hong Kong
     examine(r, 'Message')
 
-    bot.sendLocation(chat_id, 49.25, -123.1, reply_to_message_id=msg_id, reply_markup=show_keyboard)  # Vancouver
+    bot.sendLocation(chat_id, 49.25, -123.1, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)  # Vancouver
 
     bot.sendLocation(chat_id, -37.82, 144.97, reply_markup=hide_keyboard)  # Melbourne
 

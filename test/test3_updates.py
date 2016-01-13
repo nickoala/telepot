@@ -6,6 +6,7 @@ import pprint
 import sys
 import traceback
 import telepot
+import telepot.namedtuple
 
 """
 This script tests:
@@ -44,7 +45,7 @@ def examine(result, type):
     try:
         print('Examining %s ......' % type)
 
-        nt = telepot.namedtuple(result, type)
+        nt = telepot.namedtuple.namedtuple(result, type)
         assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
 
         if type == 'Message':
