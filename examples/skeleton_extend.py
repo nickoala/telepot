@@ -10,9 +10,21 @@ A skeleton for your telepot programs - extend from `Bot` and define a `handle` m
 
 class YourBot(telepot.Bot):
     def handle(self, msg):
-        content_type, chat_type, chat_id = telepot.glance2(msg)
-        print(content_type, chat_type, chat_id)
-        # Do your stuff according to `content_type` ...
+        flavor = telepot.flavor(msg)
+
+        # a normal message
+        if flavor == 'message':
+            content_type, chat_type, chat_id = telepot.glance2(msg)
+            print(content_type, chat_type, chat_id)
+
+            # Do your stuff according to `content_type` ...
+
+        # an inline query - possible only AFTER `/setinline` has been done for the bot.
+        elif flavor == 'inline_query':
+            query_id, from_id, query_srting = telepot.glance2(msg, flavor=flavor)
+            print(query_id, from_id, query_srting)
+
+            # bot.answerInlineQuery(...)
 
 
 TOKEN = sys.argv[1] # get token from command-line

@@ -1,6 +1,7 @@
 import sys
 import time
 import telepot
+import telepot.namedtuple
 
 """
 $ python2.7 emodi.py <token>
@@ -15,7 +16,7 @@ checking and substring-extraction below may not work as expected.
 
 def handle(msg):
     content_type, chat_type, chat_id = telepot.glance2(msg)
-    m = telepot.namedtuple(msg, 'Message')
+    m = telepot.namedtuple.namedtuple(msg, 'Message')
 
     if chat_id < 0:
         # group message
