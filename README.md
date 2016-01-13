@@ -2,6 +2,7 @@
 
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
+**[Dealing with Inline Query](#inline-query)**  
 **[The Intermediate](#intermediate)**  
 **[The Advanced](#advanced)**  
 **[Async Version](#async)** (Python 3.4.3 or newer)  
@@ -175,9 +176,7 @@ When processing a message, a few pieces of information are so central that you a
 
 *chat_type* can be: `private`, `group`, or `channel`.
 
-It is a good habit to always check the *content_type* before further processing. Do not assume every message is a `text` message.
-
-*The old `glance()` function should not be used anymore. It relies on the `from` field, which becomes optional in the latest Bot API. The new `glance2()` will supercede it eventually. I keep it for now to maintain backward-compatibility.*
+It is a good habit to always check the *content_type* before further processing. Do not assume every message is a `text`.
 
 A better skeleton would look like:
 
@@ -189,8 +188,8 @@ import telepot
 def handle(msg):
     content_type, chat_type, chat_id = telepot.glance2(msg)
     print content_type, chat_type, chat_id
-    # Do your stuff according to `content_type` ...
 
+    # Do your stuff according to `content_type` ...
 
 TOKEN = sys.argv[1]  # get token from command-line
 
@@ -301,6 +300,44 @@ The server returns a number of `file_id`s, with various file sizes. These are th
 Besides sending photos, you may also `sendAudio()`, `sendDocument()`, `sendSticker()`, `sendVideo()`, and `sendVoice()`.
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
+
+<a id="inline-query"></a>
+## Dealing with Inline Query
+
+By default, a bot only receives messages through a private chat, a group, or a channel. These are what I call *normal messages*.
+
+By sending a `/setinline` command to BotFather, you enable the bot to receive *[inline queries](https://core.telegram.org/bots/inline)* as well. Inline query is a way for users to ask your bot questions, even if they have not opened a chat with your bot, nor in the same group with your bot.
+
+If you don't understand or don't care about inline query, you may skip this section. All your bot receives will be normal messages. All discussions below still works for you. You can even safely ignore code blocks that deal with inline queries.
+
+If you do care about inline query, the important thing to note is that your bot will now receive two **flavors** of messages: normal messages and inline queries. A normal message has the flavor `message`; an inline query has the flavor `inline_query`.
+
+#### Use `flavor()` to differentiate the flavor
+
+```python
+flavor = telepot.flavor(msg)
+
+if flavor == 'message':
+    print 'Normal message'
+elif flavor == 'inline_query':
+    print 'Inline query'
+```
+
+#### You may `glance2()` an inline query too
+
+Supply the `flavor`, and it gives you some "headline" info about this query:
+
+```python
+query_id, from_id, query_string = telepot.glance2(msg, flavor='inline_query')
+```
+
+#### `answerInlineQuery()`
+
+Coming soon ...
+
+#### A skeleton that deals with inline query
+
+Coming soon ...
 
 <a id="intermediate"></a>
 ## The Intermediate
