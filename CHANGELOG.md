@@ -1,5 +1,15 @@
 # telepot changelog
 
+## 6.0 (2016-01-13)
+
+- Moved all namedtuple-related stuff to a new module `telepot.namedtuple`. All calls to the function `telepot.namedtuple()` should be changed to `telepot.namedtuple.namedtuple()`
+- Added a function `telepot.flavor()` to differentiate between a normal message and an inline query
+- Added `flavor` parameter to `telepot.glance2()` to extract info according to message flavor
+- `notifyOnMessage()` and `messageLoop()` can handle inline query as well as normal chat messages
+- Added a few `per_XXX_id()` functions useful for spawning delegates for inline queries
+- Added `UserHandler`
+- `reply_markup` parameter can accept namedtuples `ReplyKeyboardMarkup`, `ReplyKeyboardHide`, `ForceReply` as values
+
 ## 5.0 (2015-12-28)
 
 - Added webhook interface
