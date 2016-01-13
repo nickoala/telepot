@@ -22,6 +22,10 @@
 
 ### Recent changes
 
+**6.1 (2016-01-13)**
+
+- Changed normal message's flavor to `normal`
+
 **6.0 (2016-01-13)**
 
 - Moved all namedtuple-related stuff to a new module `telepot.namedtuple`. All calls to the function `telepot.namedtuple()` should be changed to `telepot.namedtuple.namedtuple()`
@@ -72,9 +76,9 @@ $ easy_install --upgrade telepot  # UPGRADE
 Download manually:
 
 ```
-$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.0.zip
-$ unzip telepot-6.0.zip
-$ cd telepot-6.0
+$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.1.zip
+$ unzip telepot-6.1.zip
+$ cd telepot-6.1
 $ python setup.py install
 ```
 
@@ -308,16 +312,16 @@ By default, a bot only receives messages through a private chat, a group, or a c
 
 By sending a `/setinline` command to BotFather, you enable the bot to receive *[inline queries](https://core.telegram.org/bots/inline)* as well. Inline query is a way for users to ask your bot questions, even if they have not opened a chat with your bot, nor in the same group with your bot.
 
-If you don't understand or don't care about inline query, you may skip this section. All your bot receives will be normal messages. All discussions below still works for you. You can even safely ignore code blocks that deal with inline queries.
+If you don't understand or don't care about inline query, you may skip this section. All your bot receives will be normal messages. All remaining discussions still work for you. You can even safely ignore code blocks that deal with inline queries.
 
-If you do care about inline query, the important thing to note is that your bot will now receive two **flavors** of messages: normal messages and inline queries. A normal message has the flavor `message`; an inline query has the flavor `inline_query`.
+If you do care about inline query, the important thing to note is that your bot will now receive two **flavors** of messages: normal messages and inline queries. A normal message has the flavor `normal`; an inline query has the flavor `inline_query`.
 
 #### Use `flavor()` to differentiate the flavor
 
 ```python
 flavor = telepot.flavor(msg)
 
-if flavor == 'message':
+if flavor == 'normal':
     print 'Normal message'
 elif flavor == 'inline_query':
     print 'Inline query'
@@ -325,10 +329,10 @@ elif flavor == 'inline_query':
 
 #### You may `glance2()` an inline query too
 
-Supply the `flavor`, and it gives you some "headline" info about this query:
+Supply the correct `flavor`, and it gives you some "headline" info about the inline query:
 
 ```python
-query_id, from_id, query_string = telepot.glance2(msg, flavor='inline_query')
+query_id, from_user_id, query_string = telepot.glance2(msg, flavor='inline_query')
 ```
 
 #### `answerInlineQuery()`
