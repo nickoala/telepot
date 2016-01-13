@@ -1,5 +1,9 @@
 # telepot changelog
 
+## 6.1 (2016-01-13)
+
+- Changed normal message's flavor to `normal`
+
 ## 6.0 (2016-01-13)
 
 - Moved all namedtuple-related stuff to a new module `telepot.namedtuple`. All calls to the function `telepot.namedtuple()` should be changed to `telepot.namedtuple.namedtuple()`
