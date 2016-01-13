@@ -10,27 +10,14 @@ import telepot
 import telepot.async.helper
 
 
-class Bot(object):
+class Bot(telepot._BotBase):
     def __init__(self, token, loop=None):
-        self._token = token
+        super(Bot, self).__init__(token)
         self._loop = loop if loop is not None else asyncio.get_event_loop()
-
-        self._http_timeout = 30
-        self._file_chunk_size = 65536
 
     @property
     def loop(self):
         return self._loop
-
-    def _fileurl(self, path):
-        return 'https://api.telegram.org/file/bot%s/%s' % (self._token, path)
-
-    def _methodurl(self, method):
-        return 'https://api.telegram.org/bot%s/%s' % (self._token, method)
-
-    def _rectify(self, params):
-        # remove None, then json-serialize if needed
-        return {key: value if type(value) not in [dict, list] else json.dumps(value, separators=(',',':')) for key,value in params.items() if value is not None}
 
     @asyncio.coroutine
     def _parse(self, response):
@@ -47,19 +34,32 @@ class Bot(object):
 
     @asyncio.coroutine
     def getMe(self):
-        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('getMe')), self._http_timeout)
+        r = yield from asyncio.wait_for(
+                aiohttp.post(self._methodurl('getMe')), 
+                self._http_timeout
+            )
         return (yield from self._parse(r))
 
     @asyncio.coroutine
     def sendMessage(self, chat_id, text, parse_mode=None, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None):
-        p = {'chat_id': chat_id, 'text': text, 'parse_mode': parse_mode, 'disable_web_page_preview': disable_web_page_preview, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}
-        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('sendMessage'), params=self._rectify(p)), self._http_timeout)
+        p = self._strip(locals())
+        r = yield from asyncio.wait_for(
+                aiohttp.post(
+                    self._methodurl('sendMessage'), 
+                    params=self._rectify(p, allow_namedtuple=['reply_markup'])), 
+                self._http_timeout
+            )
         return (yield from self._parse(r))
 
     @asyncio.coroutine
     def forwardMessage(self, chat_id, from_chat_id, message_id):
-        p = {'chat_id': chat_id, 'from_chat_id': from_chat_id, 'message_id': message_id}
-        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('forwardMessage'), params=self._rectify(p)), self._http_timeout)
+        p = self._strip(locals())
+        r = yield from asyncio.wait_for(
+                aiohttp.post(
+                    self._methodurl('forwardMessage'), 
+                    params=self._rectify(p)), 
+                self._http_timeout
+            )
         return (yield from self._parse(r))
 
     @asyncio.coroutine
@@ -73,80 +73,127 @@ class Bot(object):
 
         if isinstance(inputfile, io.IOBase):
             files = {filetype: inputfile}
-            r = yield from aiohttp.post(self._methodurl(method), params=self._rectify(params), data=files)
+            r = yield from aiohttp.post(
+                    self._methodurl(method), 
+                    params=self._rectify(params, allow_namedtuple=['reply_markup']), 
+                    data=files)
 
             # `_http_timeout` is not used here because, for some reason, the larger the file, 
             # the longer it takes for the server to respond (after upload is finished). It is hard to say
             # what value `_http_timeout` should be. In the future, maybe I should let user specify.
         else:
             params[filetype] = inputfile
-            r = yield from asyncio.wait_for(aiohttp.post(self._methodurl(method), params=self._rectify(params)), self._http_timeout)
+            r = yield from asyncio.wait_for(
+                    aiohttp.post(
+                        self._methodurl(method), 
+                        params=self._rectify(params, allow_namedtuple=['reply_markup'])), 
+                    self._http_timeout)
 
         return (yield from self._parse(r))
 
     @asyncio.coroutine
     def sendPhoto(self, chat_id, photo, caption=None, reply_to_message_id=None, reply_markup=None):
-        return (yield from self._sendFile(photo, 'photo', {'chat_id': chat_id, 'caption': caption, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}))
+        p = self._strip(locals(), more=['photo'])
+        return (yield from self._sendFile(photo, 'photo', p))
 
     @asyncio.coroutine
     def sendAudio(self, chat_id, audio, duration=None, performer=None, title=None, reply_to_message_id=None, reply_markup=None):
-        return (yield from self._sendFile(audio, 'audio', {'chat_id': chat_id, 'duration': duration, 'performer': performer, 'title': title, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}))
+        p = self._strip(locals(), more=['audio'])
+        return (yield from self._sendFile(audio, 'audio', p))
 
     @asyncio.coroutine
     def sendDocument(self, chat_id, document, reply_to_message_id=None, reply_markup=None):
-        return (yield from self._sendFile(document, 'document', {'chat_id': chat_id, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}))
+        p = self._strip(locals(), more=['document'])
+        return (yield from self._sendFile(document, 'document', p))
 
     @asyncio.coroutine
     def sendSticker(self, chat_id, sticker, reply_to_message_id=None, reply_markup=None):
-        return (yield from self._sendFile(sticker, 'sticker', {'chat_id': chat_id, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}))
+        p = self._strip(locals(), more=['sticker'])
+        return (yield from self._sendFile(sticker, 'sticker', p))
 
     @asyncio.coroutine
     def sendVideo(self, chat_id, video, duration=None, caption=None, reply_to_message_id=None, reply_markup=None):
-        return (yield from self._sendFile(video, 'video', {'chat_id': chat_id, 'duration': duration, 'caption': caption, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}))
+        p = self._strip(locals(), more=['video'])
+        return (yield from self._sendFile(video, 'video', p))
 
     @asyncio.coroutine
-    def sendVoice(self, chat_id, audio, duration=None, reply_to_message_id=None, reply_markup=None):
-        return (yield from self._sendFile(audio, 'voice', {'chat_id': chat_id, 'duration': duration, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}))
+    def sendVoice(self, chat_id, voice, duration=None, reply_to_message_id=None, reply_markup=None):
+        p = self._strip(locals(), more=['voice'])
+        return (yield from self._sendFile(voice, 'voice', p))
 
     @asyncio.coroutine
     def sendLocation(self, chat_id, latitude, longitude, reply_to_message_id=None, reply_markup=None):
-        p = {'chat_id': chat_id, 'latitude': latitude, 'longitude': longitude, 'reply_to_message_id': reply_to_message_id, 'reply_markup': reply_markup}
-        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('sendLocation'), params=self._rectify(p)), self._http_timeout)
+        p = self._strip(locals())
+        r = yield from asyncio.wait_for(
+                aiohttp.post(
+                    self._methodurl('sendLocation'), 
+                    params=self._rectify(p, allow_namedtuple=['reply_markup'])), 
+                self._http_timeout
+            )
         return (yield from self._parse(r))
 
     @asyncio.coroutine
     def sendChatAction(self, chat_id, action):
-        p = {'chat_id': chat_id, 'action': action}
-        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('sendChatAction'), params=self._rectify(p)), self._http_timeout)
+        p = self._strip(locals())
+        r = yield from asyncio.wait_for(
+                aiohttp.post(
+                    self._methodurl('sendChatAction'), 
+                    params=self._rectify(p)), 
+                self._http_timeout
+            )
         return (yield from self._parse(r))
 
     @asyncio.coroutine
     def getUserProfilePhotos(self, user_id, offset=None, limit=None):
-        p = {'user_id': user_id, 'offset': offset, 'limit': limit}
-        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('getUserProfilePhotos'), params=self._rectify(p)), self._http_timeout)
+        p = self._strip(locals())
+        r = yield from asyncio.wait_for(
+                aiohttp.post(
+                    self._methodurl('getUserProfilePhotos'), 
+                    params=self._rectify(p)), 
+                self._http_timeout
+            )
         return (yield from self._parse(r))
 
     @asyncio.coroutine
     def getFile(self, file_id):
-        p = {'file_id': file_id}
-        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('getFile'), params=self._rectify(p)), self._http_timeout)
+        p = self._strip(locals())
+        r = yield from asyncio.wait_for(
+                aiohttp.post(
+                    self._methodurl('getFile'), 
+                    params=self._rectify(p)), 
+                self._http_timeout
+            )
         return (yield from self._parse(r))
 
     @asyncio.coroutine
     def getUpdates(self, offset=None, limit=None, timeout=None):
-        p = {'offset': offset, 'limit': limit, 'timeout': timeout}
-        r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('getUpdates'), params=self._rectify(p)), self._http_timeout+(0 if timeout is None else timeout))
+        p = self._strip(locals())
+        r = yield from asyncio.wait_for(
+                aiohttp.post(
+                    self._methodurl('getUpdates'), 
+                    params=self._rectify(p)), 
+                self._http_timeout+(0 if timeout is None else timeout)
+            )
         return (yield from self._parse(r))
 
     @asyncio.coroutine
     def setWebhook(self, url=None, certificate=None):
-        p = {'url': url}
+        p = self._strip(locals(), more=['certificate'])
 
         if certificate:
             files = {'certificate': certificate}
-            r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('setWebhook'), params=self._rectify(p), data=files), self._http_timeout)
+            r = yield from asyncio.wait_for(
+                    aiohttp.post(
+                        self._methodurl('setWebhook'), 
+                        params=self._rectify(p), 
+                        data=files), 
+                    self._http_timeout)
         else:
-            r = yield from asyncio.wait_for(aiohttp.post(self._methodurl('setWebhook'), params=self._rectify(p)), self._http_timeout)
+            r = yield from asyncio.wait_for(
+                    aiohttp.post(
+                        self._methodurl('setWebhook'), 
+                        params=self._rectify(p)), 
+                    self._http_timeout)
 
         return (yield from self._parse(r))
 
@@ -159,7 +206,9 @@ class Bot(object):
             raise telepot.TelegramError('No file_path returned', None)
 
         try:
-            r = yield from asyncio.wait_for(aiohttp.get(self._fileurl(f['file_path'])), self._http_timeout)
+            r = yield from asyncio.wait_for(
+                    aiohttp.get(self._fileurl(f['file_path'])), 
+                    self._http_timeout)
 
             d = dest if isinstance(dest, io.IOBase) else open(dest, 'wb')
 
@@ -175,7 +224,18 @@ class Bot(object):
 
             if 'r' in locals():
                 r.close()
-                
+
+    @asyncio.coroutine
+    def answerInlineQuery(self, inline_query_id, results, cache_time=None, is_personal=None, next_offset=None):
+        p = self._strip(locals())
+        r = yield from asyncio.wait_for(
+                aiohttp.post(
+                    self._methodurl('answerInlineQuery'), 
+                    params=self._rectify(p, allow_namedtuple=['results'])),
+                timeout=self._http_timeout
+            )
+        return (yield from self._parse(r))
+
     @asyncio.coroutine
     def messageLoop(self, handler=None, source=None, ordered=True, maxhold=3):
         if handler is None:
@@ -191,7 +251,10 @@ class Bot(object):
 
         def handle(update):
             try:
-                callback(update['message'])
+                for a in ['message', 'inline_query', 'chosen_inline_result']:
+                    if a in update:
+                        callback(update[a])
+                        break
             except:
                 # Localize the error so message thread can keep going.
                 traceback.print_exc()
