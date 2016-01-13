@@ -30,7 +30,7 @@ class BadFlavor(TelepotException):
 
 def flavor(msg):
     if 'message_id' in msg:
-        return 'message'
+        return 'normal'
     elif 'query' in msg and 'id' in msg:
         return 'inline_query'
     elif 'result_id' in msg:
@@ -66,7 +66,7 @@ def glance(msg, long=False):
         return content_type, msg['from']['id'], msg['chat']['id']
 
 
-def glance2(msg, flavor='message', long=False):
+def glance2(msg, flavor='normal', long=False):
     def gl_message():
         content_type = _infer_content_type(msg)
 
@@ -84,7 +84,7 @@ def glance2(msg, flavor='message', long=False):
     def gl_chosen_inline_result():
         return msg['result_id'], msg['from']['id'], msg['query']
 
-    if flavor == 'message':
+    if flavor == 'normal':
         return gl_message()
     elif flavor == 'inline_query':
         return gl_inline_query()

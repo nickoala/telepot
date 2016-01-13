@@ -241,7 +241,7 @@ class ChatHandler(ChatContext):
 
 @openable
 class UserHandler(UserContext):
-    def __init__(self, seed_tuple, timeout, flavors=['message', 'inline_query', """'chosen_inline_result'"""]):
+    def __init__(self, seed_tuple, timeout, flavors=['normal', 'inline_query', """'chosen_inline_result'"""]):
         bot, initial_msg, seed = seed_tuple
         super(UserHandler, self).__init__(bot, seed, initial_msg['from']['id'])
         self.listener.set_options(timeout=timeout)
