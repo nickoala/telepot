@@ -161,6 +161,21 @@ class ChatContext(ListenerContext):
         return self._sender
 
 
+class UserContext(ListenerContext):
+    def __init__(self, bot, context_id, user_id):
+        super(UserContext, self).__init__(bot, context_id)
+        self._user_id = user_id
+        self._sender = Sender(bot, user_id)
+
+    @property
+    def user_id(self):
+        return self._user_id
+
+    @property
+    def sender(self):
+        return self._sender
+
+
 class StopListening(telepot.TelepotException):
     def __init__(self, code=None, reason=None):
         super(StopListening, self).__init__(code, reason)
@@ -222,3 +237,12 @@ class ChatHandler(ChatContext):
         super(ChatHandler, self).__init__(bot, seed, initial_msg['chat']['id'])
         self.listener.set_options(timeout=timeout)
         self.listener.capture(chat__id=self.chat_id)
+
+
+@openable
+class UserHandler(UserContext):
+    def __init__(self, seed_tuple, timeout, flavors=['message', 'inline_query', """'chosen_inline_result'"""]):
+        bot, initial_msg, seed = seed_tuple
+        super(UserHandler, self).__init__(bot, seed, initial_msg['from']['id'])
+        self.listener.set_options(timeout=timeout)
+        self.listener.capture(_=lambda msg: telepot.flavor(msg) in flavors, from__id=self.user_id)
