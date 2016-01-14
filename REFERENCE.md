@@ -6,20 +6,31 @@
 - [DelegatorBot](#telepot-DelegatorBot)
 - [Functions](#telepot-functions)
 
+**[telepot.namedtuple](#telepot-namedtuple)**
+- [Functions](#telepot-namedtuple-functions)
+
 **[telepot.helper](#telepot-helper)**
 - [Microphone](#telepot-helper-Microphone)
 - [Listener](#telepot-helper-Listener)
 - [Sender](#telepot-helper-Sender)
 - [ListenerContext](#telepot-helper-ListenerContext)
 - [ChatContext](#telepot-helper-ChatContext)
+- [UserContext](#telepot-helper-UserContext)
 - [Monitor](#telepot-helper-Monitor)
 - [ChatHandler](#telepot-helper-ChatHandler)
+- [UserHandler](#telepot-helper-UserHandler)
 - [@openable](#telepot-helper-openable)
 
 **[telepot.delegate](#telepot-delegate)**
 - [per_chat_id](#telepot-delegate-per-chat-id)
 - [per_chat_id_in](#telepot-delegate-per-chat-id-in)
 - [per_chat_id_except](#telepot-delegate-per-chat-id-except)
+- [per_from_id](#telepot-delegate-per-from-id)
+- [per_from_id_in](#telepot-delegate-per-from-id-in)
+- [per_from_id_except](#telepot-delegate-per-from-id-except)
+- [per_inline_from_id](#telepot-delegate-per-inline-from-id)
+- [per_inline_from_id_in](#telepot-delegate-per-inline-from-id-in)
+- [per_inline_from_id_except](#telepot-delegate-per-inline-from-id-except)
 - [call](#telepot-delegate-call)
 - [create_run](#telepot-delegate-create-run)
 - [create_open](#telepot-delegate-create-open)
@@ -292,6 +303,10 @@ with open('save/to/path', 'wb') as f:
     bot.downloadFile('ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJ', f)
 ```
 
+**answerInlineQuery(inline_query_id, results, cache_time=None, is_personal=None, next_offset=None)**
+
+*To be filled in ...*
+
 **notifyOnMessage(callback=None, relax=0.1, timeout=20, source=None, ordered=True, maxhold=3, run_forever=False)**
 
 Spawn a thread to constantly check for updates. Apply `callback` to every message received. `callback` must take one argument, which is the message.
@@ -449,6 +464,10 @@ Thanks to **[Tornado](http://www.tornadoweb.org/)** for inspiration.
 <a id="telepot-functions"></a>
 ### Functions in `telepot` module
 
+**flavor(msg)**
+
+*To be filled in ...*
+
 **glance2(msg, long=False)**
 
 If `long` is `False`, extract a tuple of *(content_type, chat_type, msg['chat']['id'])*.
@@ -470,6 +489,12 @@ content_type, chat_type, chat_id = telepot.glance2(msg)
 content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance2(msg, long=True)
 ```
 
+<a id="telepot-namedtuple"></a>
+## `telepot.namedtuple` module
+
+<a id="telepot-namedtuple-functions"></a>
+### Functions
+
 **namedtuple(dictionary, type)**
 
 Convert a dictionary to a namedtuple of a given object type.
@@ -485,17 +510,19 @@ Namedtuple field names cannot be Python keywords, but the [Message](https://core
 Examples:
 
 ```python
+import telepot.namedtuple
+
 # Suppose `msg` is a message (dict) previously received.
 
 # Turn the entire message to a namedtuple
-m = telepot.namedtuple(msg, 'Message')
+m = telepot.namedtuple.namedtuple(msg, 'Message')
 
 print m.from_.id  # == msg['from']['id']
 print m.chat.id   # == msg['chat']['id']
 
 # Convert only part of the message
-user = telepot.namedtuple(msg['from'], 'User')
-chat = telepot.namedtuple(msg['chat'], 'Chat')
+user = telepot.namedtuple.namedtuple(msg['from'], 'User')
+chat = telepot.namedtuple.namedtuple(msg['chat'], 'Chat')
 ```
 
 `namedtuple()` is just a convenience function. *Frankly, you can do without it.*
@@ -698,6 +725,11 @@ This object exposes these properties:
 - **chat_id**
 - **sender** - a `Sender` object aimed at the target chat
 
+<a id="telepot-helper-UserContext"></a>
+### `telepot.helper.UserContext`
+
+*To be filled in ...*
+
 <a id="telepot-helper-Monitor"></a>
 ### `telepot.helper.Monitor`
 
@@ -818,6 +850,11 @@ Called just before this object is about to exit.
 
 Raises a `StopListening` exception, causing this object to exit.
 
+<a id="telepot-helper-UserHandler"></a>
+### `telepot.helper.UserHandler`
+
+*To be filled in ...*
+
 <a id="telepot-helper-openable"></a>
 ### `telepot.helper.openable` class decorator
 
@@ -875,6 +912,36 @@ Returns a seed-calculating-function that returns the chat id as the seed if the 
 ```python
 lambda msg: msg['chat']['id'] if msg['chat']['id'] not in set else None
 ```
+
+<a id="telepot-delegate-per-from-id"></a>
+**per_from_id()**
+
+*To be filled in ...*
+
+<a id="telepot-delegate-per-from-id-in"></a>
+**per_from_id_in(set)**
+
+*To be filled in ...*
+
+<a id="telepot-delegate-per-from-id-except"></a>
+**per_from_id_except(set)**
+
+*To be filled in ...*
+
+<a id="telepot-delegate-per-inline-from-id"></a>
+**per_inline_from_id()**
+
+*To be filled in ...*
+
+<a id="telepot-delegate-per-inline-from-id-in"></a>
+**per_inline_from_id_in(set)**
+
+*To be filled in ...*
+
+<a id="telepot-delegate-per-inline-from-id-except"></a>
+**per_inline_from_id_except(set)**
+
+*To be filled in ...*
 
 <a id="telepot-delegate-call"></a>
 **call(func, \*args, \*\*kwargs)**
