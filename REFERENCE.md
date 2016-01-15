@@ -1217,6 +1217,10 @@ See: https://core.telegram.org/bots/api#setwebhook
 
 Download a file. `dest` can be a path (string) or a Python file object.
 
+*coroutine* **answerInlineQuery(self, inline_query_id, results, cache_time=None, is_personal=None, next_offset=None)**
+
+*To be filled in ...*
+
 *coroutine* **messageLoop(handler=None, source=None, ordered=True, maxhold=3)**
 
 Functionally equivalent to `notifyOnMessage()`, this method constantly checks for updates and applies `handler` to each message received. `handler` must take one argument, which is the message.
