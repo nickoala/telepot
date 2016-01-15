@@ -7,7 +7,8 @@
 - [Functions](#telepot-functions)
 
 **[telepot.namedtuple](#telepot-namedtuple)**
-- [Functions](#telepot-namedtuple-functions)
+- [Convert dictionary to namedtuple](#telepot-namedtuple-convert)
+- [Use namedtuple constructors](#telepot-namedtuple-construct)
 
 **[telepot.helper](#telepot-helper)**
 - [Microphone](#telepot-helper-Microphone)
@@ -272,9 +273,7 @@ See: https://core.telegram.org/bots/api#getupdates
 
 **setWebhook(url=None, certificate=None)**
 
-Specify a url and receive incoming updates via an outgoing webhook.
-
-*Since 1.2*, you may upload your public key certificate with the `certificate` argument.
+Specify a url and receive incoming updates via an outgoing webhook. Optionally, you may upload your public key certificate with the `certificate` argument.
 
 See: https://core.telegram.org/bots/api#setwebhook
 
@@ -305,7 +304,33 @@ with open('save/to/path', 'wb') as f:
 
 **answerInlineQuery(inline_query_id, results, cache_time=None, is_personal=None, next_offset=None)**
 
-*To be filled in ...*
+Send answers to an inline query. `results` is a list of [InlineQueryResult](https://core.telegram.org/bots/api#inlinequeryresult). As is the custom in telepot, you may construct those objects as **dictionaries**. A potentially easier alternative is to use the namedtuple classes provided by `telepot.namedtuple` module.
+
+See: https://core.telegram.org/bots/api#answerinlinequery
+
+Examples:
+
+```python
+from telepot.namedtuple import InlineQueryResultArticle
+
+articles = [InlineQueryResultArticle(
+                id='greeting1', title='Morning', message_text='Good morning'),
+            {'type': 'article',
+                'id': 'greeting2', 'title': 'Afternoon', 'message_text': 'Good afternoon'}]
+
+bot.answerInlineQuery(query_id, articles)
+```
+
+```python
+from telepot.namedtuple import InlineQueryResultPhoto
+
+photos = [InlineQueryResultPhoto(
+              id='123', photo_url='...', thumb_url='...'),
+          {'type': 'photo',
+              'id': '345', 'photo_url': '...', 'thumb_url': '...'}]
+
+bot.answerInlineQuery(query_id, photos)
+```
 
 **notifyOnMessage(callback=None, relax=0.1, timeout=20, source=None, ordered=True, maxhold=3, run_forever=False)**
 
@@ -466,66 +491,132 @@ Thanks to **[Tornado](http://www.tornadoweb.org/)** for inspiration.
 
 **flavor(msg)**
 
-*To be filled in ...*
+Returns the flavor of a message:
 
-**glance2(msg, long=False)**
+- a normal message is `normal`
+- an inline query is `inline_query`
 
-If `long` is `False`, extract a tuple of *(content_type, chat_type, msg['chat']['id'])*.
+If the bot can receive inline queries, you should always check the flavor before further processing. See `glance2()` below for an example.
 
-If `long` is `True`, extract a tuple of *(content_type, chat_type, msg['chat']['id'], msg['date'], msg['message_id'])*.
+**glance2(msg, flavor='normal', long=False)**
+
+Extracts "headline" information about a message.
+
+When `flavor` is `normal`:
+- returns a tuple of *(content_type, chat_type, msg['chat']['id'])*.
+- if `long` is `True`, returns a tuple of *(content_type, chat_type, msg['chat']['id'], msg['date'], msg['message_id'])*.
 
 *content_type* can be one of: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, `group_chat_created`, `supergroup_chat_created`, `migrate_to_chat_id`, `migrate_from_chat_id`, or `channel_chat_created`.
 
 *chat_type* can be one of: `private`, `group`, `supergroup`, or `channel`.
 
-*`glance2()` supercedes the old `glance()`, and will replace it eventually. You should not use `glance()` anymore.*
+When `flavor` is `inline_query`:
+- returns a tuple of *(msg['id'], msg['from']['id'], msg['query'])*.
+- if `long` is `True`, returns a tuple of *(msg['id'], msg['from']['id'], msg['query'], msg['offset'])*.
 
 Examples:
 
 ```python
+import telepot
+
 # Suppose `msg` is a message previously received.
 
-content_type, chat_type, chat_id = telepot.glance2(msg)
-content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance2(msg, long=True)
+flavor = telepot.flavor(msg)
+
+if flavor == 'message':
+    content_type, chat_type, chat_id = telepot.glance2(msg)
+    content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance2(msg, long=True)
+
+    # Do you stuff according to `content_type`
+
+elif flavor == 'inline_query':
+    query_id, from_id, query_string = telepot.glance2(msg, flavor='inline_query')
+    query_id, from_id, query_string, offset = telepot.glance2(msg, flavor='inline_query', long=True)
+
+    # bot.answerInlineQuery(...)
 ```
 
 <a id="telepot-namedtuple"></a>
 ## `telepot.namedtuple` module
 
-<a id="telepot-namedtuple-functions"></a>
-### Functions
+**Telepot's custom is to represent Bot API objects as dictionaries.** On the other hand, we also have this module which provides namedtuple classes mirroring all Bot API object types:
 
-**namedtuple(dictionary, type)**
+- [User](https://core.telegram.org/bots/api#user)
+- [Chat](https://core.telegram.org/bots/api#chat)
+- [Message](https://core.telegram.org/bots/api#message)
+- [PhotoSize](https://core.telegram.org/bots/api#photosize)
+- [Audio](https://core.telegram.org/bots/api#audio)
+- [Document](https://core.telegram.org/bots/api#document)
+- [Sticker](https://core.telegram.org/bots/api#sticker)
+- [Video](https://core.telegram.org/bots/api#video)
+- [Voice](https://core.telegram.org/bots/api#voice)
+- [Contact](https://core.telegram.org/bots/api#contact)
+- [Location](https://core.telegram.org/bots/api#location)
+- [Update](https://core.telegram.org/bots/api#update)
+- [UserProfilePhotos](https://core.telegram.org/bots/api#userprofilephotos)
+- [File](https://core.telegram.org/bots/api#file)
+- [ReplyKeyboardMarkup](https://core.telegram.org/bots/api#replykeyboardmarkup)
+- [ReplyKeyboardHide](https://core.telegram.org/bots/api#replykeyboardhide)
+- [ForceReply](https://core.telegram.org/bots/api#forcereply)
+- [InlineQuery](https://core.telegram.org/bots/api#inlinequery)
+- [InlineQueryResultArticle](https://core.telegram.org/bots/api#inlinequeryresultarticle)
+- [InlineQueryResultPhoto](https://core.telegram.org/bots/api#inlinequeryresultphoto)
+- [InlineQueryResultGif](https://core.telegram.org/bots/api#inlinequeryresultgif)
+- [InlineQueryResultMpeg4Gif](https://core.telegram.org/bots/api#inlinequeryresultmpeg4gif)
+- [InlineQueryResultVideo](https://core.telegram.org/bots/api#inlinequeryresultvideo)
+
+The reasons for having namedtuple classes are twofold:
+
+- Under some situations, you may want an object with a complete set of fields, including those whose values are `None`. A dictionary, as translated from Bot API's response, would have those `None` fields absent. By converting such a dictionary to a namedtuple, all fields are guaranteed to be present, even if their values are `None`.
+- While you may construct `ReplyKeyboardMarkup`, `ReplyKeyboardHide`, `ForceReply`, and `InlineQueryResultZZZ` using dictionaries, it may be easier to use the namedtuple constructors.
+
+*Beware of a peculiarity.* Namedtuple field names cannot be Python keywords, but the [Message](https://core.telegram.org/bots/api#message) object and a few others have a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `dict['from']` becomes `namedtuple.from_` when converted to a namedtuple.
+
+<a id="telepot-namedtuple-convert"></a>
+### Convert dictionary to namedtuple
+
+Suppose you have received a message in the form a dictionary, here are two ways to obtain its namedtuple:
+
+```python
+from telepot.namedtuple import namedtuple, Message
+
+# Unpack dict, give it to constructor
+ntuple1 = Message(**msg)
+
+# Use namedtuple() function, give it the class name
+ntuple2 = namedtuple(msg, 'Message')
+
+# ntuple1 == ntuple2
+
+# `from` becomes `from_` due to keyword collision
+print ntuple1.from_.id  # == msg['from']['id']
+
+# other field names unchanged
+print ntuple2.chat.id   # == msg['chat']['id']
+```
+
+You may also choose to convert only part of the message:
+
+```python
+from telepot.namedtuple import namedtuple, User, Chat
+
+ntuple3 = User(**msg['from'])              # these two lines
+ntuple4 = namedtuple(msg['from'], 'User')  # are equivalent
+
+ntuple5 = Chat(**msg['chat'])              # these two lines
+ntuple6 = namedtuple(msg['chat'], 'Chat')  # are equivalent
+```
+
+**namedtuple(dict, type)**
 
 Convert a dictionary to a namedtuple of a given object type.
 
-**type** can be: `Audio`, `Chat`, `Contact`, `Document`, `File`, `Location`, `Message`, `PhotoSize`, `PhotoSize[]`, `PhotoSize[][]`, `Sticker`, `Update`, `Update[]`, `User`, `UserProfilePhotos`, `Video`, `Voice`.
+**type** can be one of the Bot API object types listed above.
 
-The returned namedtuples mirror the corresponding [Bot API objects](https://core.telegram.org/bots/api#available-types).
+<a id="telepot-namedtuple-construct"></a>
+### Use namedtuple constructors
 
-The source dictionary may not contain all necessary fields. Absent fields are set to `None`.
-
-Namedtuple field names cannot be Python keywords, but the [Message](https://core.telegram.org/bots/api#message) object has a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `dict['from']` becomes `namedtuple.from_` when converted to a namedtuple.
-
-Examples:
-
-```python
-import telepot.namedtuple
-
-# Suppose `msg` is a message (dict) previously received.
-
-# Turn the entire message to a namedtuple
-m = telepot.namedtuple.namedtuple(msg, 'Message')
-
-print m.from_.id  # == msg['from']['id']
-print m.chat.id   # == msg['chat']['id']
-
-# Convert only part of the message
-user = telepot.namedtuple.namedtuple(msg['from'], 'User')
-chat = telepot.namedtuple.namedtuple(msg['chat'], 'Chat')
-```
-
-`namedtuple()` is just a convenience function. *Frankly, you can do without it.*
+*To be filled in ...*
 
 <a id="telepot-helper"></a>
 ## `telepot.helper` module
