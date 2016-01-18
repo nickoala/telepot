@@ -1,5 +1,11 @@
 # telepot changelog
 
+## 6.2 (2016-01-18)
+
+- Handle new field `chosen_inline_result` in Update object
+- `telepot.flavor()` returns a new flavor `chosen_inline_result`
+- Added `telepot.namedtuple.ChosenInlineResult` class
+
 ## 6.1 (2016-01-13)
 
 - Changed normal message's flavor to `normal`
