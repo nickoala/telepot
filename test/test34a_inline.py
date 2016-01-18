@@ -15,13 +15,13 @@ def equivalent(data, nt):
     if type(data) is dict:
         keys = list(data.keys())
 
-        # number of dictionary keys == number of non-None values in namedtuple?        
+        # number of dictionary keys == number of non-None values in namedtuple?
         if len(keys) != len([f for f in nt._fields if getattr(nt, f) is not None]):
             return False
 
         # map `from` to `from_`
         fields = list([k+'_' if k in ['from'] else k for k in keys])
-        
+
         return all(map(equivalent, [data[k] for k in keys], [getattr(nt, f) for f in fields]))
     elif type(data) is list:
         return all(map(equivalent, data, nt))
@@ -60,28 +60,33 @@ def answer(msg):
             return
 
         examine(msg, 'InlineQuery')
-        
+
         articles = [InlineQueryResultArticle(
                        id='abc', title='HK', message_text='Hong Kong', url='https://www.google.com', hide_url=True),
-                   InlineQueryResultArticle(
-                       id='def', title='SZ', message_text='Shenzhen', url='https://www.yahoo.com')]
+                   {'type': 'article',
+                       'id': 'def', 'title': 'SZ', 'message_text': 'Shenzhen', 'url': 'https://www.yahoo.com'}]
 
         photos = [InlineQueryResultPhoto(
                       id='123', photo_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf', thumb_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf'),
                   {'type': 'photo',
                       'id': '345', 'photo_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'thumb_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'caption': 'Caption', 'title': 'Title', 'message_text': 'Message Text'}]
-        """"           
-        gifs = [InlineQueryResultGif(
-                    id='ghi', gif_url='http://www.animalstown.com/animals/g/gnu/coloring-pages/gnu-color-page-6.gif', thumb_url='http://www.animalstown.com/animals/g/gnu/coloring-pages/gnu-color-page-6.gif'),
-                {'type': 'gif',
-                    'id': 'jkl', 'gif_url': 'http://img2.colorirgratis.com/gnu-na-savana-africana_49d5b597bc78d-p.gif', 'thumb_url': 'http://img2.colorirgratis.com/gnu-na-savana-africana_49d5b597bc78d-p.gif'}]
-        """
-#                   InlineQueryResultVideo(
-#                       id='jkl', video_url='', mime_type='')
 
         results = random.choice([articles, photos])
 
         yield from bot.answerInlineQuery(query_id, results, cache_time=20, is_personal=True, next_offset='5')
+
+    elif flavor == 'chosen_inline_result':
+        result_id, from_id, query = telepot.glance2(msg, flavor=flavor)
+
+        if from_id != USER_ID:
+            print('Unauthorized user:', from_id)
+            return
+
+        examine(msg, 'ChosenInlineResult')
+
+        print('Chosen inline query:')
+        pprint.pprint(msg)
+
     else:
         raise telepot.BadFlavor(msg)
 
