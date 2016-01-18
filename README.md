@@ -22,6 +22,12 @@
 
 ### Recent changes
 
+**6.2 (2016-01-18)**
+
+- Handle new field `chosen_inline_result` in Update object
+- `telepot.flavor()` returns a new flavor `chosen_inline_result`
+- Added `telepot.namedtuple.ChosenInlineResult` class
+
 **6.1 (2016-01-13)**
 
 - Changed normal message's flavor to `normal`
@@ -37,17 +43,6 @@
 - `reply_markup` parameter can accept namedtuples `ReplyKeyboardMarkup`, `ReplyKeyboardHide`, `ForceReply` as values
 
 **As you can see, 6.0 has just come out. Below documentations are not entirely up-to-date, although most of the stuff still applies. I will update them as soon as I can.**
-
-**5.0 (2015-12-28)**
-
-- Added webhook interface
-- Added `supergroup_chat_created`, `migrate_to_chat_id`, `migrate_from_chat_id`, and `channel_chat_created` fields to Message
-
-**4.1 (2015-11-03)**
-
-- Added `openable()` class decorator
-- Default `on_close()` prints out exception
-- Async `SpeakerBot` and `DelegatorBot` constructor accepts `loop` parameter
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
@@ -76,9 +71,9 @@ $ easy_install --upgrade telepot  # UPGRADE
 Download manually:
 
 ```
-$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.1.zip
-$ unzip telepot-6.1.zip
-$ cd telepot-6.1
+$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.2.zip
+$ unzip telepot-6.2.zip
+$ cd telepot-6.2
 $ python setup.py install
 ```
 
