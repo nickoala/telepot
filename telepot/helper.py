@@ -241,8 +241,12 @@ class ChatHandler(ChatContext):
 
 @openable
 class UserHandler(UserContext):
-    def __init__(self, seed_tuple, timeout, flavors=['normal', 'inline_query', """'chosen_inline_result'"""]):
+    def __init__(self, seed_tuple, timeout, flavors='all'):
         bot, initial_msg, seed = seed_tuple
         super(UserHandler, self).__init__(bot, seed, initial_msg['from']['id'])
         self.listener.set_options(timeout=timeout)
-        self.listener.capture(_=lambda msg: telepot.flavor(msg) in flavors, from__id=self.user_id)
+
+        if flavors == 'all':
+            self.listener.capture(from__id=self.user_id)
+        else:
+            self.listener.capture(_=lambda msg: telepot.flavor(msg) in flavors, from__id=self.user_id)

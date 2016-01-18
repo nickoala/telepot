@@ -27,7 +27,7 @@ def per_from_id_except(s):
     return _wrap_none(lambda msg: msg['from']['id'] if msg['from']['id'] not in s else None)
 
 def _isinline(msg):
-    return flavor(msg) in ['inline_query', """'chosen_inline_result'"""]
+    return flavor(msg) in ['inline_query', 'chosen_inline_result']
 
 def per_inline_from_id():
     return _wrap_none(lambda msg: msg['from']['id'] if _isinline(msg) else None)

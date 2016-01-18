@@ -175,12 +175,6 @@ UserProfilePhotos = _create_class('UserProfilePhotos', [
                         ('photos', PhotoSizeArrayArray)
                     ])
 
-File = _create_class('File', [
-           'file_id',
-           'file_size',
-           'file_path'
-       ])
-
 ReplyKeyboardMarkup = _create_class('ReplyKeyboardMarkup', [
                           'keyboard',
                           'resize_keyboard',
@@ -234,18 +228,18 @@ InlineQuery = _create_class('InlineQuery', [
                   'query', 
                   'offset'
               ])
-"""
+
 ChosenInlineResult = _create_class('ChosenInlineResult', [
                          'result_id', 
                          ('from_', User), 
                          'query'
                      ])
-"""
+
 Update = _create_class('Update', [
              'update_id', 
              ('message', Message),
              ('inline_query', InlineQuery),
-#             ('chosen_inline_result', ChosenInlineResult),
+             ('chosen_inline_result', ChosenInlineResult),
          ])
 
 def UpdateArray(data):
@@ -327,13 +321,7 @@ InlineQueryResultVideo = _create_class('InlineQueryResultVideo', [
                              'description',
                          ])
 
-"""
-Convert a dictionary to a namedtuple, given the type of object.
-You can see what `type` is valid by entering this in Python interpreter:
->>> import telepot.namedtuple
->>> print telepot.namedtuple._classmap
-It includes all Bot API objects, plus a few.
-"""
+
 def namedtuple(data, type):
     if type[-2:] == '[]':
         return _classmap[type](data)

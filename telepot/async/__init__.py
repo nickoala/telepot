@@ -251,10 +251,15 @@ class Bot(telepot._BotBase):
 
         def handle(update):
             try:
-                for a in ['message', 'inline_query', 'chosen_inline_result']:
-                    if a in update:
-                        callback(update[a])
-                        break
+                if 'message' in update:
+                    callback(update['message'])
+                elif 'inline_query' in update:
+                    callback(update['inline_query'])
+                elif 'chosen_inline_result' in update:
+                    callback(update['chosen_inline_result'])
+                else:
+                    # Do not swallow. Make sure developer knows.
+                    raise BadFlavor(update)
             except:
                 # Localize the error so message thread can keep going.
                 traceback.print_exc()
