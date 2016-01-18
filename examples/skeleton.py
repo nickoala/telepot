@@ -18,12 +18,26 @@ def handle(msg):
 
         # Do your stuff according to `content_type` ...
 
-    # an inline query - possible only AFTER `/setinline` has been done for the bot.
+    # an inline query - only AFTER `/setinline` has been done for the bot.
     elif flavor == 'inline_query':
         query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
-        print query_id, from_id, query_string
+        print 'Inline Query:', query_id, from_id, query_string
 
-        # bot.answerInlineQuery(...)
+        # Compose your own answers
+        articles = [{'type': 'article',
+                        'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+
+        bot.answerInlineQuery(query_id, articles)
+
+    # a chosen inline result - only AFTER `/setinlinefeedback` has been done for the bot.
+    elif flavor == 'chosen_inline_result':
+        result_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+        print 'Chosen Inline Result:', result_id, from_id, query_string
+
+        # Remember the chosen answer to do better next time
+
+    else:
+        raise telepot.BadFlavor(msg)
 
 
 TOKEN = sys.argv[1]  # get token from command-line
