@@ -98,7 +98,7 @@ bot.sendMessage(chat_id, 'I do not understand your last message.', reply_to_mess
 
 bot.sendMessage(chat_id, 'http://www.yahoo.com \n no web page preview', disable_web_page_preview=True)
 
-# Support very basic markdown since 2.0
+# Support very basic markdown
 bot.sendMessage(chat_id, '*bold text*\n_italic text_\n[link](http://www.google.com)', parse_mode='Markdown')
 
 # Show a custom keyboard
@@ -112,6 +112,15 @@ bot.sendMessage(chat_id, 'Hiding it now.', reply_markup=hide_keyboard)
 # Force reply
 force_reply = {'force_reply': True}
 bot.sendMessage(chat_id, 'Force reply', reply_markup=force_reply)
+
+# `reply_markup` also accepts namedtuples
+from telepot.namedtuple import ReplyKeyboardMarkup, ReplyKeyboardHide, ForceReply
+
+bot.sendMessage(chat_id, 'Show keyboard', reply_markup=ReplyKeyboardMarkup(keyboard=[['Yes', 'No']]))
+
+bot.sendMessage(chat_id, 'Hide keyboard', reply_markup=ReplyKeyboardHide())
+
+bot.sendMessage(chat_id, 'Force reply', reply_markup=ForceReply())
 ```
 
 **forwardMessage(chat_id, from_chat_id, message_id)**
@@ -313,10 +322,10 @@ Examples:
 ```python
 from telepot.namedtuple import InlineQueryResultArticle
 
-articles = [InlineQueryResultArticle(
-                id='greeting1', title='Morning', message_text='Good morning'),
-            {'type': 'article',
-                'id': 'greeting2', 'title': 'Afternoon', 'message_text': 'Good afternoon'}]
+articles = [{'type': 'article',
+                'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'},
+            InlineQueryResultArticle(
+                id='xyz', title='ZZZZZ', message_text='Good night')]
 
 bot.answerInlineQuery(query_id, articles)
 ```
@@ -324,10 +333,10 @@ bot.answerInlineQuery(query_id, articles)
 ```python
 from telepot.namedtuple import InlineQueryResultPhoto
 
-photos = [InlineQueryResultPhoto(
-              id='123', photo_url='...', thumb_url='...'),
-          {'type': 'photo',
-              'id': '345', 'photo_url': '...', 'thumb_url': '...'}]
+photos = [{'type': 'photo',
+              'id': '123', 'photo_url': '...', 'thumb_url': '...'},
+          InlineQueryResultPhoto(
+              id='999', photo_url='...', thumb_url='...')]
 
 bot.answerInlineQuery(query_id, photos)
 ```
@@ -495,8 +504,9 @@ Returns the flavor of a message:
 
 - a normal message is `normal`
 - an inline query is `inline_query`
+- a chosen inline result is `chosen_inline_result`
 
-If the bot can receive inline queries, you should always check the flavor before further processing. See `glance2()` below for an example.
+If the bot can receive inline queries and/or chosen inline results, you should always check the flavor before further processing. See `glance2()` below for an example.
 
 **glance2(msg, flavor='normal', long=False)**
 
@@ -513,6 +523,10 @@ When `flavor` is `normal`:
 When `flavor` is `inline_query`:
 - returns a tuple of *(msg['id'], msg['from']['id'], msg['query'])*.
 - if `long` is `True`, returns a tuple of *(msg['id'], msg['from']['id'], msg['query'], msg['offset'])*.
+
+When `flavor` is `chosen_inline_result`:
+- returns a tuple of *(msg['result_id'], msg['from']['id'], msg['query'])*
+- parameter `long` has no effect in this case
 
 Examples:
 
@@ -534,6 +548,11 @@ elif flavor == 'inline_query':
     query_id, from_id, query_string, offset = telepot.glance2(msg, flavor='inline_query', long=True)
 
     # bot.answerInlineQuery(...)
+
+elif flavor == 'chosen_inline_result':
+    result_id, from_id, query_string = telepot.glance2(msg, flavor='chosen_inline_result')
+
+    # remember the chosen result, hopefully do better next time
 ```
 
 <a id="telepot-namedtuple"></a>
@@ -616,7 +635,37 @@ Convert a dictionary to a namedtuple of a given object type.
 <a id="telepot-namedtuple-construct"></a>
 ### Use namedtuple constructors
 
-*To be filled in ...*
+When creating reply markup (for `sendZZZ()`) or inline query results (for `answerInlineQuery()`), telepot's custom is to use dictionaries. An alternative is to use namedtuples.
+
+Examples:
+
+```python
+from telepot.namedtuple import ReplyKeyboardMarkup, ReplyKeyboardHide, ForceReply
+
+bot.sendMessage(chat_id, 'Show keyboard', reply_markup=ReplyKeyboardMarkup(keyboard=[['Yes', 'No']]))
+bot.sendMessage(chat_id, 'Hide keyboard', reply_markup=ReplyKeyboardHide())
+bot.sendMessage(chat_id, 'Force reply', reply_markup=ForceReply())
+```
+```python
+from telepot.namedtuple import InlineQueryResultArticle
+
+articles = [{'type': 'article',
+                'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'},
+            InlineQueryResultArticle(
+                id='xyz', title='ZZZZZ', message_text='Good night')]
+
+bot.answerInlineQuery(query_id, articles)
+```
+```python
+from telepot.namedtuple import InlineQueryResultPhoto
+
+photos = [{'type': 'photo',
+              'id': '123', 'photo_url': '...', 'thumb_url': '...'},
+          InlineQueryResultPhoto(
+              id='999', photo_url='...', thumb_url='...')]
+
+bot.answerInlineQuery(query_id, photos)
+```
 
 <a id="telepot-helper"></a>
 ## `telepot.helper` module
