@@ -558,7 +558,7 @@ elif flavor == 'chosen_inline_result':
 <a id="telepot-namedtuple"></a>
 ## `telepot.namedtuple` module
 
-**Telepot's custom is to represent Bot API objects as dictionaries.** On the other hand, we also have this module which provides namedtuple classes mirroring all Bot API object types:
+**Telepot's custom is to represent Bot API objects as dictionaries.** On the other hand, we also have namedtuple classes mirroring all Bot API object types:
 
 - [User](https://core.telegram.org/bots/api#user)
 - [Chat](https://core.telegram.org/bots/api#chat)
@@ -1056,32 +1056,41 @@ lambda msg: msg['chat']['id'] if msg['chat']['id'] not in set else None
 <a id="telepot-delegate-per-from-id"></a>
 **per_from_id()**
 
-*To be filled in ...*
+Returns a seed-calculating-function that returns `from` field's user id as the seed, equivalent to:
+```python
+lambda msg: msg['from']['id']
+```
 
 <a id="telepot-delegate-per-from-id-in"></a>
 **per_from_id_in(set)**
 
-*To be filled in ...*
+Returns a seed-calculating-function that returns `from` field's user id as the seed, if that user id is in the `set`, equivalent to:
+```python
+lambda msg: msg['from']['id'] if msg['from']['id'] in set else None
+```
 
 <a id="telepot-delegate-per-from-id-except"></a>
 **per_from_id_except(set)**
 
-*To be filled in ...*
+Returns a seed-calculating-function that returns `from` field's user id as the seed, if that user id is *not* in the `set`, equivalent to:
+```python
+lambda msg: msg['from']['id'] if msg['from']['id'] not in set else None
+```
 
 <a id="telepot-delegate-per-inline-from-id"></a>
 **per_inline_from_id()**
 
-*To be filled in ...*
+Returns a seed-calculating-function that returns `from` field's user id as the seed, only for inline queries and chosen inline results.
 
 <a id="telepot-delegate-per-inline-from-id-in"></a>
 **per_inline_from_id_in(set)**
 
-*To be filled in ...*
+Returns a seed-calculating-function that returns `from` field's user id as the seed, if that user id is in the `set`, only for inline queries and chosen inline results.
 
 <a id="telepot-delegate-per-inline-from-id-except"></a>
 **per_inline_from_id_except(set)**
 
-*To be filled in ...*
+Returns a seed-calculating-function that returns `from` field's user id as the seed, if that user id is *not* in the `set`, only for inline queries and chosen inline results.
 
 <a id="telepot-delegate-call"></a>
 **call(func, \*args, \*\*kwargs)**
