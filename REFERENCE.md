@@ -1,4 +1,4 @@
-# telepot reference
+# telepot 6.2 reference
 
 **[telepot](#telepot)**
 - [Bot](#telepot-Bot)
