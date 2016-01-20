@@ -3,7 +3,7 @@
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
 **[Dealing with Inline Query](#inline-query)**  
-**[The Intermediate](#intermediate)**  
+**[Class-based Message Handling](#classbased)**  
 **[The Advanced](#advanced)**  
 **[Async Version](#async)** (Python 3.4.3 or newer)  
 **[Webhook Interface](#webhook)**  
@@ -41,8 +41,6 @@
 - Added a few `per_XXX_id()` functions useful for spawning delegates for inline queries
 - Added `UserHandler`
 - `reply_markup` parameter can accept namedtuples `ReplyKeyboardMarkup`, `ReplyKeyboardHide`, `ForceReply` as values
-
-**As you can see, 6.0 has just come out. Below documentations are not entirely up-to-date, although most of the stuff still applies. I will update them as soon as I can.**
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
@@ -250,7 +248,7 @@ After being added as an **administrator** to a channel, the bot can send message
 
 #### Send a custom keyboard
 
-A custom keyboard presents custom buttons for users to tab. Check it out.
+A custom keyboard presents custom buttons for users to tap. Check it out.
 
 ```python
 >>> show_keyboard = {'keyboard': [['Yes','No'], ['Maybe','Maybe not']]}
@@ -336,7 +334,7 @@ An inline query has this structure:
 Supply the correct `flavor`, and `glance2()` extracts some "headline" info about the inline query:
 
 ```python
-query_id, from_user_id, query_string = telepot.glance2(msg, flavor='inline_query')
+query_id, from_id, query_string = telepot.glance2(msg, flavor='inline_query')
 ```
 
 #### Answer the query
@@ -348,17 +346,17 @@ The only way to respond to an inline query is to `answerInlineQuery()`. There ar
 - [InlineQueryResultMpeg4Gif](https://core.telegram.org/bots/api#inlinequeryresultmpeg4gif)
 - [InlineQueryResultVideo](https://core.telegram.org/bots/api#inlinequeryresultvideo)
 
-These objects include a variety of fields with various meanings, most of them optional. It is beyond the scope of this document to discuss the effects of those fields.
+These objects include a variety of fields with various meanings, most of them optional. It is beyond the scope of this document to discuss the effects of those fields. Refer to the links above for details.
 
 As is the custom in telepot, you may construct these results using dictionaries. An alternative is to use the namedtuple classes provided by `telepot.namedtuple` module.
 
 ```python
 from telepot.namedtuple import InlineQueryResultArticle
 
-articles = [InlineQueryResultArticle(
-                id='greeting1', title='Morning', message_text='Good morning'),
-            {'type': 'article',
-                'id': 'greeting2', 'title': 'Afternoon', 'message_text': 'Good afternoon'}]
+articles = [{'type': 'article',
+                'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'},
+            InlineQueryResultArticle(
+                id='xyz', title='ZZZZZ', message_text='Good night')]
 
 bot.answerInlineQuery(query_id, articles)
 ```
@@ -366,15 +364,46 @@ bot.answerInlineQuery(query_id, articles)
 ```python
 from telepot.namedtuple import InlineQueryResultPhoto
 
-photos = [InlineQueryResultPhoto(
-              id='123', photo_url='...', thumb_url='...'),
-          {'type': 'photo',
-              'id': '345', 'photo_url': '...', 'thumb_url': '...'}]
+photos = [{'type': 'photo',
+              'id': '123', 'photo_url': '...', 'thumb_url': '...'},
+          InlineQueryResultPhoto(
+              id='999', photo_url='...', thumb_url='...')]
 
 bot.answerInlineQuery(query_id, photos)
 ```
 
-#### A skeleton that deals with inline query
+#### Detect which answer has been chosen
+
+By sending `/setinlinefeedback` to BotFather, you enable the bot to know which of the provided results your users have chosen. After `/setinlinefeedback` is done, your bot will receive one more flavor of messages: `chosen_inline_result`.
+
+```python
+flavor = telepot.flavor(msg)
+
+if flavor == 'normal':
+   ...
+elif flavor == 'inline_query':
+   ...
+elif flavor == 'chosen_inline_result':
+   ...
+```
+
+A chosen inline result has this structure:
+
+```python
+{u'from': {u'first_name': u'Nick', u'id': 999999999},
+ u'query': u'qqqqq',
+ u'result_id': u'abc'}
+ ```
+
+The `result_id` refers to the id you have assigned to a particular answer.
+
+Again, use `glance2()` to extract "headline" info:
+
+```python
+result_id, from_id, query_string = telepot.glance2(msg, flavor='chosen_inline_result')
+```
+
+#### A skeleton that deals with all flavors
 
 ```python
 import sys
@@ -387,16 +416,30 @@ def handle(msg):
     # normal message
     if flavor == 'normal':
         content_type, chat_type, chat_id = telepot.glance2(msg)
-        print content_type, chat_type, chat_id
+        print 'Normal Message:', content_type, chat_type, chat_id
 
         # Do your stuff according to `content_type` ...
 
-    # inline query
+    # inline query - need `/setinline`
     elif flavor == 'inline_query':
         query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
-        print query_id, from_id, query_string
+        print 'Inline Query:', query_id, from_id, query_string
 
-        # bot.answerInlineQuery(...)
+        # Compose your own answers
+        articles = [{'type': 'article',
+                        'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+
+        bot.answerInlineQuery(query_id, articles)
+
+    # chosen inline result - need `/setinlinefeedback`
+    elif flavor == 'chosen_inline_result':
+        result_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+        print 'Chosen Inline Result:', result_id, from_id, query_string
+
+        # Remember the chosen answer to do better next time
+
+    else:
+        raise telepot.BadFlavor(msg)
 
 
 TOKEN = sys.argv[1]  # get token from command-line
@@ -410,12 +453,14 @@ while 1:
     time.sleep(10)
 ```
 
-<a id="intermediate"></a>
-## The Intermediate
+**[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
-Defining a global message handler may lead to the proliferation of global variables quickly. Encapsulation may be achieved by extending the `Bot` class, defining a `handle` method, then calling `notifyOnMessage()` with no callback function. This way, the object's `handle` method will be used as the callback.
+<a id="classbased"></a>
+## Class-based Message Handling
 
-Here is a skeleton using this strategy:
+Defining a global message handler may lead to proliferation of global variables quickly. Encapsulation may be achieved by extending the `Bot` class, defining a `handle` method, then calling `notifyOnMessage()` with no callback function. This way, the object's `handle` method will be used as the callback.
+
+Here is a Python 3 skeleton using this strategy. Remember that you may not need the blocks dealing with `inline_query` and `chosen_inline_result` if you have not `/setinline` or `/setinlinefeedback` on the bot.
 
 ```python
 import sys
@@ -424,16 +469,42 @@ import telepot
 
 class YourBot(telepot.Bot):
     def handle(self, msg):
-        content_type, chat_type, chat_id = telepot.glance2(msg)
-        print content_type, chat_type, chat_id
-        # Do your stuff according to `content_type` ...
+        flavor = telepot.flavor(msg)
+
+        # normal message
+        if flavor == 'normal':
+            content_type, chat_type, chat_id = telepot.glance2(msg)
+            print('Normal Message:', content_type, chat_type, chat_id)
+
+            # Do your stuff according to `content_type` ...
+
+        # inline query - need `/setinline`
+        elif flavor == 'inline_query':
+            query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            print('Inline Query:', query_id, from_id, query_string)
+
+            # Compose your own answers
+            articles = [{'type': 'article',
+                            'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+
+            bot.answerInlineQuery(query_id, articles)
+
+        # chosen inline result - need `/setinlinefeedback`
+        elif flavor == 'chosen_inline_result':
+            result_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            print('Chosen Inline Result:', result_id, from_id, query_string)
+
+            # Remember the chosen answer to do better next time
+
+        else:
+            raise telepot.BadFlavor(msg)
 
 
-TOKEN = sys.argv[1] # get token from command-line
+TOKEN = sys.argv[1]  # get token from command-line
 
 bot = YourBot(TOKEN)
 bot.notifyOnMessage()
-print 'Listening ...'
+print('Listening ...')
 
 # Keep the program running.
 while 1:
