@@ -5,6 +5,7 @@
 **[Dealing with Inline Query](#inline-query)**  
 **[Class-based Message Handling](#classbased)**  
 **[Maintain Threads of Conversation](#threads-conversation)**  
+**[Follow User's Every Action](#follow-user)**  
 **[Async Version](#async)** (Python 3.4.3 or newer)  
 **[Webhook Interface](#webhook)**  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
@@ -564,6 +565,11 @@ This is the class that deals with an individual chat. Being a subclass of `ChatH
 `on_message()` is called whenever a chat message arrives. How messages are distributed to the correct object is done by the library. You don't have to worry about it.
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
+
+<a id="follow-user"></a>
+## Follow User's Every Action
+
+*Coming up next ...*
 
 <a id="async"></a>
 ## Async Version (Python 3.4.3 or newer)
