@@ -11,14 +11,14 @@ A skeleton for your telepot programs.
 def handle(msg):
     flavor = telepot.flavor(msg)
 
-    # a normal message
+    # normal message
     if flavor == 'normal':
         content_type, chat_type, chat_id = telepot.glance2(msg)
-        print content_type, chat_type, chat_id
+        print 'Normal Message:', content_type, chat_type, chat_id
 
         # Do your stuff according to `content_type` ...
 
-    # an inline query - only AFTER `/setinline` has been done for the bot.
+    # inline query - need `/setinline`
     elif flavor == 'inline_query':
         query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
         print 'Inline Query:', query_id, from_id, query_string
@@ -29,7 +29,7 @@ def handle(msg):
 
         bot.answerInlineQuery(query_id, articles)
 
-    # a chosen inline result - only AFTER `/setinlinefeedback` has been done for the bot.
+    # chosen inline result - need `/setinlinefeedback`
     elif flavor == 'chosen_inline_result':
         result_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
         print 'Chosen Inline Result:', result_id, from_id, query_string
