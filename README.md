@@ -4,7 +4,7 @@
 **[The Basics](#basics)**  
 **[Dealing with Inline Query](#inline-query)**  
 **[Class-based Message Handling](#classbased)**  
-**[The Advanced](#advanced)**  
+**[Maintain Threads of Conversation](#threads-conversation)**  
 **[Async Version](#async)** (Python 3.4.3 or newer)  
 **[Webhook Interface](#webhook)**  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
@@ -513,14 +513,14 @@ while 1:
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
-<a id="advanced"></a>
-## The Advanced
+<a id="threads-conversation"></a>
+## Maintain Threads of Conversation
 
 Having a single message handler is adequate for simple programs. For more sophisticated programs where states need to be maintained across messages, a better approach is needed.
 
-Consider this scenario. A bot wants to have an intelligent conversation with a lot of users, and if we could only use a single message-handling function, we would have to maintain some state variables about each conversation *outside* the function. On receiving each message, we first have to check whether the user already has a conversation started, and if so, what we have been talking about. There has to be a better way.
+Consider this scenario. A bot wants to have an intelligent conversation with a lot of users, and if we could only use a single message-handling function, we would have to maintain some state variables about each conversation *outside* the function. On receiving each message, we first have to check whether the user already has a conversation started, and if so, what we have been talking about. To avoid such tedium, we need a structured way to maintain "threads" of conversation.
 
-Let's look at my solution. Here, I implement a bot that counts how many messages have been sent by an individual user. If no message is received after 10 seconds, it starts over (timeout). The counting is done *per chat* - that's the important point.
+Let's look at my solution. Here, I implemented a bot that counts how many messages have been sent by an individual user. If no message is received after 10 seconds, it starts over (timeout). The counting is done *per chat* - that's the important point.
 
 ```python
 import sys
@@ -677,7 +677,7 @@ loop.run_forever()
 
 #### Skeleton for `DelegatorBot`
 
-I have re-done the `MessageCounter` example here. Again, it is very similar to the [traditional version](#advanced).
+I have re-done the `MessageCounter` example here. Again, it is very similar to the [traditional version](#threads-conversation).
 
 ```python
 import sys
