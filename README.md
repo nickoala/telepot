@@ -545,31 +545,63 @@ bot = telepot.DelegatorBot(TOKEN, [
 bot.notifyOnMessage(run_forever=True)
 ```
 
-Noteworthy are two classes: `DelegatorBot` and `MessageCounter`. Let me explain one by one.
+A `DelegatorBot` is a `Bot` with the newfound ability to spawn *delegates*. Its constructor takes a list of tuples telling it when and how to spawn delegates. In the example above, it is spawning one `MessageCounter` *per chat id*.
 
-#### `DelegatorBot`
+For every received message, the function `per_chat_id()` digests it down to a *seed* - in this case, the chat id. At first, when there is no `MessageCounter` associated with a seed (chat id), a new `MessageCounter` is created. Next time, when there is already a `MessageCounter` associated with the seed (chat id), no new one is needed.
 
-It is a `Bot` with the newfound ability to spawn *delegates*. Its constructor takes a list of tuples telling it when and how to spawn delegates. In the example above, it is spawning one `MessageCounter` *per chat id*.
+A `MessageCounter` is only an object encapsulating states; it says nothing about how to spawn a delegate. The function `create_open()` causes the spawning of a thread. Thread is the default delegation mechanism (that is why I use the verb "spawn"). There is a way to provide your own implementation of threads or other delegation mechanisms. The [Chatbox example](#examples-chatbox) demonstrates this possibility.
 
-Technically, `per_chat_id()` returns a *seed-calculating-function*, and `create_open()` returns a *delegate-producing-function*. I won't get into details here. You can [read the reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md#telepot-DelegatorBot) for that.
-
-Simply put, a *seed-calculating-function* determines **when** to spawn a delegate, while a *delegate-producing-function* determines **how** to spawn one. The default manifestation of a delegate is a thread, although you can override that.
-
-#### `MessageCounter`, extending from `ChatHandler`
-
-This is the class that deals with an individual chat. Being a subclass of `ChatHandler` offers a few benefits:
-
-- inherits utilities for dealing with a chat, e.g. a `sender` object that makes it easy to send messages to a chat (as demonstrated above), a `listener` object that waits for messages from the chat (implicitly done, not shown above).
-- inherits most methods and attributes required by `create_open()`. Just implement `on_message()` and you are done.
-
-`on_message()` is called whenever a chat message arrives. How messages are distributed to the correct object is done by the library. You don't have to worry about it.
+The function `create_open()` requires the object `MessageCounter` to meet certain criteria. Being a subclass of `ChatHandler`, `MessageCounter` fulfills most of them. The only thing it has to do is implement the method `on_message()`, which is called whenever a normal message arrives. How messages are distributed to the correct object is done by telepot. You don't have to worry about that.
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
 <a id="follow-user"></a>
 ## Follow User's Every Action
 
-*Coming up next ...*
+The Message Counter example only deals with normal messages. What if you want to maintain states across different flavors of messages? Here is a counter that follows all messages originating from a user, regardless of flavor.
+
+```python
+import sys
+import random
+import telepot
+from telepot.delegate import per_from_id, create_open
+
+class AllKnowingCounter(telepot.helper.UserHandler):
+    def __init__(self, seed_tuple, timeout):
+        super(AllKnowingCounter, self).__init__(seed_tuple, timeout)
+        self._counts = {'normal': 0,
+                        'inline_query': 0,
+                        'chosen_inline_result': 0}
+
+    def on_message(self, msg):
+        flavor = telepot.flavor(msg)
+        self._counts[flavor] += 1
+
+        print(self._counts)
+
+        # Have to answer inline query to receive chosen result
+        if flavor == 'inline_query':
+            query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+
+            articles = [{'type': 'article',
+                             'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+
+            bot.answerInlineQuery(query_id, articles)
+
+
+TOKEN = sys.argv[1]
+
+bot = telepot.DelegatorBot(TOKEN, [
+    (per_from_id(), create_open(AllKnowingCounter, timeout=20)),
+])
+bot.notifyOnMessage(run_forever=True)
+```
+
+All messages, regardless of flavor, as long as it is originating from a user, would have a `from` field containing an `id`. The function `per_from_id()` digests a message down to its originating user id, thus ensuring there is one and only one `AllKnowingCounter` *per user id*.
+
+`AllKnowingCounter`, being a subclass of `UserHandler`, is automatically set up to capture messages originating from a certain user, regardless of flavor.
+
+`per_from_id()` and `UserHandler` combined, we can track a user's every step.
 
 <a id="async"></a>
 ## Async Version (Python 3.4.3 or newer)
