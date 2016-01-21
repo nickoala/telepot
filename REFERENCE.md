@@ -98,8 +98,11 @@ bot.sendMessage(chat_id, 'I do not understand your last message.', reply_to_mess
 
 bot.sendMessage(chat_id, 'http://www.yahoo.com \n no web page preview', disable_web_page_preview=True)
 
-# Support very basic markdown
+# Markdown
 bot.sendMessage(chat_id, '*bold text*\n_italic text_\n[link](http://www.google.com)', parse_mode='Markdown')
+
+# HTML
+bot.sendMessage(chat_id, '<i>italic</i> <code>inline fixed-width code</code>', parse_mode='HTML')
 
 # Show a custom keyboard
 show_keyboard = {'keyboard': [['Yes', 'No'], ['Maybe', 'Maybe not']]}
