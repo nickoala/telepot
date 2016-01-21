@@ -6,6 +6,7 @@
 **[Class-based Message Handling](#classbased)**  
 **[Maintain Threads of Conversation](#threads-conversation)**  
 **[Follow User's Every Action](#follow-user)**  
+**[Inline-only Handler](#inline-only)**  
 **[Async Version](#async)** (Python 3.4.3 or newer)  
 **[Webhook Interface](#webhook)**  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
@@ -558,17 +559,18 @@ The function `create_open()` requires the object `MessageCounter` to meet certai
 <a id="follow-user"></a>
 ## Follow User's Every Action
 
-The Message Counter example only deals with normal messages. What if you want to maintain states across different flavors of messages? Here is a counter that follows all messages originating from a user, regardless of flavor.
+The Message Counter example only deals with normal messages. What if you want to maintain states across different flavors of messages? Here is a tracker that follows all messages originating from a user, regardless of flavor.
 
 ```python
 import sys
-import random
 import telepot
 from telepot.delegate import per_from_id, create_open
 
-class AllKnowingCounter(telepot.helper.UserHandler):
+class UserTracker(telepot.helper.UserHandler):
     def __init__(self, seed_tuple, timeout):
-        super(AllKnowingCounter, self).__init__(seed_tuple, timeout)
+        super(UserTracker, self).__init__(seed_tuple, timeout)
+
+        # keep track of how many messages of each flavor
         self._counts = {'normal': 0,
                         'inline_query': 0,
                         'chosen_inline_result': 0}
@@ -577,7 +579,7 @@ class AllKnowingCounter(telepot.helper.UserHandler):
         flavor = telepot.flavor(msg)
         self._counts[flavor] += 1
 
-        print(self._counts)
+        print(self.id, ':', self._counts)
 
         # Have to answer inline query to receive chosen result
         if flavor == 'inline_query':
@@ -592,16 +594,68 @@ class AllKnowingCounter(telepot.helper.UserHandler):
 TOKEN = sys.argv[1]
 
 bot = telepot.DelegatorBot(TOKEN, [
-    (per_from_id(), create_open(AllKnowingCounter, timeout=20)),
+    (per_from_id(), create_open(UserTracker, timeout=20)),
 ])
 bot.notifyOnMessage(run_forever=True)
 ```
 
-All messages, regardless of flavor, as long as it is originating from a user, would have a `from` field containing an `id`. The function `per_from_id()` digests a message down to its originating user id, thus ensuring there is one and only one `AllKnowingCounter` *per user id*.
+All messages, regardless of flavor, as long as it is originating from a user, would have a `from` field containing an `id`. The function `per_from_id()` digests a message down to its originating user id, thus ensuring there is one and only one `UserTracker` *per user id*.
 
-`AllKnowingCounter`, being a subclass of `UserHandler`, is automatically set up to capture messages originating from a certain user, regardless of flavor.
+`UserTracker`, being a subclass of `UserHandler`, is automatically set up to capture messages originating from a certain user, regardless of flavor.
 
 `per_from_id()` and `UserHandler` combined, we can track a user's every step.
+
+**[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
+
+<a id="inline-only"></a>
+## Inline-only Handler
+
+What if you only care about inline query (and chosen inline result)? Well, here you go ...
+
+```python
+import sys
+import telepot
+from telepot.delegate import per_inline_from_id, create_open
+
+class InlineHandler(telepot.helper.UserHandler):
+    def __init__(self, seed_tuple, timeout):
+        super(InlineHandler, self).__init__(seed_tuple, timeout, flavors=['inline_query', 'chosen_inline_result'])
+
+    def on_message(self, msg):
+        flavor = telepot.flavor(msg)
+
+        if flavor == 'inline_query':
+            query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            print(self.id, ':', 'Inline Query:', query_id, from_id, query_string)
+
+            articles = [{'type': 'article',
+                             'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+
+            bot.answerInlineQuery(query_id, articles)
+            print(self.id, ':', 'Answers sent.')
+
+        elif flavor == 'chosen_inline_result':
+            result_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            print(self.id, ':', 'Chosen Inline Result:', result_id, from_id, query_string)
+
+
+TOKEN = sys.argv[1]
+
+bot = telepot.DelegatorBot(TOKEN, [
+    (per_inline_from_id(), create_open(InlineHandler, timeout=10)),
+])
+bot.notifyOnMessage(run_forever=True)
+```
+
+The function `per_inline_from_id()` digests a message down to its originating user id, but only for **inline query** and **chosen inline result**. It ignores normal messages.
+
+`InlineHandler`, again, is a subclass of `UserHandler`. But it specifies which message flavors to capture (in the constructor). In this case, it only cares about **inline query** and **chosen inline result**.
+
+This inline bot does the job, but not ideally. As the user types and pauses, types and pauses, types and pauses ... closely bunched inline queries arrive. In fact, a new inline query often arrives *before* we finish processing a preceding one. With only a single thread of execution *per user id*, we can only process the (closely bunched) inline queries sequentially. Ideally, whenever we see a new inline query from the same user, it should override and cancel any preceding inline queries being processed (that belong to the same user).
+
+I may provide some utility to better handle this situation in the future. For now, you will have to implement your own.
+
+**[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
 <a id="async"></a>
 ## Async Version (Python 3.4.3 or newer)
