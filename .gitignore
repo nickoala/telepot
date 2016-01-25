@@ -4,3 +4,4 @@ dist/
 .idea/
 checklist.txt
 .remote-sync.json
+.pypirc
