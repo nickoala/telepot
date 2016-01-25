@@ -957,7 +957,7 @@ This example only handles text messages and stores messages in memory. If the bo
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/chatbox_nodb.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/chatboxa_nodb.py)**
 
-<a id="#examples-user-tracker"></a>
+<a id="examples-user-tracker"></a>
 #### User Tracker
 
 Tracks a user's every actions, including normal messages and inline-related messages.
@@ -965,7 +965,7 @@ Tracks a user's every actions, including normal messages and inline-related mess
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/tracker.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/trackera.py)**
 
-<a id="#examples-inline-only-handler"></a>
+<a id="examples-inline-only-handler"></a>
 #### Inline-only Handler
 
 Only handles a user's inline-related messages.
@@ -973,7 +973,7 @@ Only handles a user's inline-related messages.
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/inline.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/inlinea.py)**
 
-<a id="#examples-pairing-patterns"></a>
+<a id="examples-pairing-patterns"></a>
 #### Pairing Patterns
 
 When using `DelegatorBot`, each `per_ZZZ()` function is most sensibly paired with a certain kind of handler. This example demonstrates those patterns.
