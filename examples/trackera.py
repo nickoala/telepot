@@ -7,7 +7,7 @@ from telepot.async.delegate import create_open
 """
 $ python3.4 trackera.py <token>
 
-Tracker user actions across all flavors.
+Tracks user actions across all flavors.
 """
 
 class UserTracker(telepot.helper.UserHandler):
