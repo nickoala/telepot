@@ -18,8 +18,11 @@
 - [IP Cam using Telegram as DDNS](#examples-ipcam)
 - [Emodi - an Emoji Unicode Decoder](#examples-emodi)
 - [Message Counter](#examples-message-counter)
-- [Guess-a-number](#examples-guess-a-number)
+- [Guess a number](#examples-guess-a-number)
 - [Chatbox - a Mailbox for Chats](#examples-chatbox)
+- [User Tracker](#examples-user-tracker)
+- [Inline-only Handler](#examples-inline-only-handler)
+- [Pairing Patterns](#examples-pairing-patterns)
 - [Webhooks](#examples-webhooks)
 
 ### Recent changes
@@ -920,7 +923,7 @@ Counts number of messages a user has sent. Illustrates the basic usage of `Deleg
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/countera.py)**
 
 <a id="examples-guess-a-number"></a>
-#### Guess-a-number
+#### Guess a number
 
 1. Send the bot anything to start a game.
 2. The bot randomly picks an integer between 0-99.
@@ -953,6 +956,30 @@ This example only handles text messages and stores messages in memory. If the bo
 
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/chatbox_nodb.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/chatboxa_nodb.py)**
+
+<a id="#examples-user-tracker"></a>
+#### User Tracker
+
+Tracks a user's every actions, including normal messages and inline-related messages.
+
+**[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/tracker.py)**  
+**[Async version »](https://github.com/nickoala/telepot/blob/master/examples/trackera.py)**
+
+<a id="#examples-inline-only-handler"></a>
+#### Inline-only Handler
+
+Only handles a user's inline-related messages.
+
+**[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/inline.py)**  
+**[Async version »](https://github.com/nickoala/telepot/blob/master/examples/inlinea.py)**
+
+<a id="#examples-pairing-patterns"></a>
+#### Pairing Patterns
+
+When using `DelegatorBot`, each `per_ZZZ()` function is most sensibly paired with a certain kind of handler. This example demonstrates those patterns.
+
+**[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/pairing.py)**  
+**[Async version »](https://github.com/nickoala/telepot/blob/master/examples/pairinga.py)**
 
 <a id="examples-webhooks"></a>
 #### Webhooks
