@@ -588,7 +588,7 @@ class UserTracker(telepot.helper.UserHandler):
             articles = [{'type': 'article',
                              'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
 
-            bot.answerInlineQuery(query_id, articles)
+            self.bot.answerInlineQuery(query_id, articles)
 
 
 TOKEN = sys.argv[1]
@@ -631,7 +631,7 @@ class InlineHandler(telepot.helper.UserHandler):
             articles = [{'type': 'article',
                              'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
 
-            bot.answerInlineQuery(query_id, articles)
+            self.bot.answerInlineQuery(query_id, articles)
             print(self.id, ':', 'Answers sent.')
 
         elif flavor == 'chosen_inline_result':
