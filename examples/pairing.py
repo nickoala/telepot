@@ -6,7 +6,7 @@ from telepot.delegate import per_chat_id, per_from_id, per_inline_from_id, creat
 """
 $ python2.7 pairing.py <token>
 
-Demonstrates the pairing patterns between per_ZZZ() and handler classes.
+Demonstrates pairing patterns between per_ZZZ() and handler classes.
 """
 
 # Captures only normal chat messages, to be paired with per_chat_id()

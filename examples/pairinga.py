@@ -9,7 +9,7 @@ from telepot.async.delegate import create_open
 """
 $ python3.4 pairinga.py <token>
 
-Demonstrates the pairing patterns between per_ZZZ() and handler classes.
+Demonstrates pairing patterns between per_ZZZ() and handler classes.
 """
 
 # Captures only normal chat messages, to be paired with per_chat_id()
