@@ -728,10 +728,7 @@ import telepot.async
 class YourBot(telepot.async.Bot):
     @asyncio.coroutine
     def handle(self, msg):
-        content_type, chat_type, chat_id = telepot.glance2(msg)
-        print(content_type, chat_type, chat_id)
-        # Do your stuff according to `content_type` ...
-
+        # ......
 
 TOKEN = sys.argv[1]  # get token from command-line
 
@@ -744,7 +741,9 @@ print('Listening ...')
 loop.run_forever()
 ```
 
-#### Skeleton, by defining a global hander
+[View source »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_extend.py)
+
+#### Skeleton, by defining a global handler
 
 ```python
 import sys
@@ -754,10 +753,7 @@ import telepot.async
 
 @asyncio.coroutine
 def handle(msg):
-    content_type, chat_type, chat_id = telepot.glance2(msg)
-    print(content_type, chat_type, chat_id)
-    # Do your stuff according to `content_type` ...
-
+    # ......
 
 TOKEN = sys.argv[1]  # get token from command-line
 
@@ -769,6 +765,8 @@ print('Listening ...')
 
 loop.run_forever()
 ```
+
+[View source »](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)
 
 #### Skeleton for `DelegatorBot`
 
