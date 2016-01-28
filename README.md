@@ -829,7 +829,7 @@ except ImportError:
     from queue import Queue
 
 def handle(msg):
-    ......
+    # ......
 
 bot = telepot.Bot(TOKEN)
 update_queue = Queue()
