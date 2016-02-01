@@ -9,6 +9,7 @@
 **[Inline-only Handler](#inline-only)**  
 **[Async Version](#async)** (Python 3.4.3 or newer)  
 **[Webhook Interface](#webhook)**  
+**[Deep Linking](#deep-linking)**  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
 **[Mailing List](https://groups.google.com/forum/#!forum/telepot)**  
 **[Examples](#examples)**  
@@ -24,6 +25,7 @@
 - [Inline-only Handler](#examples-inline-only-handler)
 - [Pairing Patterns](#examples-pairing-patterns)
 - [Webhooks](#examples-webhooks)
+- [Deep Linking](#examples-deep-linking)
 
 ### Recent changes
 
@@ -523,7 +525,7 @@ while 1:
 
 Having a single message handler is adequate for simple programs. For more sophisticated programs where states need to be maintained across messages, a better approach is needed.
 
-Consider this scenario. A bot wants to have an intelligent conversation with a lot of users, and if we could only use a single message-handling function, we would have to maintain some state variables about each conversation *outside* the function. On receiving each message, we first have to check whether the user already has a conversation started, and if so, what we have been talking about. To avoid such tedium, we need a structured way to maintain "threads" of conversation.
+Consider this scenario. A bot wants to have an intelligent conversation with a lot of users, and if we could only use a single message-handling function, we would have to maintain some state variables about each conversation *outside* the function. On receiving each message, we first have to check whether the user already has a conversation started, and if so, what we have been talking about. To avoid such mundaneness, we need a structured way to maintain "threads" of conversation.
 
 Let's look at my solution. Here, I implemented a bot that counts how many messages have been sent by an individual user. If no message is received after 10 seconds, it starts over (timeout). The counting is done *per chat* - that's the important point.
 
@@ -741,7 +743,7 @@ print('Listening ...')
 loop.run_forever()
 ```
 
-[View source »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_extend.py)
+**[View source »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_extend.py)**
 
 #### Skeleton, by defining a global handler
 
@@ -766,7 +768,7 @@ print('Listening ...')
 loop.run_forever()
 ```
 
-[View source »](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)
+**[View source »](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)**
 
 #### Skeleton for `DelegatorBot`
 
@@ -854,6 +856,29 @@ def pass_update():
 It is beyond the scope of this document to detail the usage of web frameworks. Please look at the **[webhook examples](#examples-webhooks)** for full demonstrations. Remember, you will have to set up the webhook URL, SSL certificate, and web server on your own.
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
+
+<a id="deep-linking"></a>
+## Deep Linking
+
+Telegram website's introduction to [deep linking](https://core.telegram.org/bots#deep-linking) may be a bit confusing to beginners. I try to give a clearer explanation here.
+
+1. You have a database of users. Each user has an ID. Suppose you want your Telegram bot to communicate with user `123`, but you don't know his Telegram `chat_id` (which the bot needs in order to send messages to him). How do you "entice" him to talk to the bot, thus revealing his `chat_id`? You put a link on a web page.
+
+2. But the link has to be "personalized". You want each user to press on a slightly different link, in order to distinguish them. One way to do that is to embed user ID in the link. However, user IDs are *not* something you want to expose, so you generate a (temporary) **key** associated with a user ID, and **embed that key in the link**. If user `123` has the key `abcde`, his personalized link will be:
+
+    ```
+    https://telegram.me/<bot_username>?start=abcde
+    ```
+
+3. Someone clicks on the link, and is led to a conversation with your bot. When he presses the START button, your bot will receive a message:
+
+    ```
+    /start abcde
+    ```
+
+4. On receiving that message, the bot sees that `abcde` is associated with user `123`. Telegram `chat_id` can also be extracted from the message. Knowing user `123`'s `chat_id`, the bot can send him messages afterwards.
+
+**[Deep linking example »](#examples-deep-linking)**
 
 <a id="examples"></a>
 ## Examples
@@ -988,3 +1013,15 @@ A few examples from above are duplicated, by using webhooks. For traditional Pyt
 **[Message Counter + Flask](https://github.com/nickoala/telepot/blob/master/examples/webhook_flask_counter.py)**  
 **[Async Skeleton + aiohttp](https://github.com/nickoala/telepot/blob/master/examples/webhook_aiohttp_skeletona.py)**  
 **[Async Message Counter + aiohttp](https://github.com/nickoala/telepot/blob/master/examples/webhook_aiohttp_countera.py)**  
+
+<a id="examples-deep-linking"></a>
+#### Deep Linking
+
+Using Flask as the web frontend, this example serves a web link at `<base_url>/link`, and sets up a webhook at `<base_url>/abc`
+
+- Open browser, visit: `<base_url>/link`
+- Click on the link
+- On Telegram conversation, click on the START button
+- Bot should receive a message: `/start ghijk`, where `ghijk` is the key embedded in the link, and the payload sent along with the `/start` command. You may use this key to identify the user, then his Telegram `chat_id`.
+
+**[Webhook + Flask + Deep linking](https://github.com/nickoala/telepot/blob/master/examples/webhook_flask_deeplinking.py)**  
