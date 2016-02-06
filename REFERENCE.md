@@ -1,4 +1,4 @@
-# telepot 6.2 reference
+# telepot 6.3 reference
 
 **[telepot](#telepot)**
 - [Bot](#telepot-Bot)
@@ -14,6 +14,7 @@
 - [Microphone](#telepot-helper-Microphone)
 - [Listener](#telepot-helper-Listener)
 - [Sender](#telepot-helper-Sender)
+- [Answerer](#telepot-helper-Answerer)
 - [ListenerContext](#telepot-helper-ListenerContext)
 - [ChatContext](#telepot-helper-ChatContext)
 - [UserContext](#telepot-helper-UserContext)
@@ -44,6 +45,7 @@
 **[telepot.async.helper](#telepot-async-helper)** (Python 3.4.3 or newer)
 - [Microphone](#telepot-async-helper-Microphone)
 - [Listener](#telepot-async-helper-Listener)
+- [Answerer](#telepot-async-helper-Answerer)
 
 **[telepot.async.delegate](#telepot-async-delegate)**  (Python 3.4.3 or newer)
 - [call](#telepot-async-delegate-call)
@@ -379,7 +381,7 @@ import telepot
 
 class YourBot(telepot.Bot):
     def handle(self, msg):
-        content_type, chat_type, chat_id = telepot.glance2(msg)
+        content_type, chat_type, chat_id = telepot.glance(msg)
         print content_type, chat_type, chat_id
         # Do your stuff according to `content_type` ...
 
@@ -398,7 +400,7 @@ import time
 import telepot
 
 def handle(msg):
-    content_type, chat_type, chat_id = telepot.glance2(msg)
+    content_type, chat_type, chat_id = telepot.glance(msg)
     print content_type, chat_type, chat_id
     # Do your stuff according to `content_type` ...
 
@@ -509,9 +511,11 @@ Returns the flavor of a message:
 - an inline query is `inline_query`
 - a chosen inline result is `chosen_inline_result`
 
-If the bot can receive inline queries and/or chosen inline results, you should always check the flavor before further processing. See `glance2()` below for an example.
+If the bot can receive inline queries and/or chosen inline results, you should always check the flavor before further processing. See `glance()` below for an example.
 
-**glance2(msg, flavor='normal', long=False)**
+**glance(msg, flavor='normal', long=False)**
+
+*This function has an alias, `glance2()`, for backward compatibility. Developers are encouraged to use `glance()` from now on.*
 
 Extracts "headline" information about a message.
 
@@ -541,22 +545,26 @@ import telepot
 flavor = telepot.flavor(msg)
 
 if flavor == 'message':
-    content_type, chat_type, chat_id = telepot.glance2(msg)
-    content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance2(msg, long=True)
+    content_type, chat_type, chat_id = telepot.glance(msg)
+    content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance(msg, long=True)
 
     # Do you stuff according to `content_type`
 
 elif flavor == 'inline_query':
-    query_id, from_id, query_string = telepot.glance2(msg, flavor='inline_query')
-    query_id, from_id, query_string, offset = telepot.glance2(msg, flavor='inline_query', long=True)
+    query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
+    query_id, from_id, query_string, offset = telepot.glance(msg, flavor='inline_query', long=True)
 
     # bot.answerInlineQuery(...)
 
 elif flavor == 'chosen_inline_result':
-    result_id, from_id, query_string = telepot.glance2(msg, flavor='chosen_inline_result')
+    result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
 
     # remember the chosen result, hopefully do better next time
 ```
+
+**flance(msg, long=False)**
+
+A combination of `flavor()` and `glance()`, it returns a tuple of two elements: *(flavor of message, tuple as returned by `glance()` of the same message)*. The `long` parameter is passed to `glance()`, controlling how much info is extracted.
 
 <a id="telepot-namedtuple"></a>
 ## `telepot.namedtuple` module
@@ -834,6 +842,28 @@ Parameters:
 **sendLocation(latitude, longitude, reply_to_message_id=None, reply_markup=None)**
 
 **sendChatAction(action)**
+
+<a id="telepot-helper-Answerer"></a>
+### `telepot.helper.Answerer`
+
+On receiving an inline query, it spawns a thread to compute results and send them. If a preceding thread is already working for a user, it is cancelled. This ensures **at most one active thread** per user id.
+
+**Answerer(bot, compute_function)**
+
+Parameters:
+- **bot** - the parent bot.
+- **compute_function** - an answer-computing function.
+    - It must take one argument, the *inline query*.
+    - Its returned value is given to `bot.answerInlineQuery()` to send.
+    - It may return one of the following:
+        - a *list* of [InlineQueryResult](https://core.telegram.org/bots/api#inlinequeryresult)
+        - a *tuple*, whose first element is a list of InlineQueryResult, followed by positional arguments to be supplied to `bot.answerInlineQuery()`
+        - a *dict* representing keyword arguments to be supplied to `bot.answerInlineQuery()`
+    - It must be **thread-safe**, because many threads may access it as the same time.
+
+**answer(inline_query)**
+
+Spawns a thread that calls the `compute_function` (specified in constructor), then applies the returned value to `bot.answerInlineQuery()`, in effect answering the inline query. If a preceding thread is already working for a user, that thread is cancelled, thus ensuring at most one active thread per user id.
 
 <a id="telepot-helper-ListenerContext"></a>
 ### `telepot.helper.ListenerContext`
@@ -1362,7 +1392,7 @@ import telepot.async
 class YourBot(telepot.async.Bot):
     @asyncio.coroutine
     def handle(self, msg):
-        content_type, chat_type, chat_id = telepot.glance2(msg)
+        content_type, chat_type, chat_id = telepot.glance(msg)
         print(content_type, chat_type, chat_id)
         # Do your stuff according to `content_type` ...
 
@@ -1388,7 +1418,7 @@ import telepot.async
 
 @asyncio.coroutine
 def handle(msg):
-    content_type, chat_type, chat_id = telepot.glance2(msg)
+    content_type, chat_type, chat_id = telepot.glance(msg)
     print(content_type, chat_type, chat_id)
     # Do your stuff according to `content_type` ...
 
@@ -1533,6 +1563,29 @@ The only difference with traditional `telepot.helper.Listener` is that it uses `
 **Listener(microphone, queue)**
 
 *coroutine* **wait()**
+
+<a id="telepot-async-helper-Answerer"></a>
+### `telepot.async.helper.Answerer`
+
+On receiving an inline query, it creates a new task to compute results and send them. If a preceding task is already working for a user, it is cancelled. This ensures **at most one active task** per user id.
+
+**Answerer(bot, compute_function, loop=None)**
+
+Parameters:
+- **bot** - the parent bot.
+- **compute_function** - an answer-computing function.
+    - It may be a regular function or a coroutine.
+    - It must take one argument, the *inline query*.
+    - Its returned value is given to `bot.answerInlineQuery()` to send.
+    - It may return one of the following:
+        - a *list* of [InlineQueryResult](https://core.telegram.org/bots/api#inlinequeryresult)
+        - a *tuple*, whose first element is a list of InlineQueryResult, followed by positional arguments to be supplied to `bot.answerInlineQuery()`
+        - a *dict* representing keyword arguments to be supplied to `bot.answerInlineQuery()`
+- **loop** - the event loop. If `None`, use `asyncio`'s default event loop.
+
+**answer(inline_query)**
+
+Creates a task that calls the `compute_function` (specified in constructor), then applies the returned value to `bot.answerInlineQuery()`, in effect answering the inline query. If a preceding task is already working for a user, that task is cancelled, thus ensuring at most one active task per user id.
 
 <a id="telepot-async-delegate"></a>
 ## `telepot.async.delegate` module (Python 3.4.3 or newer)
