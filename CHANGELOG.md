@@ -1,5 +1,11 @@
 # telepot changelog
 
+## 6.3 (2016-02-06)
+
+- Added `Answerer` class to better deal with inline queries
+- Made `telepot.glance()` equivalent to `telepot.glance2()`. Developers are encouraged to use `telepot.glance()` from now on.
+- Added `telepot.flance()`, a combination of `telepot.flavor()` and `telepot.glance()`.
+
 ## 6.2 (2016-01-18)
 
 - Handle new field `chosen_inline_result` in Update object
