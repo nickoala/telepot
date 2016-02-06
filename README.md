@@ -23,6 +23,7 @@
 - [Chatbox - a Mailbox for Chats](#examples-chatbox)
 - [User Tracker](#examples-user-tracker)
 - [Inline-only Handler](#examples-inline-only-handler)
+- [Answerer Usage](#examples-answerer-usage)
 - [Pairing Patterns](#examples-pairing-patterns)
 - [Webhooks](#examples-webhooks)
 - [Deep Linking](#examples-deep-linking)
@@ -178,9 +179,9 @@ while 1:
     time.sleep(10)
 ```
 
-#### Quickly `glance2()` a message
+#### Quickly `glance()` a message
 
-When processing a message, a few pieces of information are so central that you almost always have to extract them. Use `glance2()` to extract a tuple of *(content_type, chat_type, chat_id)* from a message.
+When processing a message, a few pieces of information are so central that you almost always have to extract them. Use `glance()` to extract a tuple of *(content_type, chat_type, chat_id)* from a message.
 
 *content_type* can be: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, or `group_chat_created`.
 
@@ -196,7 +197,7 @@ import time
 import telepot
 
 def handle(msg):
-    content_type, chat_type, chat_id = telepot.glance2(msg)
+    content_type, chat_type, chat_id = telepot.glance(msg)
     print content_type, chat_type, chat_id
 
     # Do your stuff according to `content_type` ...
@@ -333,7 +334,7 @@ elif flavor == 'inline_query':
     print 'Inline query'
 ```
 
-#### You may `glance2()` an inline query too
+#### You may `glance()` an inline query too
 
 An inline query has this structure:
 
@@ -344,10 +345,10 @@ An inline query has this structure:
  u'query': u'abc'}
 ```
 
-Supply the correct `flavor`, and `glance2()` extracts some "headline" info about the inline query:
+Supply the correct `flavor`, and `glance()` extracts some "headline" info about the inline query:
 
 ```python
-query_id, from_id, query_string = telepot.glance2(msg, flavor='inline_query')
+query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
 ```
 
 #### Answer the query
@@ -410,10 +411,10 @@ A chosen inline result has this structure:
 
 The `result_id` refers to the id you have assigned to a particular answer.
 
-Again, use `glance2()` to extract "headline" info:
+Again, use `glance()` to extract "headline" info:
 
 ```python
-result_id, from_id, query_string = telepot.glance2(msg, flavor='chosen_inline_result')
+result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
 ```
 
 #### A skeleton that deals with all flavors
@@ -428,14 +429,14 @@ def handle(msg):
 
     # normal message
     if flavor == 'normal':
-        content_type, chat_type, chat_id = telepot.glance2(msg)
+        content_type, chat_type, chat_id = telepot.glance(msg)
         print 'Normal Message:', content_type, chat_type, chat_id
 
         # Do your stuff according to `content_type` ...
 
     # inline query - need `/setinline`
     elif flavor == 'inline_query':
-        query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+        query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
         print 'Inline Query:', query_id, from_id, query_string
 
         # Compose your own answers
@@ -446,7 +447,7 @@ def handle(msg):
 
     # chosen inline result - need `/setinlinefeedback`
     elif flavor == 'chosen_inline_result':
-        result_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+        result_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
         print 'Chosen Inline Result:', result_id, from_id, query_string
 
         # Remember the chosen answer to do better next time
@@ -486,14 +487,14 @@ class YourBot(telepot.Bot):
 
         # normal message
         if flavor == 'normal':
-            content_type, chat_type, chat_id = telepot.glance2(msg)
+            content_type, chat_type, chat_id = telepot.glance(msg)
             print('Normal Message:', content_type, chat_type, chat_id)
 
             # Do your stuff according to `content_type` ...
 
         # inline query - need `/setinline`
         elif flavor == 'inline_query':
-            query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
             print('Inline Query:', query_id, from_id, query_string)
 
             # Compose your own answers
@@ -504,7 +505,7 @@ class YourBot(telepot.Bot):
 
         # chosen inline result - need `/setinlinefeedback`
         elif flavor == 'chosen_inline_result':
-            result_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            result_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
             print('Chosen Inline Result:', result_id, from_id, query_string)
 
             # Remember the chosen answer to do better next time
@@ -594,7 +595,7 @@ class UserTracker(telepot.helper.UserHandler):
 
         # Have to answer inline query to receive chosen result
         if flavor == 'inline_query':
-            query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
 
             articles = [{'type': 'article',
                              'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
@@ -636,7 +637,7 @@ class InlineHandler(telepot.helper.UserHandler):
         flavor = telepot.flavor(msg)
 
         if flavor == 'inline_query':
-            query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
             print(self.id, ':', 'Inline Query:', query_id, from_id, query_string)
 
             articles = [{'type': 'article',
@@ -646,7 +647,7 @@ class InlineHandler(telepot.helper.UserHandler):
             print(self.id, ':', 'Answers sent.')
 
         elif flavor == 'chosen_inline_result':
-            result_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            result_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
             print(self.id, ':', 'Chosen Inline Result:', result_id, from_id, query_string)
 
 
@@ -1001,6 +1002,16 @@ Only handles a user's inline-related messages.
 
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/inline.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/inlinea.py)**
+
+<a id="examples-answerer-usage"></a>
+#### Answerer Usage
+
+`Answerer` may be used globally or within a `UserHandler`. Just give it an answer-computing function, and dump inline queries to its `answer()` method. These examples demonstrate how to do it.
+
+**[Traditional `Answerer` in a global context »](https://github.com/nickoala/telepot/blob/master/examples/answerer_global.py)**  
+**[Traditional `Answerer` in a `UserHandler` »](https://github.com/nickoala/telepot/blob/master/examples/answerer_handler.py)**  
+**[Async `Answerer` in a global context »](https://github.com/nickoala/telepot/blob/master/examples/answerera_global.py)**  
+**[Async `Answerer` in a `UserHandler` »](https://github.com/nickoala/telepot/blob/master/examples/answerera_handler.py)**  
 
 <a id="examples-pairing-patterns"></a>
 #### Pairing Patterns
