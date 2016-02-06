@@ -29,6 +29,12 @@
 
 ### Recent changes
 
+**6.3 (2016-02-06)**
+
+- Added `Answerer` class to better deal with inline queries
+- Made `telepot.glance()` equivalent to `telepot.glance2()`. Developers are encouraged to use `telepot.glance()` from now on.
+- Added `telepot.flance()`, a combination of `telepot.flavor()` and `telepot.glance()`.
+
 **6.2 (2016-01-18)**
 
 - Handle new field `chosen_inline_result` in Update object
@@ -76,9 +82,9 @@ $ easy_install --upgrade telepot  # UPGRADE
 Download manually:
 
 ```
-$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.2.zip
-$ unzip telepot-6.2.zip
-$ cd telepot-6.2
+$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.3.zip
+$ unzip telepot-6.3.zip
+$ cd telepot-6.3
 $ python setup.py install
 ```
 
@@ -658,7 +664,7 @@ The function `per_inline_from_id()` digests a message down to its originating us
 
 This inline bot does the job, but not ideally. As the user types and pauses, types and pauses, types and pauses ... closely bunched inline queries arrive. In fact, a new inline query often arrives *before* we finish processing a preceding one. With only a single thread of execution *per user id*, we can only process the (closely bunched) inline queries sequentially. Ideally, whenever we see a new inline query from the same user, it should override and cancel any preceding inline queries being processed (that belong to the same user).
 
-I may provide some utility to better handle this situation in the future. For now, you will have to implement your own.
+**I have just added an `Answerer` class to better deal with this situation. Documentation is coming very soon ...**
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
