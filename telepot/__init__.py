@@ -56,17 +56,7 @@ def _infer_content_type(msg):
     return content_type[0]
 
 
-# Do not use. To be deprecated in future.
-def glance(msg, long=False):
-    content_type = _infer_content_type(msg)
-
-    if long:
-        return content_type, msg['from']['id'], msg['chat']['id'], msg['date'], msg['message_id']
-    else:
-        return content_type, msg['from']['id'], msg['chat']['id']
-
-
-def glance2(msg, flavor='normal', long=False):
+def glance(msg, flavor='normal', long=False):
     def gl_message():
         content_type = _infer_content_type(msg)
 
@@ -92,6 +82,15 @@ def glance2(msg, flavor='normal', long=False):
         return gl_chosen_inline_result()
     else:
         raise BadFlavor(flavor)
+
+
+glance2 = glance  # alias for backward compatibility
+
+
+def flance(msg, long=False):
+    f = flavor(msg)
+    g = glance(msg, flavor=f, long=long)
+    return f,g
 
 
 class BadHTTPResponse(TelepotException):
