@@ -17,7 +17,7 @@ class ChatHandlerSubclass(telepot.helper.ChatHandler):
 
     def on_message(self, msg):
         self._count += 1
-        print '%s %d: %d: %s' % (type(self).__name__, self.id, self._count, telepot.glance2(msg, flavor='normal'))
+        print '%s %d: %d: %s' % (type(self).__name__, self.id, self._count, telepot.glance(msg, flavor='normal'))
 
     def on_close(self, exception):
         print '%s %d: closed' % (type(self).__name__, self.id)
@@ -32,7 +32,7 @@ class UserHandlerSubclass(telepot.helper.UserHandler):
         self._count += 1
         flavor = telepot.flavor(msg)
 
-        print '%s %d: %d: %s: %s' % (type(self).__name__, self.id, self._count, flavor, telepot.glance2(msg, flavor=flavor))
+        print '%s %d: %d: %s: %s' % (type(self).__name__, self.id, self._count, flavor, telepot.glance(msg, flavor=flavor))
 
     def on_close(self, exception):
         print '%s %d: closed' % (type(self).__name__, self.id)
@@ -47,7 +47,7 @@ class UserHandlerSubclassInlineOnly(telepot.helper.UserHandler):
         self._count += 1
         flavor = telepot.flavor(msg)
 
-        print '%s %d: %d: %s: %s' % (type(self).__name__, self.id, self._count, flavor, telepot.glance2(msg, flavor=flavor))
+        print '%s %d: %d: %s: %s' % (type(self).__name__, self.id, self._count, flavor, telepot.glance(msg, flavor=flavor))
 
     def on_close(self, exception):
         print '%s %d: closed' % (type(self).__name__, self.id)

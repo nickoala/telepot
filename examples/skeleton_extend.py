@@ -14,14 +14,14 @@ class YourBot(telepot.Bot):
 
         # normal message
         if flavor == 'normal':
-            content_type, chat_type, chat_id = telepot.glance2(msg)
+            content_type, chat_type, chat_id = telepot.glance(msg)
             print('Normal Message:', content_type, chat_type, chat_id)
 
             # Do your stuff according to `content_type` ...
 
         # inline query - need `/setinline`
         elif flavor == 'inline_query':
-            query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
             print('Inline Query:', query_id, from_id, query_string)
 
             # Compose your own answers
@@ -32,7 +32,7 @@ class YourBot(telepot.Bot):
 
         # chosen inline result - need `/setinlinefeedback`
         elif flavor == 'chosen_inline_result':
-            result_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            result_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
             print('Chosen Inline Result:', result_id, from_id, query_string)
 
             # Remember the chosen answer to do better next time

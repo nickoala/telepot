@@ -31,7 +31,7 @@ class Player(telepot.helper.ChatHandler):
         return True  # prevent on_message() from being called on the initial message
 
     def on_message(self, msg):
-        content_type, chat_type, chat_id = telepot.glance2(msg)
+        content_type, chat_type, chat_id = telepot.glance(msg)
 
         if content_type != 'text':
             self.sender.sendMessage('Give me a number, please.')

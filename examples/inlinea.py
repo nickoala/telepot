@@ -19,7 +19,7 @@ class InlineHandler(telepot.helper.UserHandler):
         flavor = telepot.flavor(msg)
 
         if flavor == 'inline_query':
-            query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
             print(self.id, ':', 'Inline Query:', query_id, from_id, query_string)
 
             articles = [{'type': 'article',
@@ -29,7 +29,7 @@ class InlineHandler(telepot.helper.UserHandler):
             print(self.id, ':', 'Answers sent.')
 
         elif flavor == 'chosen_inline_result':
-            result_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            result_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
             print(self.id, ':', 'Chosen Inline Result:', result_id, from_id, query_string)
 
 

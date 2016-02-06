@@ -28,7 +28,7 @@ class UserTracker(telepot.helper.UserHandler):
 
         # Have to answer inline query to receive chosen result
         if flavor == 'inline_query':
-            query_id, from_id, query_string = telepot.glance2(msg, flavor=flavor)
+            query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
 
             articles = [{'type': 'article',
                              'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]

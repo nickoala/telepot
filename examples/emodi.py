@@ -15,7 +15,7 @@ checking and substring-extraction below may not work as expected.
 """
 
 def handle(msg):
-    content_type, chat_type, chat_id = telepot.glance2(msg)
+    content_type, chat_type, chat_id = telepot.glance(msg)
     m = telepot.namedtuple.namedtuple(msg, 'Message')
 
     if chat_id < 0:

@@ -66,7 +66,7 @@ class OwnerHandler(telepot.helper.ChatHandler):
 
     @asyncio.coroutine
     def on_message(self, msg):
-        content_type, chat_type, chat_id = telepot.glance2(msg)
+        content_type, chat_type, chat_id = telepot.glance(msg)
 
         if content_type != 'text':
             yield from self.sender.sendMessage("I don't understand")
@@ -115,7 +115,7 @@ class MessageSaver(telepot.helper.Monitor):
 
     # Store every message, except those whose sender is in the exclude list, or non-text messages.
     def on_message(self, msg):
-        content_type, chat_type, chat_id = telepot.glance2(msg)
+        content_type, chat_type, chat_id = telepot.glance(msg)
 
         if chat_id in self._exclude:
             print('Chat id %d is excluded.' % chat_id)

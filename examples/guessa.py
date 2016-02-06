@@ -35,7 +35,7 @@ class Player(telepot.helper.ChatHandler):
 
     @asyncio.coroutine
     def on_message(self, msg):
-        content_type, chat_type, chat_id = telepot.glance2(msg)
+        content_type, chat_type, chat_id = telepot.glance(msg)
 
         if content_type != 'text':
             yield from self.sender.sendMessage('Give me a number, please.')

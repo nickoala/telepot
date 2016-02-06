@@ -22,7 +22,7 @@ Demonstrates deep linking.
 key_id_map = { 'ghijk' : 123 }
 
 def handle(msg):
-    content_type, chat_type, chat_id = telepot.glance2(msg)
+    content_type, chat_type, chat_id = telepot.glance(msg)
     print 'Normal Message:', content_type, chat_type, chat_id
 
     if content_type == 'text':
