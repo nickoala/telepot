@@ -127,6 +127,63 @@ class Sender(object):
             #   self.sendMessage = partial(bot.sendMessage, chat_id)
 
 
+class Answerer(object):
+    def __init__(self, bot, compute):
+        self._bot = bot
+        self._compute = compute
+        self._workers = {}  # map: user id --> worker thread
+        self._lock = threading.Lock()  # control access to `self._workers`
+
+    def answer(outerself, inline_query):
+        from_id = inline_query['from']['id']
+
+        class Worker(threading.Thread):
+            def __init__(innerself):
+                super(Worker, innerself).__init__()
+                innerself._cancelled = False
+
+            def cancel(innerself):
+                innerself._cancelled = True
+
+            def run(innerself):
+                try:
+                    query_id = inline_query['id']
+
+                    if innerself._cancelled:
+                        return
+
+                    # Important: compute function must be thread-safe.
+                    r = outerself._compute(inline_query)
+
+                    if innerself._cancelled:
+                        return
+
+                    if isinstance(r, list):
+                        outerself._bot.answerInlineQuery(query_id, r)
+                    elif isinstance(r, tuple):
+                        outerself._bot.answerInlineQuery(query_id, *r)
+                    elif isinstance(r, dict):
+                        outerself._bot.answerInlineQuery(query_id, **r)
+                    else:
+                        raise ValueError('Invalid result format')
+                finally:
+                    with outerself._lock:
+                        # Delete only if I have NOT been cancelled.
+                        if not innerself._cancelled:
+                            del outerself._workers[from_id]
+
+                        # If I have been cancelled, that position in `outerself._workers`
+                        # no longer belongs to me. I should not delete that key.
+
+        # Several threads may access `outerself._workers`. Use `outerself._lock` to protect.
+        with outerself._lock:
+            if from_id in outerself._workers:
+                outerself._workers[from_id].cancel()
+
+            outerself._workers[from_id] = Worker()
+            outerself._workers[from_id].start()
+
+
 class ListenerContext(object):
     def __init__(self, bot, context_id):
         self._bot = bot

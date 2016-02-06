@@ -57,3 +57,52 @@ class Listener(telepot.helper.Listener):
 
                 if meet_some_criteria(msg):
                     return msg
+
+
+from concurrent.futures._base import CancelledError
+
+class Answerer(object):
+    def __init__(self, bot, compute, loop=None):
+        self._bot = bot
+        self._compute = compute
+        self._loop = loop if loop is not None else asyncio.get_event_loop()
+        self._working_tasks = {}
+
+    @asyncio.coroutine
+    def _compute_and_answer(self, inline_query):
+        try:
+            from_id = inline_query['from']['id']
+            query_id = inline_query['id']
+
+            if asyncio.iscoroutinefunction(self._compute):
+                r = yield from self._compute(inline_query)
+            else:
+                r = self._compute(inline_query)
+
+            if isinstance(r, list):
+                yield from self._bot.answerInlineQuery(query_id, r)
+            elif isinstance(r, tuple):
+                yield from self._bot.answerInlineQuery(query_id, *r)
+            elif isinstance(r, dict):
+                yield from self._bot.answerInlineQuery(query_id, **r)
+            else:
+                raise ValueError('Invalid result format')
+        except CancelledError:
+            # Cancelled. Record has been occupied by new task. Don't touch.
+            raise
+        except:
+            # Die accidentally. Remove myself from record.
+            del self._working_tasks[from_id]
+            raise
+        else:
+            # Die naturally. Remove myself from record.
+            del self._working_tasks[from_id]
+
+    def answer(self, inline_query):
+        from_id = inline_query['from']['id']
+
+        if from_id in self._working_tasks:
+            self._working_tasks[from_id].cancel()
+
+        t = self._loop.create_task(self._compute_and_answer(inline_query))
+        self._working_tasks[from_id] = t
