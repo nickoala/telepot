@@ -1006,7 +1006,7 @@ Only handles a user's inline-related messages.
 <a id="examples-answerer-usage"></a>
 #### Answerer Usage
 
-`Answerer` may be used globally or within a `UserHandler`. Just give it an answer-computing function, and dump inline queries to its `answer()` method. These examples demonstrate how to do it.
+`Answerer` lets you conveniently deal with inline queries. It may be used globally or within a `UserHandler`. Give it an answer-computing function, and dump inline queries to its `answer()` method. These examples demonstrate how to do it.
 
 **[Traditional `Answerer` in a global context »](https://github.com/nickoala/telepot/blob/master/examples/answerer_global.py)**  
 **[Traditional `Answerer` in a `UserHandler` »](https://github.com/nickoala/telepot/blob/master/examples/answerer_handler.py)**  
