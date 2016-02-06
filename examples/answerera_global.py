@@ -4,7 +4,7 @@ import telepot
 import telepot.async
 
 """
-$ python3.4 skeletona.py <token>
+$ python3.4 answerera_global.py <token>
 
 Use Answerer globally.
 
