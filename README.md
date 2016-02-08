@@ -467,6 +467,41 @@ while 1:
     time.sleep(10)
 ```
 
+However, dealing with inline queries this way is not ideal. As you types and pauses, types and pauses, types and pauses ... closely bunched inline queries arrive. In fact, a new inline query often arrives *before* we finish processing a preceding one. With only a single thread of execution, we can only process the (closely bunched) inline queries sequentially. Ideally, whenever we see a new inline query from the same user, it should override and cancel any preceding inline queries being processed (that belong to the same user).
+
+Telepot has a ready-made solution for you ...
+
+<a id="inline-query-answerer"></a>
+#### Use `Answerer` to answer inline queries
+
+An `Answerer` takes an inline query, inspects its `from` `id` (the originating user id), and checks to see whether that user has an *unfinished* thread processing a preceding inline query. If there is, the unfinished thread will be cancelled before a new thread is spawned to process the latest inline query. In other words, an `Answerer` ensures **at most one** active inline-query-processing thread per user.
+
+`Answerer` also frees you from having to call `bot.answerInlineQuery()` every time. You supply it with an *answer-computing function*. It takes that function's returned value and calls `bot.answerInlineQuery()` to send the results. Being accessible by multiple threads, the answer-computing function must be **thread-safe**.
+
+To use an `Answerer`, you construct it with an answer-computing function:
+
+```python
+def compute_answer(inline_query):
+    articles = [{'type': 'article',
+                     'id': 'abc', 'title': 'ABC', 'message_text': 'XYZ'}]
+    return articles
+
+answerer = telepot.helper.Answerer(bot, compute_answer)
+```
+
+Then, you dump inline queries to it. It will ensure at most one active thread per user.
+
+```python
+flavor = telepot.flavor(msg)
+
+if flavor == 'inline_query':
+    answerer.answer(msg)
+```
+
+If you use telepot's [async version](#async) (Python 3.4.3 or newer), you should also use the async version of `Answerer`. In that case, it will create *tasks* instead of spawning threads, and you don't have to worry about thread safety. 
+
+`Answerer` may be used in a global context (as above), or within an [Inline User Handler](#inline-only). For a full demonstration of its usage, please see the [examples](#examples-answerer-usage).
+
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
 <a id="classbased"></a>
@@ -665,37 +700,9 @@ The function `per_inline_from_id()` digests a message down to its originating us
 
 This inline bot does the job, but not ideally. As the user types and pauses, types and pauses, types and pauses ... closely bunched inline queries arrive. In fact, a new inline query often arrives *before* we finish processing a preceding one. With only a single thread of execution *per user id*, we can only process the (closely bunched) inline queries sequentially. Ideally, whenever we see a new inline query from the same user, it should override and cancel any preceding inline queries being processed (that belong to the same user).
 
-Telepot has a ready-made solution for you ...
+[As mentioned earlier](#inline-query-answerer), a solution is to use `Answerer`. It inspects an inline query's `from` `id` (the originating user id), cancels any unfinished thread of the same user, and ensures **at most one** active inline-query-processing thread per user.
 
-#### Use `Answerer` to answer inline queries
-
-An `Answerer` takes an inline query, inspects its `from` `id` (the originating user id), and checks to see whether that user has an *unfinished* thread processing a preceding inline query. If there is, the unfinished thread will be cancelled before a new thread is spawned to process the latest inline query. In other words, an `Answerer` ensures **at most one** active inline-query-processing thread per user.
-
-`Answerer` also frees you from having to call `bot.answerInlineQuery()` every time. You supply it with an *answer-computing function*. It takes that function's returned value and calls `bot.answerInlineQuery()` to send the results. Being accessible by multiple threads, the answer-computing function must be **thread-safe**.
-
-To use an `Answerer`, you construct it with an answer-computing function:
-
-```python
-def compute_answer(inline_query):
-    articles = [{'type': 'article',
-                     'id': 'abc', 'title': 'ABC', 'message_text': 'XYZ'}]
-    return articles
-
-answerer = telepot.helper.Answerer(bot, compute_answer)
-```
-
-Then, you dump inline queries to it. It will ensure at most one active thread per user.
-
-```python
-flavor = telepot.flavor(msg)
-
-if flavor == 'inline_query':
-    answerer.answer(msg)
-```
-
-If you use telepot's async version (Python 3.4.3 or newer, see below), you should also use the async version of `Answerer`. In that case, it will create *tasks* instead of spawning threads, and you don't have to worry about thread safety. 
-
-For full demonstrations, please see the [examples](#examples-answerer-usage).
+For a full demonstration of `Answerer`'s uage, please see the [examples](#examples-answerer-usage).
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
