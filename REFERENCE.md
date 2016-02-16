@@ -893,7 +893,7 @@ This object implements these methods:
 <a id="telepot-helper-ListenerContext"></a>
 ### `telepot.helper.ListenerContext`
 
-*Subclass:* [`telepot.helper.ChatContext`](#telepot-helper-ChatContext) [`telepot.helper.UserContext`](#telepot-helper-UserContext) [`telepot.helper.Monitor`](#telepot-helper-Monitor)
+*Subclass:* [`telepot.helper.ChatContext`](#telepot-helper-ChatContext) [`telepot.helper.UserContext`](#telepot-helper-UserContext) [`telepot.helper.Monitor`](#telepot-helper-Monitor) [`telepot.async.helper.Monitor`](#telepot-async-helper-Monitor)
 
 **ListenerContext(bot, context_id)**
 
@@ -910,7 +910,7 @@ This object exposes these properties:
 ### `telepot.helper.ChatContext`
 
 *Superclass:* [`telepot.helper.ListenerContext`](#telepot-helper-ListenerContext)  
-*Subclass:* [`telepot.helper.ChatHandler`](#telepot-helper-ChatHandler)
+*Subclass:* [`telepot.helper.ChatHandler`](#telepot-helper-ChatHandler) [`telepot.async.helper.ChatHandler`](#telepot-async-helper-ChatHandler)
 
 **ChatContext(bot, context_id, chat_id)**
 
@@ -927,7 +927,7 @@ This object exposes these properties:
 ### `telepot.helper.UserContext`
 
 *Superclass:* [`telepot.helper.ListenerContext`](#telepot-helper-ListenerContext)  
-*Subclass:* [`telepot.helper.UserHandler`](#telepot-helper-UserHandler)
+*Subclass:* [`telepot.helper.UserHandler`](#telepot-helper-UserHandler) [`telepot.async.helper.UserHandler`](#telepot-async-helper-UserHandler)
 
 **UserContext(bot, context_id, user_id)**
 
@@ -1115,12 +1115,12 @@ The best demonstration of using `@openable` is actually the `Monitor` and `ChatH
 
 ```python
 @openable
-class Monitor(ListenerContext):
+class Monitor(ListenerContext, DefaultRouterMixin):
     def __init__(...):
         ...
 
 @openable
-class ChatHandler(ChatContext):
+class ChatHandler(ChatContext, DefaultRouterMixin):
     def __init__(...):
         ...
 ```
@@ -1640,22 +1640,30 @@ This class is basically identical to its superclass, except that it overrides th
 <a id="telepot-async-helper-DefaultRouterMixin"></a>
 ### `telepot.async.helper.DefaultRouterMixin`
 
-Coming soon ...
+The class introduces a `Router` member into subclasses. This `Router` uses `telepot.flavor` as the key function, and has a routing table similar to: `{'normal': self.on_chat_message, 'inline_query': self.on_inline_query, 'chosen_inline_result': self.on_chosen_inline_result}`. But you don't have to implement all of those `self.on_ZZZ()` method, only implement the ones you need.
+
+*Subclass:* [`telepot.async.helper.Monitor`](#telepot-async-helper-Monitor) [`telepot.async.helper.ChatHandler`](#telepot-async-helper-ChatHandler) [`telepot.async.helper.UserHandler`](#telepot-async-helper-UserHandler) 
+
+This object exposes these properties:
+- **router**
+
+This object implements these methods:
+- *coroutine* **on_message(msg)**: relay the message to the underlying `router.route(msg)`
 
 <a id="telepot-async-helper-Monitor"></a>
 ### `telepot.async.helper.Monitor`
 
-Coming soon ...
+*Superclass:* [`telepot.helper.ListenerContext`](#telepot-helper-ListenerContext) [`telepot.async.helper.DefaultRouterMixin`](#telepot-async-helper-DefaultRouterMixin)
 
 <a id="telepot-async-helper-ChatHandler"></a>
 ### `telepot.async.helper.ChatHandler`
 
-Coming soon ...
+*Superclass:* [`telepot.helper.ChatContext`](#telepot-helper-ChatContext) [`telepot.async.helper.DefaultRouterMixin`](#telepot-async-helper-DefaultRouterMixin)
 
 <a id="telepot-async-helper-UserHandler"></a>
 ### `telepot.async.helper.UserHandler`
 
-Coming soon ...
+*Superclass:* [`telepot.helper.UserContext`](#telepot-helper-UserContext) [`telepot.async.helper.DefaultRouterMixin`](#telepot-async-helper-DefaultRouterMixin)
 
 <a id="telepot-async-helper-openable"></a>
 ### `telepot.async.helper.openable` class decorator
@@ -1728,4 +1736,4 @@ The object of `cls` must have these defined:
 - method (regular or coroutine) `on_close(exception)`
 - property `listener` which returns a `Listener` object
 
-An easy way to fulfilled these requirements is to extend from [`Monitor`](#telepot-helper-Monitor) or [`ChatHandler`](#telepot-helper-ChatHandler), or decorating a class with the [`@openable`](#telepot-helper-openable) class decorator.
+An easy way to fulfilled these requirements is to extend from [`Monitor`](#telepot-async-helper-Monitor), [`ChatHandler`](#telepot-async-helper-ChatHandler), [`UserHandler`](#telepot-async-helper-UserHandler), or decorating a class with the [`@openable`](#telepot-async-helper-openable) class decorator.
