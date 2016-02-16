@@ -2,6 +2,7 @@
 telepot.egg-info/
 dist/
 .idea/
-checklist.txt
+todo.txt
 .remote-sync.json
 .pypirc
+qpull.py
