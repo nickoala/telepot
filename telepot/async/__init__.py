@@ -10,10 +10,24 @@ import telepot
 import telepot.async.helper
 
 
+def flavor_router(routing_table):
+    router = telepot.async.helper.Router(telepot.flavor, routing_table)
+    return router.route
+
+                                         
 class Bot(telepot._BotBase):
     def __init__(self, token, loop=None):
         super(Bot, self).__init__(token)
         self._loop = loop if loop is not None else asyncio.get_event_loop()
+
+        try:
+            getattr(self, 'handle')
+
+        # If self.handle is not defined, automatically route messages to sub-handlers.
+        except AttributeError:
+            self.handle = flavor_router({'normal': telepot.async.helper._delay_yell(self, 'on_chat_message'),
+                                         'inline_query': telepot.async.helper._delay_yell(self, 'on_inline_query'),
+                                         'chosen_inline_result': telepot.async.helper._delay_yell(self, 'on_chosen_inline_result')})
 
     @property
     def loop(self):
@@ -240,6 +254,8 @@ class Bot(telepot._BotBase):
     def messageLoop(self, handler=None, source=None, ordered=True, maxhold=3):
         if handler is None:
             handler = self.handle
+        elif isinstance(handler, dict):
+            handler = flavor_router(handler)
 
         def create_task_for(msg):
             self.loop.create_task(handler(msg))
@@ -259,7 +275,7 @@ class Bot(telepot._BotBase):
                     callback(update['chosen_inline_result'])
                 else:
                     # Do not swallow. Make sure developer knows.
-                    raise BadFlavor(update)
+                    raise telepot.BadFlavor(update)
             except:
                 # Localize the error so message thread can keep going.
                 traceback.print_exc()
