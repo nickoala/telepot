@@ -366,14 +366,18 @@ bot.answerInlineQuery(query_id, photos)
 
 **notifyOnMessage(callback=None, relax=0.1, timeout=20, source=None, ordered=True, maxhold=3, run_forever=False)**
 
-Spawn a thread to constantly check for updates. Apply `callback` to every message received. `callback` must take one argument, which is the message.
+Spawn a thread to constantly check for updates. Apply `callback` to every message received. `callback` may be:
 
-If `callback` is not supplied, `self.handle` is assumed. In other words, a bot must have the method, `handle(msg)`, defined if `notifyOnMessage()` is called without the `callback` argument.
+- a *function* that takes one argument, the message.
+- a *dict* in the form: `{'normal': f1, 'inline_query': f2, 'chosen_inline_result': f3}`, where `f1`, `f2`, `f3` are functions that take one argument, the message. Which function gets called is determined by the flavor of a message. You don't have to include all flavors in the dict, only the ones you need.
+- `None` (default), in which case you have to define some instance methods for the bot to be used as callbacks. You have two options:
+    - implement the bot's `handle(msg)` method.
+    - implement one or more of `on_chat_message(msg)`, `on_inline_query(msg)`, and `on_chosen_inline_result(msg)`. Which gets called is determined by the flavor of a message.
 
 If `source` is `None` (default), `getUpdates()` is used to obtain updates from Telegram servers. If `source` is a synchronized queue (`Queue.Queue` in Python 2.7 or `queue.Queue` in Python 3), updates are obtained from the queue. In normal scenarios, a web application implementing a webhook dumps updates into the queue, while the bot pulls updates from it. 
 
 Parameters:
-- callback (function): a function to apply to every message received. If `None`, `self.handle` is assumed. 
+- callback (function): a function, a dict, or `None`, as described above.
 - relax (float): seconds between each `getUpdates()`. Applies only when `source` is `None`.
 - timeout (integer): timeout supplied to `getUpdates()`, controlling how long to poll. Applies only when `source` is `None`.
 - source (Queue): source of updates
@@ -389,50 +393,9 @@ Parameters:
     - the maximum number of seconds an update is held waiting for a not-yet-arrived smaller `update_id`. When this number of seconds is up, the update is delivered to `callback` even if some smaller `update_id`s have not yet arrived. If those smaller `update_id`s arrive at some later time, they are discarded.
 - run_forever (boolean): append an infinite loop at the end and never returns. Useful as the very last line in a program.
 
-Note: `source`, `ordered`, and `maxhold` are relevant *only if you use webhook*.
-
-This can be a skeleton for a lot of telepot programs:
-
-```python
-import sys
-import telepot
-
-class YourBot(telepot.Bot):
-    def handle(self, msg):
-        content_type, chat_type, chat_id = telepot.glance(msg)
-        print content_type, chat_type, chat_id
-        # Do your stuff according to `content_type` ...
-
-
-TOKEN = sys.argv[1]  # get token from command-line
-
-bot = YourBot(TOKEN)
-bot.notifyOnMessage(run_forever=True)
-```
-
-If you prefer defining a global handler, or want to have a custom infinite loop at the end, this skeleton may be for you:
-
-```python
-import sys
-import time
-import telepot
-
-def handle(msg):
-    content_type, chat_type, chat_id = telepot.glance(msg)
-    print content_type, chat_type, chat_id
-    # Do your stuff according to `content_type` ...
-
-
-TOKEN = sys.argv[1]  # get token from command-line
-
-bot = telepot.Bot(TOKEN)
-bot.notifyOnMessage(handle)
-print 'Listening ...'
-
-# Keep the program running.
-while 1:
-    time.sleep(10)
-```
+Note:
+- `relax` and `timeout` are relevant *only if you use `getUpdates()`*
+- `source`, `ordered`, and `maxhold` are relevant *only if you use webhook*
 
 <a id="telepot-SpeakerBot"></a>
 ### `telepot.SpeakerBot`
@@ -586,7 +549,9 @@ A combination of `flavor()` and `glance()`, it returns a tuple of two elements: 
 
 **flavor_router(routing_table)**
 
-Coming soon ...
+Returns a *function* that takes one argument (a message), and depending on the flavor, routes that message to another function according to the *routing_table*.
+
+The *routing_table* is a dict of the form: `{'normal': f1, 'inline_query': f2, 'chosen_inline_result': f3}`, where `f1`, `f2`, `f3` are functions that take one argument (the message). You don't have to include all flavors in the dict, only the ones you need.
 
 <a id="telepot-namedtuple"></a>
 ## `telepot.namedtuple` module
@@ -890,7 +855,25 @@ Spawns a thread that calls the `compute_function` (specified in constructor), th
 <a id="telepot-helper-Router"></a>
 ### `telepot.helper.Router`
 
-Coming soon ...
+Here is the idea. Every message can be digested down to a *key*, which is then used to look up a *routing table*, leading to a *function*, which is applied to the message. This essentially *routes* messages to a number of handler functions according to some predefined criteria.
+
+**Router(key_function, routing_table)**
+
+Parameters:
+- **key_function** - a function that takes one argument (a message), and returns one of the following:
+    - a key
+    - a tuple: the first element being the key, the rest being *extra arguments* to be passed along
+- **routing_table** - a dict of the form: `{key1: f1, key2: f2, ..., None: fd}`, where `f1`, `f2` ... are functions that take a message as the first argument, followed by *extra arguments* returned by `key_function`. The dict may optionally contain a `None` key that leads to a *default* function, `fd`. If `key_function` returns a key that does not match any in the dict, the default function is used.
+
+In the majority of cases, we would like to route messages by flavor. As a result, `key_function` often is `telepot.flavor`, and `routing_table` often looks like `{'normal': f1, 'inline_query': f2, 'chosen_inline_result': f3}`. Bare in mind this routing mechanism is more general than that.
+
+**set_key_function(fn)**
+
+**set_routing_table(table)**
+
+**route(msg)**
+
+Obtain a key by applying *key function* to `msg`. Use the key to find a function in the *routing table*. Applies that function to `msg` followed by any extra arguments. If the key does not exist in the routing table, we look for a `None` key in the routing table. If a `None` key exists, the associated function is used. Otherwise, a `RuntimeError` is raised.
 
 <a id="telepot-helper-DefaultRouterMixin"></a>
 ### `telepot.helper.DefaultRouterMixin`
@@ -1385,20 +1368,23 @@ Download a file. `dest` can be a path (string) or a Python file object.
 
 *coroutine* **answerInlineQuery(self, inline_query_id, results, cache_time=None, is_personal=None, next_offset=None)**
 
-*To be filled in ...*
+Coming soon ...
 
 *coroutine* **messageLoop(handler=None, source=None, ordered=True, maxhold=3)**
 
-Functionally equivalent to `notifyOnMessage()`, this method constantly checks for updates and applies `handler` to each message received. `handler` must take one argument, which is the message.
+Functionally equivalent to `notifyOnMessage()`, this method constantly checks for updates and applies `handler` to each message received. `handler` may be:
 
-If `handler` is `None`, `self.handle` is assumed to be the handler function. In other words, a bot must have the method, `handle(msg)`, defined if `messageLoop()` is called without the `handler` argument.
+- a regular *function* that takes one argument, the message. It will be called directly, like all regular functions.
+- a *coroutine* that takes one argument, the message. It will be allocated a task using `BaseEventLoop.create_task()`.
+- a *dict* in the form: `{'normal': f1, 'inline_query': f2, 'chosen_inline_result': f3}`, where `f1`, `f2`, `f3` may be regular functions or coroutines that take one argument, the message. Which gets called is determined by the flavor of a message. You don't have to include all flavors in the dict, only the ones you need.
+- `None` (default), in which case you have to define some instance methods for the bot to be used as callbacks. You have two options:
+    - implement the bot's `handle(msg)` method.
+    - implement one or more of `on_chat_message(msg)`, `on_inline_query(msg)`, and `on_chosen_inline_result(msg)`. Which gets called is determined by the flavor of a message.
 
 If `source` is `None` (default), `getUpdates()` is used to obtain updates from Telegram servers. If `source` is an `asyncio.Queue`, updates are obtained from the queue. In normal scenarios, a web application implementing a webhook dumps updates into the queue, while the bot pulls updates from it. 
 
 Parameters:
-- handler: a function or coroutine to apply to every message received. If `None`, `self.handle` is assumed.
-    - If a regular function, it is called directly.
-    - If a coroutine, it is allocated a task using `BaseEventLoop.create_task()`.
+- handler: as describe above.
 - source (Queue): source of updates
     - If `None`, use `getUpdates()` to obtain updates from Telegram servers.
     - If an `asyncio.Queue`, updates are pulled from the queue.
@@ -1411,7 +1397,9 @@ Parameters:
 - maxhold (float): applied only when `source` is a queue and `ordered` is `True`
     - the maximum number of seconds an update is held waiting for a not-yet-arrived smaller `update_id`. When this number of seconds is up, the update is delivered to `handler` even if some smaller `update_id`s have not yet arrived. If those smaller `update_id`s arrive at some later time, they are discarded.
 
-Note: `source`, `ordered`, and `maxhold` are relevant *only if you use webhook*.
+Note:
+- `relax` and `timeout` are relevant *only if you use `getUpdates()`*
+- `source`, `ordered`, and `maxhold` are relevant *only if you use webhook*.
 
 This can be a skeleton for a lot of telepot programs:
 
