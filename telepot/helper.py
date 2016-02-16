@@ -186,6 +186,7 @@ class Answerer(object):
 
 class ListenerContext(object):
     def __init__(self, bot, context_id):
+        super(ListenerContext, self).__init__()
         self._bot = bot
         self._id = context_id
         self._listener = bot.create_listener()
@@ -250,7 +251,7 @@ def openable(cls):
     def open(self, *arg, **kwargs):
         pass
 
-    def on_message(self, *arg, **kwargs):
+    def on_message(self, msg):
         raise NotImplementedError()
 
     def on_close(self, exception):
@@ -277,8 +278,57 @@ def openable(cls):
     return cls
 
 
+class Router(object):
+    def __init__(self, key_function, routing_table):
+        super(Router, self).__init__()
+        self._digest = key_function
+        self._table = routing_table
+
+    def set_key_function(self, fn):
+        self._digest = fn
+
+    def set_routing_table(self, t):
+        self._table = t
+        
+    def route(self, msg):
+        k = self._digest(msg)
+        
+        if isinstance(k, tuple):
+            key, args = k[0], k[1:]
+        else:
+            key, args = k, ()
+        
+        try:
+            fn = self._table[key]
+        except KeyError as e:
+            # Check for default handler, key=None
+            if None in self._table:
+                fn = self._table[None]
+            else:
+                raise RuntimeError('No handler for key: %s, and default handler not defined' % str(e.args))
+        
+        fn(msg, *args)
+
+
+class DefaultRouterMixin(object):
+    def __init__(self):
+        super(DefaultRouterMixin, self).__init__()
+        self._router = Router(telepot.flavor, {'normal': lambda msg: self.on_chat_message(msg),
+                                               'inline_query': lambda msg: self.on_inline_query(msg),
+                                               'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
+                                               # use lambda to delay evaluation of self.on_ZZZ to runtime because 
+                                               # I don't want to require defining all methods right here.
+
+    @property
+    def router(self):
+        return self._router
+
+    def on_message(self, msg):
+        self._router.route(msg)
+
+
 @openable
-class Monitor(ListenerContext):
+class Monitor(ListenerContext, DefaultRouterMixin):
     def __init__(self, seed_tuple, capture):
         bot, initial_msg, seed = seed_tuple
         super(Monitor, self).__init__(bot, seed)
@@ -286,18 +336,16 @@ class Monitor(ListenerContext):
         for c in capture:
             self.listener.capture(**c)
 
-
 @openable
-class ChatHandler(ChatContext):
+class ChatHandler(ChatContext, DefaultRouterMixin):
     def __init__(self, seed_tuple, timeout):
         bot, initial_msg, seed = seed_tuple
         super(ChatHandler, self).__init__(bot, seed, initial_msg['chat']['id'])
         self.listener.set_options(timeout=timeout)
         self.listener.capture(chat__id=self.chat_id)
 
-
 @openable
-class UserHandler(UserContext):
+class UserHandler(UserContext, DefaultRouterMixin):
     def __init__(self, seed_tuple, timeout, flavors='all'):
         bot, initial_msg, seed = seed_tuple
         super(UserHandler, self).__init__(bot, seed, initial_msg['from']['id'])
