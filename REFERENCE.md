@@ -857,6 +857,8 @@ Spawns a thread that calls the `compute_function` (specified in constructor), th
 
 Here is the idea. Every message can be digested down to a *key*, which is then used to look up a *routing table*, leading to a *function*, which is applied to the message. This essentially *routes* messages to a number of handler functions according to some predefined criteria.
 
+*Subclass:* [`telepot.async.helper.Router`](#telepot-async-helper-Router)
+
 **Router(key_function, routing_table)**
 
 Parameters:
@@ -878,7 +880,15 @@ Obtain a key by applying *key function* to `msg`. Use the key to find a function
 <a id="telepot-helper-DefaultRouterMixin"></a>
 ### `telepot.helper.DefaultRouterMixin`
 
-Coming soon ...
+The class introduces a `Router` member into subclasses. This `Router` uses `telepot.flavor` as the key function, and has a routing table similar to: `{'normal': self.on_chat_message, 'inline_query': self.on_inline_query, 'chosen_inline_result': self.on_chosen_inline_result}`. But you don't have to implement all of those `self.on_ZZZ()` method, only implement the ones you need.
+
+*Subclass:* [`telepot.helper.Monitor`](#telepot-helper-Monitor) [`telepot.helper.ChatHandler`](#telepot-helper-ChatHandler) [`telepot.helper.UserHandler`](#telepot-helper-UserHandler) 
+
+This object exposes these properties:
+- **router**
+
+This object implements these methods:
+- **on_message(msg)**: relay the message to the underlying `router.route(msg)`
 
 <a id="telepot-helper-ListenerContext"></a>
 ### `telepot.helper.ListenerContext`
@@ -933,7 +943,7 @@ This object exposes these properties:
 <a id="telepot-helper-Monitor"></a>
 ### `telepot.helper.Monitor`
 
-*Superclass:* [`telepot.helper.ListenerContext`](#telepot-helper-ListenerContext)
+*Superclass:* [`telepot.helper.ListenerContext`](#telepot-helper-ListenerContext) [`telepot.helper.DefaultRouterMixin`](#telepot-helper-DefaultRouterMixin)
 
 How to use this class:
 
@@ -994,7 +1004,7 @@ Raises a `StopListening` exception, causing this object to exit.
 <a id="telepot-helper-ChatHandler"></a>
 ### `telepot.helper.ChatHandler`
 
-*Superclass:* [`telepot.helper.ChatContext`](#telepot-helper-ChatContext)
+*Superclass:* [`telepot.helper.ChatContext`](#telepot-helper-ChatContext) [`telepot.helper.DefaultRouterMixin`](#telepot-helper-DefaultRouterMixin)
 
 How to use this class:
 
@@ -1053,7 +1063,7 @@ Raises a `StopListening` exception, causing this object to exit.
 <a id="telepot-helper-UserHandler"></a>
 ### `telepot.helper.UserHandler`
 
-*Superclass:* [`telepot.helper.UserContext`](#telepot-helper-UserContext)
+*Superclass:* [`telepot.helper.UserContext`](#telepot-helper-UserContext) [`telepot.helper.DefaultRouterMixin`](#telepot-helper-DefaultRouterMixin)
 
 How to use this class:
 
@@ -1368,7 +1378,9 @@ Download a file. `dest` can be a path (string) or a Python file object.
 
 *coroutine* **answerInlineQuery(self, inline_query_id, results, cache_time=None, is_personal=None, next_offset=None)**
 
-Coming soon ...
+Send answers to an inline query. `results` is a list of [InlineQueryResult](https://core.telegram.org/bots/api#inlinequeryresult). As is the custom in telepot, you may construct those objects as **dictionaries**. A potentially easier alternative is to use the namedtuple classes provided by `telepot.namedtuple` module.
+
+See: https://core.telegram.org/bots/api#answerinlinequery
 
 *coroutine* **messageLoop(handler=None, source=None, ordered=True, maxhold=3)**
 
@@ -1546,7 +1558,11 @@ loop.run_forever()
 <a id="telepot-async-functions"></a>
 ### Functions in `telepot.async` module
 
-Coming soon ...
+**flavor_router(routing_table)**
+
+Returns a *coroutine* that takes one argument (a message), and depending on the flavor, routes that message to another function/coroutine according to the *routing_table*.
+
+The *routing_table* is a dict of the form: `{'normal': f1, 'inline_query': f2, 'chosen_inline_result': f3}`, where `f1`, `f2`, `f3` are functions/coroutines that take one argument (the message). You don't have to include all flavors in the dict, only the ones you need.
 
 <a id="telepot-async-helper"></a>
 ## `telepot.async.helper` module (Python 3.4.3 or newer)
@@ -1615,7 +1631,11 @@ Creates a task that calls the `compute_function` (specified in constructor), the
 <a id="telepot-async-helper-Router"></a>
 ### `telepot.async.helper.Router`
 
-Coming soon ...
+*Superclass:* [`telepot.helper.Router`](#telepot-helper-Router)
+
+This class is basically identical to its superclass, except that it overrides the method `route(msg)` to deal with handler functions possibly being coroutines. As a result, the method `route(msg)` also becomes a coroutine.
+
+*coroutine* **route(msg)**
 
 <a id="telepot-async-helper-DefaultRouterMixin"></a>
 ### `telepot.async.helper.DefaultRouterMixin`
