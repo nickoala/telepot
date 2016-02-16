@@ -1,8 +1,25 @@
 import asyncio
 import traceback
 import time
+import telepot
 import telepot.helper
 import telepot.filtering
+
+
+@asyncio.coroutine
+def _yell(fn, *args, **kwargs):
+    if asyncio.iscoroutinefunction(fn):
+        return (yield from fn(*args, **kwargs))
+    else:
+        return fn(*args, **kwargs)
+
+
+def _delay_yell(obj, method_name):
+    @asyncio.coroutine
+    def d(*a, **kw):
+        method = getattr(obj, method_name)
+        yield from _yell(method, *a, **kw)
+    return d
 
 
 class Microphone(object):
@@ -74,10 +91,7 @@ class Answerer(object):
             from_id = inline_query['from']['id']
             query_id = inline_query['id']
 
-            if asyncio.iscoroutinefunction(self._compute):
-                r = yield from self._compute(inline_query)
-            else:
-                r = self._compute(inline_query)
+            r = yield from _yell(self._compute, inline_query)
 
             if isinstance(r, list):
                 yield from self._bot.answerInlineQuery(query_id, r)
@@ -106,3 +120,74 @@ class Answerer(object):
 
         t = self._loop.create_task(self._compute_and_answer(inline_query))
         self._working_tasks[from_id] = t
+
+
+# Mirror traditional version
+openable = telepot.helper.openable
+
+class Router(telepot.helper.Router):
+    @asyncio.coroutine
+    def route(self, msg):
+        k = self._digest(msg)
+        
+        if isinstance(k, tuple):
+            key, args = k[0], k[1:]
+        else:
+            key, args = k, ()
+        
+        try:
+            fn = self._table[key]
+        except KeyError as e:
+            # Check for default handler, key=None
+            if None in self._table:
+                fn = self._table[None]
+            else:
+                raise RuntimeError('No handler for key: %s, and default handler not defined' % str(e.args))
+        
+        yield from _yell(fn, msg, *args)
+
+
+class DefaultRouterMixin(object):
+    def __init__(self):
+        super(DefaultRouterMixin, self).__init__()
+        self._router = Router(telepot.flavor, {'normal': _delay_yell(self, 'on_chat_message'),
+                                               'inline_query': _delay_yell(self, 'on_inline_query'),
+                                               'chosen_inline_result': _delay_yell(self, 'on_chosen_inline_result')})
+
+    @property
+    def router(self):
+        return self._router
+
+    @asyncio.coroutine
+    def on_message(self, msg):
+        yield from self._router.route(msg)
+
+
+@openable
+class Monitor(telepot.helper.ListenerContext, DefaultRouterMixin):
+    def __init__(self, seed_tuple, capture):
+        bot, initial_msg, seed = seed_tuple
+        super(Monitor, self).__init__(bot, seed)
+
+        for c in capture:
+            self.listener.capture(**c)
+
+@openable
+class ChatHandler(telepot.helper.ChatContext, DefaultRouterMixin):
+    def __init__(self, seed_tuple, timeout):
+        bot, initial_msg, seed = seed_tuple
+        super(ChatHandler, self).__init__(bot, seed, initial_msg['chat']['id'])
+        self.listener.set_options(timeout=timeout)
+        self.listener.capture(chat__id=self.chat_id)
+
+@openable
+class UserHandler(telepot.helper.UserContext, DefaultRouterMixin):
+    def __init__(self, seed_tuple, timeout, flavors='all'):
+        bot, initial_msg, seed = seed_tuple
+        super(UserHandler, self).__init__(bot, seed, initial_msg['from']['id'])
+        self.listener.set_options(timeout=timeout)
+
+        if flavors == 'all':
+            self.listener.capture(from__id=self.user_id)
+        else:
+            self.listener.capture(_=lambda msg: telepot.flavor(msg) in flavors, from__id=self.user_id)
