@@ -1,4 +1,4 @@
-# telepot 6.3 reference
+# telepot 6.4 reference
 
 **[telepot](#telepot)**
 - [Bot](#telepot-Bot)
@@ -15,6 +15,8 @@
 - [Listener](#telepot-helper-Listener)
 - [Sender](#telepot-helper-Sender)
 - [Answerer](#telepot-helper-Answerer)
+- [Router](#telepot-helper-Router)
+- [DefaultRouterMixin](#telepot-helper-DefaultRouterMixin)
 - [ListenerContext](#telepot-helper-ListenerContext)
 - [ChatContext](#telepot-helper-ChatContext)
 - [UserContext](#telepot-helper-UserContext)
@@ -41,13 +43,29 @@
 - [Bot](#telepot-async-Bot)
 - [SpeakerBot](#telepot-async-SpeakerBot)
 - [DelegatorBot](#telepot-async-DelegatorBot)
+- [Functions](#telepot-async-functions)
 
 **[telepot.async.helper](#telepot-async-helper)** (Python 3.4.3 or newer)
 - [Microphone](#telepot-async-helper-Microphone)
 - [Listener](#telepot-async-helper-Listener)
 - [Answerer](#telepot-async-helper-Answerer)
+- [Router](#telepot-async-helper-Router)
+- [DefaultRouterMixin](#telepot-async-helper-DefaultRouterMixin)
+- [Monitor](#telepot-async-helper-Monitor)
+- [ChatHandler](#telepot-async-helper-ChatHandler)
+- [UserHandler](#telepot-async-helper-UserHandler)
+- [@openable](#telepot-async-helper-openable)
 
 **[telepot.async.delegate](#telepot-async-delegate)**  (Python 3.4.3 or newer)
+- [per_chat_id](#telepot-async-delegate-per-chat-id)
+- [per_chat_id_in](#telepot-async-delegate-per-chat-id-in)
+- [per_chat_id_except](#telepot-async-delegate-per-chat-id-except)
+- [per_from_id](#telepot-async-delegate-per-from-id)
+- [per_from_id_in](#telepot-async-delegate-per-from-id-in)
+- [per_from_id_except](#telepot-async-delegate-per-from-id-except)
+- [per_inline_from_id](#telepot-async-delegate-per-inline-from-id)
+- [per_inline_from_id_in](#telepot-async-delegate-per-inline-from-id-in)
+- [per_inline_from_id_except](#telepot-async-delegate-per-inline-from-id-except)
 - [call](#telepot-async-delegate-call)
 - [create_run](#telepot-async-delegate-create-run)
 - [create_open](#telepot-async-delegate-create-open)
@@ -566,6 +584,10 @@ elif flavor == 'chosen_inline_result':
 
 A combination of `flavor()` and `glance()`, it returns a tuple of two elements: *(flavor of message, tuple as returned by `glance()` of the same message)*. The `long` parameter is passed to `glance()`, controlling how much info is extracted.
 
+**flavor_router(routing_table)**
+
+Coming soon ...
+
 <a id="telepot-namedtuple"></a>
 ## `telepot.namedtuple` module
 
@@ -864,6 +886,16 @@ Parameters:
 **answer(inline_query)**
 
 Spawns a thread that calls the `compute_function` (specified in constructor), then applies the returned value to `bot.answerInlineQuery()`, in effect answering the inline query. If a preceding thread is already working for a user, that thread is cancelled, thus ensuring at most one active thread per user id.
+
+<a id="telepot-helper-Router"></a>
+### `telepot.helper.Router`
+
+Coming soon ...
+
+<a id="telepot-helper-DefaultRouterMixin"></a>
+### `telepot.helper.DefaultRouterMixin`
+
+Coming soon ...
 
 <a id="telepot-helper-ListenerContext"></a>
 ### `telepot.helper.ListenerContext`
@@ -1523,6 +1555,11 @@ print('Listening ...')
 loop.run_forever()
 ```
 
+<a id="telepot-async-functions"></a>
+### Functions in `telepot.async` module
+
+Coming soon ...
+
 <a id="telepot-async-helper"></a>
 ## `telepot.async.helper` module (Python 3.4.3 or newer)
 
@@ -1587,10 +1624,85 @@ Parameters:
 
 Creates a task that calls the `compute_function` (specified in constructor), then applies the returned value to `bot.answerInlineQuery()`, in effect answering the inline query. If a preceding task is already working for a user, that task is cancelled, thus ensuring at most one active task per user id.
 
+<a id="telepot-async-helper-Router"></a>
+### `telepot.async.helper.Router`
+
+Coming soon ...
+
+<a id="telepot-async-helper-DefaultRouterMixin"></a>
+### `telepot.async.helper.DefaultRouterMixin`
+
+Coming soon ...
+
+<a id="telepot-async-helper-Monitor"></a>
+### `telepot.async.helper.Monitor`
+
+Coming soon ...
+
+<a id="telepot-async-helper-ChatHandler"></a>
+### `telepot.async.helper.ChatHandler`
+
+Coming soon ...
+
+<a id="telepot-async-helper-UserHandler"></a>
+### `telepot.async.helper.UserHandler`
+
+Coming soon ...
+
+<a id="telepot-async-helper-openable"></a>
+### `telepot.async.helper.openable` class decorator
+
+Coming soon ...
+
 <a id="telepot-async-delegate"></a>
 ## `telepot.async.delegate` module (Python 3.4.3 or newer)
 
 This module provides functions used in conjunction with `telepot.async.DelegatorBot` to specify delegation patterns. See `telepot.async.DelegatorBot` for more details.
+
+<a id="telepot-async-delegate-per-chat-id"></a>
+**per_chat_id()**
+
+Coming soon ...
+
+<a id="telepot-async-delegate-per-chat-id-in"></a>
+**per_chat_id_in(set)**
+
+Coming soon ...
+
+<a id="telepot-async-delegate-per-chat-id-except"></a>
+**per_chat_id_except(set)**
+
+Coming soon ...
+
+<a id="telepot-async-delegate-per-from-id"></a>
+**per_from_id()**
+
+Coming soon ...
+
+<a id="telepot-async-delegate-per-from-id-in"></a>
+**per_from_id_in(set)**
+
+Coming soon ...
+
+<a id="telepot-async-delegate-per-from-id-except"></a>
+**per_from_id_except(set)**
+
+Coming soon ...
+
+<a id="telepot-async-delegate-per-inline-from-id"></a>
+**per_inline_from_id()**
+
+Coming soon ...
+
+<a id="telepot-async-delegate-per-inline-from-id-in"></a>
+**per_inline_from_id_in(set)**
+
+Coming soon ...
+
+<a id="telepot-async-delegate-per-inline-from-id-except"></a>
+**per_inline_from_id_except(set)**
+
+Coming soon ...
 
 <a id="telepot-async-delegate-call"></a>
 **call(corofunc, \*args, \*\*kwargs)**
