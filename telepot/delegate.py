@@ -1,4 +1,6 @@
+import traceback
 from telepot import flavor
+from telepot.helper import WaitTooLong, StopListening
 
 def _wrap_none(fn):
     def w(*args, **kwargs):
@@ -64,7 +66,15 @@ def create_open(cls, *args, **kwargs):
                     msg = j.listener.wait()
                     j.on_message(msg)
 
+            # These exceptions are "normal" exits.
+            except (WaitTooLong, StopListening) as e:
+                j.on_close(e)
+
+            # Any other exceptions are accidents. **Print it out.**
+            # This is to prevent swallowing exceptions in the case that on_close()
+            # gets overridden but fails to account for unexpected exceptions.
             except Exception as e:
+                traceback.print_exc()
                 j.on_close(e)
 
         return wait_loop
