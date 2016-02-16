@@ -9,38 +9,31 @@ except ImportError:
 
 """
 $ python2.7 webhook_flask_skeleton.py <token> <listening_port> <webhook_url>
+
+Webhook path is '/abc' (see below), therefore:
+
+<webhook_url>: https://<base>/abc
 """
 
-def handle(msg):
-    flavor = telepot.flavor(msg)
+def on_chat_message(msg):
+    content_type, chat_type, chat_id = telepot.glance(msg)
+    print 'Normal Message:', content_type, chat_type, chat_id
 
-    # normal message
-    if flavor == 'normal':
-        content_type, chat_type, chat_id = telepot.glance(msg)
-        print 'Normal Message:', content_type, chat_type, chat_id
+# need `/setinline`
+def on_inline_query(msg):
+    query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
+    print 'Inline Query:', query_id, from_id, query_string
 
-        # Do your stuff according to `content_type` ...
+    # Compose your own answers
+    articles = [{'type': 'article',
+                    'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
 
-    # inline query - need `/setinline`
-    elif flavor == 'inline_query':
-        query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
-        print 'Inline Query:', query_id, from_id, query_string
+    bot.answerInlineQuery(query_id, articles)
 
-        # Compose your own answers
-        articles = [{'type': 'article',
-                        'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
-
-        bot.answerInlineQuery(query_id, articles)
-
-    # chosen inline result - need `/setinlinefeedback`
-    elif flavor == 'chosen_inline_result':
-        result_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
-        print 'Chosen Inline Result:', result_id, from_id, query_string
-
-        # Remember the chosen answer to do better next time
-
-    else:
-        raise telepot.BadFlavor(msg)
+# need `/setinlinefeedback`
+def on_chosen_inline_result(msg):
+    result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
+    print 'Chosen Inline Result:', result_id, from_id, query_string
 
 
 TOKEN = sys.argv[1]
@@ -51,7 +44,9 @@ app = Flask(__name__)
 bot = telepot.Bot(TOKEN)
 update_queue = Queue()  # channel between `app` and `bot`
 
-bot.notifyOnMessage(handle, source=update_queue)  # take updates from queue
+bot.notifyOnMessage({'normal': on_chat_message,
+                     'inline_query': on_inline_query,
+                     'chosen_inline_result': on_chosen_inline_result}, source=update_queue)  # take updates from queue
 
 @app.route('/abc', methods=['GET', 'POST'])
 def pass_update():

@@ -10,6 +10,10 @@ except ImportError:
 """
 $ python2.7 webhook_flask_deeplinking.py <bot_username> <token> <listening_port> <webhook_url>
 
+Webhook path is '/abc' (see below), therefore:
+
+<webhook_url>: https://<base>/abc
+
 Demonstrates deep linking.
 - Open browser, visit: https://<base_url>/link
 - Click on the link

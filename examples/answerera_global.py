@@ -12,17 +12,13 @@ In response to an inline query, it echoes the query string in the returned artic
 You can easily check that the latest answer is the one displayed.
 """
 
-@asyncio.coroutine
-def handle(msg):
-    flavor = telepot.flavor(msg)
+def on_inline_query(msg):
+    # Just dump inline query to answerer
+    answerer.answer(msg)
 
-    if flavor == 'inline_query':
-        # Just dump inline query to answerer
-        answerer.answer(msg)
-
-    elif flavor == 'chosen_inline_result':
-        result_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
-        print('Chosen Inline Result:', result_id, from_id, query_string)
+def on_chosen_inline_result(msg):
+    result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
+    print('Chosen Inline Result:', result_id, from_id, query_string)
 
 def compute_answer(inline_query):
     query_id, from_id, query_string = telepot.glance(inline_query, flavor='inline_query')
@@ -47,7 +43,8 @@ loop = asyncio.get_event_loop()
 # Create the Answerer, give it the compute function.
 answerer = telepot.async.helper.Answerer(bot, compute_answer)
 
-loop.create_task(bot.messageLoop(handle))
+loop.create_task(bot.messageLoop({'inline_query': on_inline_query,
+                                  'chosen_inline_result': on_chosen_inline_result}))
 print('Listening ...')
 
 loop.run_forever()

@@ -3,8 +3,7 @@ import sys
 import random
 import telepot
 import telepot.async
-from telepot.delegate import per_chat_id, per_from_id, per_inline_from_id
-from telepot.async.delegate import create_open
+from telepot.async.delegate import per_chat_id, per_from_id, per_inline_from_id, create_open
 
 """
 $ python3.4 pairinga.py <token>
@@ -13,7 +12,7 @@ Demonstrates pairing patterns between per_ZZZ() and handler classes.
 """
 
 # Captures only normal chat messages, to be paired with per_chat_id()
-class ChatHandlerSubclass(telepot.helper.ChatHandler):
+class ChatHandlerSubclass(telepot.async.helper.ChatHandler):
     def __init__(self, seed_tuple, timeout):
         super(ChatHandlerSubclass, self).__init__(seed_tuple, timeout)
         self._count = 0
@@ -26,7 +25,7 @@ class ChatHandlerSubclass(telepot.helper.ChatHandler):
         print('%s %d: closed' % (type(self).__name__, self.id))
 
 # Captures all flavors of messages from a user, to be paired with per_from_id()
-class UserHandlerSubclass(telepot.helper.UserHandler):
+class UserHandlerSubclass(telepot.async.helper.UserHandler):
     def __init__(self, seed_tuple, timeout):
         super(UserHandlerSubclass, self).__init__(seed_tuple, timeout)
         self._count = 0
@@ -41,7 +40,7 @@ class UserHandlerSubclass(telepot.helper.UserHandler):
         print('%s %d: closed' % (type(self).__name__, self.id))
 
 # Captures inline-related messages from a user, to be paired with per_inline_from_id()
-class UserHandlerSubclassInlineOnly(telepot.helper.UserHandler):
+class UserHandlerSubclassInlineOnly(telepot.async.helper.UserHandler):
     def __init__(self, seed_tuple, timeout):
         super(UserHandlerSubclassInlineOnly, self).__init__(seed_tuple, timeout, flavors=['inline_query', 'chosen_inline_result'])
         self._count = 0

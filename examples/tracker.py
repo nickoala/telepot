@@ -20,8 +20,11 @@ class UserTracker(telepot.helper.UserHandler):
     def on_message(self, msg):
         flavor = telepot.flavor(msg)
         self._counts[flavor] += 1
-
-        print(self.id, ':', self._counts)
+        
+        # Display message counts separated by flavors
+        print(self.id, ':', 
+              flavor, '+1', ':', 
+              ', '.join([str(self._counts[f]) for f in ['normal', 'inline_query', 'chosen_inline_result']]))
 
         # Have to answer inline query to receive chosen result
         if flavor == 'inline_query':

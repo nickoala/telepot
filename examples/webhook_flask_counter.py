@@ -10,6 +10,10 @@ except ImportError:
 
 """
 $ python3.4 webhook_flask_counter.py <token> <listening_port> <webhook_url>
+
+Webhook path is '/abc' (see below), therefore:
+
+<webhook_url>: https://<base>/abc
 """
 
 class MessageCounter(telepot.helper.ChatHandler):
@@ -17,7 +21,7 @@ class MessageCounter(telepot.helper.ChatHandler):
         super(MessageCounter, self).__init__(seed_tuple, timeout)
         self._count = 0
 
-    def on_message(self, msg):
+    def on_chat_message(self, msg):
         self._count += 1
         self.sender.sendMessage(self._count)
 

@@ -12,22 +12,19 @@ class InlineHandler(telepot.helper.UserHandler):
     def __init__(self, seed_tuple, timeout):
         super(InlineHandler, self).__init__(seed_tuple, timeout, flavors=['inline_query', 'chosen_inline_result'])
 
-    def on_message(self, msg):
-        flavor = telepot.flavor(msg)
+    def on_inline_query(self, msg):
+        query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
+        print(self.id, ':', 'Inline Query:', query_id, from_id, query_string)
 
-        if flavor == 'inline_query':
-            query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
-            print(self.id, ':', 'Inline Query:', query_id, from_id, query_string)
+        articles = [{'type': 'article',
+                         'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
 
-            articles = [{'type': 'article',
-                             'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+        self.bot.answerInlineQuery(query_id, articles)
+        print(self.id, ':', 'Answers sent.')
 
-            self.bot.answerInlineQuery(query_id, articles)
-            print(self.id, ':', 'Answers sent.')
-
-        elif flavor == 'chosen_inline_result':
-            result_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
-            print(self.id, ':', 'Chosen Inline Result:', result_id, from_id, query_string)
+    def on_chosen_inline_result(self, msg):
+        result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
+        print(self.id, ':', 'Chosen Inline Result:', result_id, from_id, query_string)
 
 
 TOKEN = sys.argv[1]

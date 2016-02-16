@@ -60,7 +60,7 @@ class OwnerHandler(telepot.helper.ChatHandler):
             # assume all messages are text
             self.sender.sendMessage(msg['text'])
 
-    def on_message(self, msg):
+    def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
         
         if content_type != 'text':
@@ -109,7 +109,7 @@ class MessageSaver(telepot.helper.Monitor):
         self._exclude = exclude
 
     # Store every message, except those whose sender is in the exclude list, or non-text messages.
-    def on_message(self, msg):
+    def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
 
         if chat_id in self._exclude:

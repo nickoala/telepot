@@ -2,23 +2,26 @@ import sys
 import asyncio
 from aiohttp import web
 import telepot
-import telepot.async
-from telepot.delegate import per_chat_id
-from telepot.async.delegate import create_open
+from telepot.async.delegate import per_chat_id, create_open
 
 """
 $ python3.4 webhook_aiohttp_countera.py <token> <listening_port> <webhook_url>
+
+Webhook path is '/abc' (see below), therefore:
+
+<webhook_url>: https://<base>/abc
 """
 
-class MessageCounter(telepot.helper.ChatHandler):
+class MessageCounter(telepot.async.helper.ChatHandler):
     def __init__(self, seed_tuple, timeout):
         super(MessageCounter, self).__init__(seed_tuple, timeout)
         self._count = 0
 
     @asyncio.coroutine
-    def on_message(self, msg):
+    def on_chat_message(self, msg):
         self._count += 1
         yield from self.sender.sendMessage(self._count)
+
 
 TOKEN = sys.argv[1]
 PORT = int(sys.argv[2])

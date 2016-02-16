@@ -1,8 +1,7 @@
 import sys
 import asyncio
 import telepot
-from telepot.delegate import per_inline_from_id
-from telepot.async.delegate import create_open
+from telepot.async.delegate import per_inline_from_id, create_open
 
 """
 $ python3.4 answerera_handler.py <token>
@@ -13,7 +12,7 @@ In response to an inline query, it echoes the query string in the returned artic
 You can easily check that the latest answer is the one displayed.
 """
 
-class InlineHandler(telepot.helper.UserHandler):
+class InlineHandler(telepot.async.helper.UserHandler):
     def __init__(self, seed_tuple, timeout):
         super(InlineHandler, self).__init__(seed_tuple, timeout, flavors=['inline_query', 'chosen_inline_result'])
 
@@ -38,18 +37,13 @@ class InlineHandler(telepot.helper.UserHandler):
         # You may control keyword arguments to bot.answerInlineQuery() by returning a dict
         # return {'results': articles, 'cache_time': 60}
 
+    def on_inline_query(self, msg):
+        # Just dump inline query to answerer
+        self._answerer.answer(msg)
 
-    @asyncio.coroutine
-    def on_message(self, msg):
-        flavor = telepot.flavor(msg)
-
-        if flavor == 'inline_query':
-            # Just dump inline query to answerer
-            self._answerer.answer(msg)
-
-        elif flavor == 'chosen_inline_result':
-            result_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
-            print(self.id, ':', 'Chosen Inline Result:', result_id, from_id, query_string)
+    def on_chosen_inline_result(self, msg):
+        result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
+        print(self.id, ':', 'Chosen Inline Result:', result_id, from_id, query_string)
 
 
 TOKEN = sys.argv[1]

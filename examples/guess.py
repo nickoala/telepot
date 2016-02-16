@@ -1,5 +1,6 @@
 import sys
 import random
+import traceback
 import telepot
 from telepot.delegate import per_chat_id, create_open
 
@@ -30,7 +31,7 @@ class Player(telepot.helper.ChatHandler):
         self.sender.sendMessage('Guess my number')
         return True  # prevent on_message() from being called on the initial message
 
-    def on_message(self, msg):
+    def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
 
         if content_type != 'text':

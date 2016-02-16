@@ -2,8 +2,7 @@ import sys
 import asyncio
 import random
 import telepot
-from telepot.delegate import per_chat_id
-from telepot.async.delegate import create_open
+from telepot.async.delegate import per_chat_id, create_open
 
 """
 $ python3.4 guessa.py <token>
@@ -17,7 +16,7 @@ Guess a number:
 5. Repeat step 3 and 4, until guess is correct.
 """
 
-class Player(telepot.helper.ChatHandler):
+class Player(telepot.async.helper.ChatHandler):
     def __init__(self, seed_tuple, timeout):
         super(Player, self).__init__(seed_tuple, timeout)
         self._answer = random.randint(0,99)
@@ -34,7 +33,7 @@ class Player(telepot.helper.ChatHandler):
         return True  # prevent on_message() from being called on the initial message
 
     @asyncio.coroutine
-    def on_message(self, msg):
+    def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
 
         if content_type != 'text':

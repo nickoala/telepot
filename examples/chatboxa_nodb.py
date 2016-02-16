@@ -1,8 +1,7 @@
 import sys
 import asyncio
 import telepot
-from telepot.delegate import per_chat_id_in
-from telepot.async.delegate import call, create_open
+from telepot.async.delegate import per_chat_id_in, call, create_open
 
 """ Python3.4.3 or newer
 
@@ -53,7 +52,7 @@ class UnreadStore(object):
 
 
 # Accept commands from owner. Give him unread messages.
-class OwnerHandler(telepot.helper.ChatHandler):
+class OwnerHandler(telepot.async.helper.ChatHandler):
     def __init__(self, seed_tuple, timeout, store):
         super(OwnerHandler, self).__init__(seed_tuple, timeout)
         self._store = store
@@ -65,7 +64,7 @@ class OwnerHandler(telepot.helper.ChatHandler):
             yield from self.sender.sendMessage(msg['text'])
 
     @asyncio.coroutine
-    def on_message(self, msg):
+    def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
 
         if content_type != 'text':
@@ -106,7 +105,7 @@ class OwnerHandler(telepot.helper.ChatHandler):
             yield from self.sender.sendMessage("I don't understand")
 
 
-class MessageSaver(telepot.helper.Monitor):
+class MessageSaver(telepot.async.helper.Monitor):
     def __init__(self, seed_tuple, store, exclude):
         # The `capture` criteria means to capture all messages.
         super(MessageSaver, self).__init__(seed_tuple, capture=[{'_': lambda msg: True}])
@@ -114,7 +113,7 @@ class MessageSaver(telepot.helper.Monitor):
         self._exclude = exclude
 
     # Store every message, except those whose sender is in the exclude list, or non-text messages.
-    def on_message(self, msg):
+    def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
 
         if chat_id in self._exclude:

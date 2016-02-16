@@ -1,8 +1,7 @@
 import sys
 import asyncio
 import telepot
-from telepot.delegate import per_from_id
-from telepot.async.delegate import create_open
+from telepot.async.delegate import per_from_id, create_open
 
 """
 $ python3.4 trackera.py <token>
@@ -10,7 +9,7 @@ $ python3.4 trackera.py <token>
 Tracks user actions across all flavors.
 """
 
-class UserTracker(telepot.helper.UserHandler):
+class UserTracker(telepot.async.helper.UserHandler):
     def __init__(self, seed_tuple, timeout):
         super(UserTracker, self).__init__(seed_tuple, timeout)
 
@@ -24,7 +23,10 @@ class UserTracker(telepot.helper.UserHandler):
         flavor = telepot.flavor(msg)
         self._counts[flavor] += 1
 
-        print(self.id, ':', self._counts)
+        # Display message counts separated by flavors
+        print(self.id, ':', 
+              flavor, '+1', ':', 
+              ', '.join([str(self._counts[f]) for f in ['normal', 'inline_query', 'chosen_inline_result']]))
 
         # Have to answer inline query to receive chosen result
         if flavor == 'inline_query':
