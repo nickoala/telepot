@@ -1,5 +1,12 @@
 # telepot changelog
 
+## 6.4 (2016-02-16)
+
+- Introduced automatic message routing to `Bot.handle()` and `ZZZHandler.on_message()`. Messages are routed to sub-handlers according to flavor, by default.
+- `notifyOnMessage()` and `messageLoop()` accept a dict as callback, routing messages according to flavor.
+- Added function `telepot.flavor_router()`, classes `telepot.helper.Router` and `telepot.helper.DefaultRouterMixin`, and their async counterparts to facilitate message routing.
+- Many functions in `telepot.delegate` and `telepot.helper` now have aliases in their respective async modules, making imports more symmetric.
+
 ## 6.3 (2016-02-06)
 
 - Added `Answerer` class to better deal with inline queries
