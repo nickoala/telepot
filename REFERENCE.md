@@ -1660,7 +1660,7 @@ Coming soon ...
 <a id="telepot-async-helper-openable"></a>
 ### `telepot.async.helper.openable` class decorator
 
-Coming soon ...
+This is an alias to [telepot.helper.openable](#telepot-helper-openable).
 
 <a id="telepot-async-delegate"></a>
 ## `telepot.async.delegate` module (Python 3.4.3 or newer)
@@ -1668,49 +1668,23 @@ Coming soon ...
 This module provides functions used in conjunction with `telepot.async.DelegatorBot` to specify delegation patterns. See `telepot.async.DelegatorBot` for more details.
 
 <a id="telepot-async-delegate-per-chat-id"></a>
-**per_chat_id()**
-
-Coming soon ...
-
+**per_chat_id()** - alias to [telepot.delegate.per_chat_id()](#telepot-delegate-per-chat-id)  
 <a id="telepot-async-delegate-per-chat-id-in"></a>
-**per_chat_id_in(set)**
-
-Coming soon ...
-
+**per_chat_id_in(set)** - alias to [telepot.delegate.per_chat_id_in(set)](#telepot-delegate-per-chat-id-in)  
 <a id="telepot-async-delegate-per-chat-id-except"></a>
-**per_chat_id_except(set)**
-
-Coming soon ...
-
+**per_chat_id_except(set)** - alias to [telepot.delegate.per_chat_id_except(set)](#telepot-delegate-per-chat-id-except)  
 <a id="telepot-async-delegate-per-from-id"></a>
-**per_from_id()**
-
-Coming soon ...
-
+**per_from_id()** - alias to [telepot.delegate.per_from_id()](#telepot-delegate-per-from-id)  
 <a id="telepot-async-delegate-per-from-id-in"></a>
-**per_from_id_in(set)**
-
-Coming soon ...
-
+**per_from_id_in(set)** - alias to [telepot.delegate.per_from_id_in(set)](#telepot-delegate-per-from-id-in)  
 <a id="telepot-async-delegate-per-from-id-except"></a>
-**per_from_id_except(set)**
-
-Coming soon ...
-
+**per_from_id_except(set)** - alias to [telepot.delegate.per_from_id_except(set)](#telepot-delegate-per-from-id-except)  
 <a id="telepot-async-delegate-per-inline-from-id"></a>
-**per_inline_from_id()**
-
-Coming soon ...
-
+**per_inline_from_id()** - alias to [telepot.delegate.per_inline_from_id()](#telepot-delegate-per-inline-from-id)  
 <a id="telepot-async-delegate-per-inline-from-id-in"></a>
-**per_inline_from_id_in(set)**
-
-Coming soon ...
-
+**per_inline_from_id_in(set)** - alias to [telepot.delegate.per_inline_from_id_in(set)](#telepot-delegate-per-inline-from-id-in)  
 <a id="telepot-async-delegate-per-inline-from-id-except"></a>
-**per_inline_from_id_except(set)**
-
-Coming soon ...
+**per_inline_from_id_except(set)** - alias to [telepot.delegate.per_inline_from_id_except(set)](#telepot-delegate-per-inline-from-id-except)  
 
 <a id="telepot-async-delegate-call"></a>
 **call(corofunc, \*args, \*\*kwargs)**
