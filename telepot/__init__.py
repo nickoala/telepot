@@ -93,6 +93,13 @@ def flance(msg, long=False):
     return f,g
 
 
+import telepot.helper
+
+def flavor_router(routing_table):
+    router = telepot.helper.Router(flavor, routing_table)
+    return router.route
+
+
 class BadHTTPResponse(TelepotException):
     def __init__(self, status, text):
         super(BadHTTPResponse, self).__init__(status, text)
@@ -164,6 +171,17 @@ class _BotBase(object):
 class Bot(_BotBase):
     def __init__(self, token):
         super(Bot, self).__init__(token)
+
+        try:
+            getattr(self, 'handle')
+
+        # If self.handle is not defined, automatically route messages to sub-handlers.
+        except AttributeError:
+            self.handle = flavor_router({'normal': lambda msg: self.on_chat_message(msg),
+                                         'inline_query': lambda msg: self.on_inline_query(msg),
+                                         'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
+                                         # use lambda to delay evaluation of self.on_ZZZ to runtime because 
+                                         # I don't want to require defining all methods right here.
 
     def _parse(self, response):
         try:
@@ -333,6 +351,8 @@ class Bot(_BotBase):
     def notifyOnMessage(self, callback=None, relax=0.1, timeout=20, source=None, ordered=True, maxhold=3, run_forever=False):
         if callback is None:
             callback = self.handle
+        elif isinstance(callback, dict):
+            callback = flavor_router(callback)
 
         def handle(update):
             try:
@@ -497,8 +517,6 @@ class Bot(_BotBase):
 
 
 import inspect
-import telepot.helper
-
 
 class SpeakerBot(Bot):
     def __init__(self, token):
