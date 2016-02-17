@@ -474,7 +474,7 @@ while 1:
     time.sleep(10)
 ```
 
-Having always to check the flavor is tedious. You may supply a *routing table* to `bot.notifyOnMessage()` to enable message routing:
+Having always to check the flavor is troublesome. You may supply a *routing table* to `bot.notifyOnMessage()` to enable message routing:
 
 ```python
 bot.notifyOnMessage({'normal': on_chat_message,
@@ -521,7 +521,7 @@ while 1:
     time.sleep(10)
 ```
 
-However, this skeleton still has room for improvement: dealing with inline queries this way is not ideal. As you types and pauses, types and pauses, types and pauses ... closely bunched inline queries arrive. In fact, a new inline query often arrives *before* we finish processing a preceding one. With only a single thread of execution, we can only process the (closely bunched) inline queries sequentially. Ideally, whenever we see a new inline query from the same user, it should override and cancel any preceding inline queries being processed (that belong to the same user).
+There is one more problem: dealing with inline queries this way is not ideal. As you types and pauses, types and pauses, types and pauses ... closely bunched inline queries arrive. In fact, a new inline query often arrives *before* we finish processing a preceding one. With only a single thread of execution, we can only process the (closely bunched) inline queries sequentially. Ideally, whenever we see a new inline query from the same user, it should override and cancel any preceding inline queries being processed (that belong to the same user).
 
 Don't worry. Telepot has a ready-made solution for you ...
 
@@ -612,14 +612,52 @@ while 1:
     time.sleep(10)
 ```
 
+Having always to check the flavor is troublesome. Alternatively, you may implement the method `on_chat_message`, `on_inline_query`, and `on_chosen_inline_result`. The bot will route messages to the correct handler according to flavor.
+
+```python
+import sys
+import time
+import telepot
+
+class YourBot(telepot.Bot):
+    def on_chat_message(self, msg):
+        content_type, chat_type, chat_id = telepot.glance(msg)
+        print('Normal Message:', content_type, chat_type, chat_id)
+
+    def on_inline_query(self, msg):
+        query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
+        print('Inline Query:', query_id, from_id, query_string)
+
+        # Compose your own answers
+        articles = [{'type': 'article',
+                        'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+
+        bot.answerInlineQuery(query_id, articles)
+
+    def on_chosen_inline_result(self, msg):
+        result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
+        print('Chosen Inline Result:', result_id, from_id, query_string)
+
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = YourBot(TOKEN)
+bot.notifyOnMessage()
+print('Listening ...')
+
+# Keep the program running.
+while 1:
+    time.sleep(10)
+```
+
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
 <a id="threads-conversation"></a>
 ## Maintain Threads of Conversation
 
-Having a single message handler is adequate for simple programs. For more sophisticated programs where states need to be maintained across messages, a better approach is needed.
+So far, we have been using a single line of execution to handle messages. That is adequate for simple programs. For more sophisticated programs where states need to be maintained across messages, a better approach is needed.
 
-Consider this scenario. A bot wants to have an intelligent conversation with a lot of users, and if we could only use a single message-handling function, we would have to maintain some state variables about each conversation *outside* the function. On receiving each message, we first have to check whether the user already has a conversation started, and if so, what we have been talking about. To avoid such mundaneness, we need a structured way to maintain "threads" of conversation.
+Consider this scenario. A bot wants to have an intelligent conversation with a lot of users, and if we could only use a single line of execution to handle messages (like what we have done so far), we would have to maintain some state variables about each conversation *outside* the message-handling function(s). On receiving each message, we first have to check whether the user already has a conversation started, and if so, what we have been talking about. To avoid such mundaneness, we need a structured way to maintain "threads" of conversation.
 
 Let's look at my solution. Here, I implemented a bot that counts how many messages have been sent by an individual user. If no message is received after 10 seconds, it starts over (timeout). The counting is done *per chat* - that's the important point.
 
@@ -633,7 +671,7 @@ class MessageCounter(telepot.helper.ChatHandler):
         super(MessageCounter, self).__init__(seed_tuple, timeout)
         self._count = 0
 
-    def on_message(self, msg):
+    def on_chat_message(self, msg):
         self._count += 1
         self.sender.sendMessage(self._count)
 
@@ -651,7 +689,18 @@ For every received message, the function `per_chat_id()` digests it down to a *s
 
 A `MessageCounter` is only an object encapsulating states; it says nothing about how to spawn a delegate. The function `create_open()` causes the spawning of a thread. Thread is the default delegation mechanism (that is why I use the verb "spawn"). There is a way to provide your own implementation of threads or other delegation mechanisms. The [Chatbox example](#examples-chatbox) demonstrates this possibility.
 
-The function `create_open()` requires the object `MessageCounter` to meet certain criteria. Being a subclass of `ChatHandler`, `MessageCounter` fulfills most of them. The only thing it has to do is implement the method `on_message()`, which is called whenever a normal message arrives. How messages are distributed to the correct object is done by telepot. You don't have to worry about that.
+The function `create_open()` requires the object `MessageCounter` to meet certain criteria. Being a subclass of `ChatHandler`, `MessageCounter` fulfills most of them. The only thing it has to do is implement the method `on_chat_message()`, which is called whenever a normal (chat) message arrives. How messages are distributed to the correct object is done by telepot. You don't have to worry about that.
+
+There are two styles of extending `ChatHandler` in terms of which methods to implement/override:
+
+- You may override `on_message()`, which is **the first point of contact** for **every** received message, regardless of flavor. If your bot can receive more than one flavor of messages, remember to check the flavor before further processing. If you *don't* override `on_message()`, it is still the the first point of contact and the default behaviour is to route a message to the appropriate handler according to flavor. Which leads us to the next style ...
+
+- You may implement one or more of `on_chat_message()`, `on_inline_query()`, and `on_chosen_inline_result()`:
+    - `on_chat_message()` is called for a `normal` message
+    - `on_inline_query()` is called for an `inline_query`
+    - `on_chosen_inline_result()` is called for a `chosen_inline_result`
+
+You have just seen the second style. And you are going to see the first style in a moment.
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
@@ -700,7 +749,7 @@ bot.notifyOnMessage(run_forever=True)
 
 All messages, regardless of flavor, as long as it is originating from a user, would have a `from` field containing an `id`. The function `per_from_id()` digests a message down to its originating user id, thus ensuring there is one and only one `UserTracker` *per user id*.
 
-`UserTracker`, being a subclass of `UserHandler`, is automatically set up to capture messages originating from a certain user, regardless of flavor.
+`UserTracker`, being a subclass of `UserHandler`, is automatically set up to capture messages originating from a certain user, regardless of flavor. Because the handling logic is similar for all flavors, it overrides `on_message()` instead of implementing `on_ZZZ()` separately.
 
 `per_from_id()` and `UserHandler` combined, we can track a user's every step.
 
@@ -720,22 +769,19 @@ class InlineHandler(telepot.helper.UserHandler):
     def __init__(self, seed_tuple, timeout):
         super(InlineHandler, self).__init__(seed_tuple, timeout, flavors=['inline_query', 'chosen_inline_result'])
 
-    def on_message(self, msg):
-        flavor = telepot.flavor(msg)
+    def on_inline_query(self, msg):
+        query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
+        print(self.id, ':', 'Inline Query:', query_id, from_id, query_string)
 
-        if flavor == 'inline_query':
-            query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
-            print(self.id, ':', 'Inline Query:', query_id, from_id, query_string)
+        articles = [{'type': 'article',
+                         'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
 
-            articles = [{'type': 'article',
-                             'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+        self.bot.answerInlineQuery(query_id, articles)
+        print(self.id, ':', 'Answers sent.')
 
-            self.bot.answerInlineQuery(query_id, articles)
-            print(self.id, ':', 'Answers sent.')
-
-        elif flavor == 'chosen_inline_result':
-            result_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
-            print(self.id, ':', 'Chosen Inline Result:', result_id, from_id, query_string)
+    def on_chosen_inline_result(self, msg):
+        result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
+        print(self.id, ':', 'Chosen Inline Result:', result_id, from_id, query_string)
 
 
 TOKEN = sys.argv[1]
@@ -746,9 +792,9 @@ bot = telepot.DelegatorBot(TOKEN, [
 bot.notifyOnMessage(run_forever=True)
 ```
 
-The function `per_inline_from_id()` digests a message down to its originating user id, but only for **inline query** and **chosen inline result**. It ignores normal messages.
+The function `per_inline_from_id()` digests a message down to its originating user id, but only for **inline query** and **chosen inline result**. It ignores normal (chat) messages.
 
-`InlineHandler`, again, is a subclass of `UserHandler`. But it specifies which message flavors to capture (in the constructor). In this case, it only cares about **inline query** and **chosen inline result**.
+`InlineHandler`, again, is a subclass of `UserHandler`. But it specifies which message flavors to capture (in the constructor). In this case, it only cares about **inline query** and **chosen inline result**. Then, it implements `on_inline_query()` and `on_chosen_inline_result()` to handle incoming messages.
 
 This inline bot does the job, but not ideally. As the user types and pauses, types and pauses, types and pauses ... closely bunched inline queries arrive. In fact, a new inline query often arrives *before* we finish processing a preceding one. With only a single thread of execution *per user id*, we can only process the (closely bunched) inline queries sequentially. Ideally, whenever we see a new inline query from the same user, it should override and cancel any preceding inline queries being processed (that belong to the same user).
 
@@ -824,9 +870,25 @@ import telepot
 import telepot.async
 
 class YourBot(telepot.async.Bot):
+    def on_chat_message(self, msg):
+        content_type, chat_type, chat_id = telepot.glance(msg)
+        print('Normal Message:', content_type, chat_type, chat_id)
+
     @asyncio.coroutine
-    def handle(self, msg):
-        # ......
+    def on_inline_query(self, msg):
+        query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
+        print('Inline Query:', query_id, from_id, query_string)
+
+        # Compose your own answers
+        articles = [{'type': 'article',
+                        'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+
+        yield from bot.answerInlineQuery(query_id, articles)
+
+    def on_chosen_inline_result(self, msg):
+        result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
+        print('Chosen Inline Result:', result_id, from_id, query_string)
+
 
 TOKEN = sys.argv[1]  # get token from command-line
 
@@ -839,9 +901,7 @@ print('Listening ...')
 loop.run_forever()
 ```
 
-**[View source »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_extend.py)**
-
-#### Skeleton, by defining a global handler
+#### Skeleton, by defining global handlers
 
 ```python
 import sys
@@ -849,22 +909,38 @@ import asyncio
 import telepot
 import telepot.async
 
+def on_chat_message(msg):
+    content_type, chat_type, chat_id = telepot.glance(msg)
+    print('Normal Message:', content_type, chat_type, chat_id)
+
 @asyncio.coroutine
-def handle(msg):
-    # ......
+def on_inline_query(msg):
+    query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
+    print('Inline Query:', query_id, from_id, query_string)
+
+    # Compose your own answers
+    articles = [{'type': 'article',
+                    'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+
+    yield from bot.answerInlineQuery(query_id, articles)
+
+def on_chosen_inline_result(msg):
+    result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
+    print('Chosen Inline Result:', result_id, from_id, query_string)
+
 
 TOKEN = sys.argv[1]  # get token from command-line
 
 bot = telepot.async.Bot(TOKEN)
 loop = asyncio.get_event_loop()
 
-loop.create_task(bot.messageLoop(handle))
+loop.create_task(bot.messageLoop({'normal': on_chat_message,
+                                  'inline_query': on_inline_query,
+                                  'chosen_inline_result': on_chosen_inline_result}))
 print('Listening ...')
 
 loop.run_forever()
 ```
-
-**[View source »](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)**
 
 #### Skeleton for `DelegatorBot`
 
@@ -874,16 +950,15 @@ I have re-done the `MessageCounter` example here. Again, it is very similar to t
 import sys
 import asyncio
 import telepot
-from telepot.delegate import per_chat_id
-from telepot.async.delegate import create_open
+from telepot.async.delegate import per_chat_id, create_open
 
-class MessageCounter(telepot.helper.ChatHandler):
+class MessageCounter(telepot.async.helper.ChatHandler):
     def __init__(self, seed_tuple, timeout):
         super(MessageCounter, self).__init__(seed_tuple, timeout)
         self._count = 0
 
     @asyncio.coroutine
-    def on_message(self, msg):
+    def on_chat_message(self, msg):
         self._count += 1
         yield from self.sender.sendMessage(self._count)
 
@@ -973,6 +1048,8 @@ Telegram website's introduction to [deep linking](https://core.telegram.org/bots
     ```
 
 4. On receiving that message, the bot sees that `abcde` is associated with user `123`. Telegram `chat_id` can also be extracted from the message. Knowing user `123`'s `chat_id`, the bot can send him messages afterwards.
+
+Telegram website's introduction refers often to "Memcache", by which they only mean a datastore that remembers key-user ID associations. In a simple experiment, a dictionary or associative array will do. In real world, you may use Memcached (the memory caching software) or a database table.
 
 **[Deep linking example »](#examples-deep-linking)**
 
