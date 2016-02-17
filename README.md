@@ -946,6 +946,8 @@ loop.run_forever()
 
 I have re-done the `MessageCounter` example here. Again, it is very similar to the [traditional version](#threads-conversation).
 
+*Note: If you are a "long-time" user of telepot and want to change from the old style of implementing `on_message()` to the new style of implementing `on_chat_message()` and company, be aware that your handler's superclass is now in the `telepot.async.helper` module. (before, it was in `telepot.helper`)*
+
 ```python
 import sys
 import asyncio
