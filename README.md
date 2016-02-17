@@ -33,6 +33,8 @@
 **6.4 (2016-02-16)**
 
 - Introduced automatic message routing to `Bot.handle()` and `ZZZHandler.on_message()`. Messages are routed to sub-handlers according to flavor, by default.
+- As an alternative to implementing `Bot.handle(msg)`, you may implement `Bot.on_chat_message(msg)`, `Bot.on_inline_query(msg)`, and `Bot.on_chosen_inline_result(msg)` as needed.
+- As an alternative to implementing `ZZZHandler.on_message()`, you may implement `ZZZHandler.on_chat_message(msg)`, `ZZZHandler.on_inline_query(msg)`, and `ZZZHandler.on_chosen_inline_result(msg)` as needed.
 - `notifyOnMessage()` and `messageLoop()` accept a dict as callback, routing messages according to flavor.
 - Added function `telepot.flavor_router()`, classes `telepot.helper.Router` and `telepot.helper.DefaultRouterMixin`, and their async counterparts to facilitate message routing.
 - Many functions in `telepot.delegate` and `telepot.helper` now have aliases in their respective async modules, making imports more symmetric.
@@ -322,13 +324,11 @@ Besides sending photos, you may also `sendAudio()`, `sendDocument()`, `sendStick
 <a id="inline-query"></a>
 ## Dealing with Inline Query
 
-By default, a bot only receives messages through a private chat, a group, or a channel. These are what I call *normal messages*.
+By default, a bot only receives messages through a private chat, a group, or a channel. These are what I call *normal messages* or *chat messages*.
 
 By sending a `/setinline` command to BotFather, you enable the bot to receive *[inline queries](https://core.telegram.org/bots/inline)* as well. Inline query is a way for users to ask your bot questions, even if they have not opened a chat with your bot, nor in the same group with your bot.
 
-If you don't understand or don't care about inline query, you may skip this section. All your bot receives will be normal messages. All remaining discussions still work for you. You can even safely ignore code blocks that deal with inline queries.
-
-If you do care about inline query, the important thing to note is that your bot will now receive two **flavors** of messages: normal messages and inline queries. A normal message has the flavor `normal`; an inline query has the flavor `inline_query`.
+The important thing to note is that your bot will now receive two **flavors** of messages: normal messages and inline queries. A normal message has the flavor `normal`; an inline query has the flavor `inline_query`.
 
 #### Use `flavor()` to differentiate the flavor
 
@@ -343,7 +343,7 @@ elif flavor == 'inline_query':
 
 #### You may `glance()` an inline query too
 
-An inline query has this structure:
+An inline query has this structure (refer to [Bot API](https://core.telegram.org/bots/api#inlinequery) for the fields' meanings):
 
 ```python
 {u'from': {u'first_name': u'Nick', u'id': 999999999},
@@ -395,7 +395,7 @@ bot.answerInlineQuery(query_id, photos)
 
 #### Detect which answer has been chosen
 
-By sending `/setinlinefeedback` to BotFather, you enable the bot to know which of the provided results your users have chosen. After `/setinlinefeedback` is done, your bot will receive one more flavor of messages: `chosen_inline_result`.
+By sending `/setinlinefeedback` to BotFather, you enable the bot to know which of the provided results your users have chosen. After `/setinlinefeedback`, your bot will receive one more flavor of messages: `chosen_inline_result`.
 
 ```python
 flavor = telepot.flavor(msg)
@@ -408,7 +408,7 @@ elif flavor == 'chosen_inline_result':
    ...
 ```
 
-A chosen inline result has this structure:
+A chosen inline result has this structure (refer to [Bot API](https://core.telegram.org/bots/api#choseninlineresult) for the fields' meanings):
 
 ```python
 {u'from': {u'first_name': u'Nick', u'id': 999999999},
@@ -474,9 +474,56 @@ while 1:
     time.sleep(10)
 ```
 
-However, dealing with inline queries this way is not ideal. As you types and pauses, types and pauses, types and pauses ... closely bunched inline queries arrive. In fact, a new inline query often arrives *before* we finish processing a preceding one. With only a single thread of execution, we can only process the (closely bunched) inline queries sequentially. Ideally, whenever we see a new inline query from the same user, it should override and cancel any preceding inline queries being processed (that belong to the same user).
+Having always to check the flavor is tedious. You may supply a *routing table* to `bot.notifyOnMessage()` to enable message routing:
 
-Telepot has a ready-made solution for you ...
+```python
+bot.notifyOnMessage({'normal': on_chat_message,
+                     'inline_query': on_inline_query,
+                     'chosen_inline_result': on_chosen_inline_result})
+```
+
+That results in a more succinct skeleton:
+
+```python
+import sys
+import time
+import telepot
+
+def on_chat_message(msg):
+    content_type, chat_type, chat_id = telepot.glance(msg)
+    print 'Chat Message:', content_type, chat_type, chat_id
+
+def on_inline_query(msg):
+    query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
+    print 'Inline Query:', query_id, from_id, query_string
+
+    # Compose your own answers
+    articles = [{'type': 'article',
+                    'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+
+    bot.answerInlineQuery(query_id, articles)
+
+def on_chosen_inline_result(msg):
+    result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
+    print 'Chosen Inline Result:', result_id, from_id, query_string
+    
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.Bot(TOKEN)
+bot.notifyOnMessage({'normal': on_chat_message,
+                     'inline_query': on_inline_query,
+                     'chosen_inline_result': on_chosen_inline_result})
+print 'Listening ...'
+
+# Keep the program running.
+while 1:
+    time.sleep(10)
+```
+
+However, this skeleton still has room for improvement: dealing with inline queries this way is not ideal. As you types and pauses, types and pauses, types and pauses ... closely bunched inline queries arrive. In fact, a new inline query often arrives *before* we finish processing a preceding one. With only a single thread of execution, we can only process the (closely bunched) inline queries sequentially. Ideally, whenever we see a new inline query from the same user, it should override and cancel any preceding inline queries being processed (that belong to the same user).
+
+Don't worry. Telepot has a ready-made solution for you ...
 
 <a id="inline-query-answerer"></a>
 #### Use `Answerer` to answer inline queries
@@ -499,9 +546,7 @@ answerer = telepot.helper.Answerer(bot, compute_answer)
 Then, you dump inline queries to it. It will ensure at most one active thread per user.
 
 ```python
-flavor = telepot.flavor(msg)
-
-if flavor == 'inline_query':
+def on_inline_query(msg):
     answerer.answer(msg)
 ```
 
