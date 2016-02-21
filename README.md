@@ -30,6 +30,12 @@
 
 ### Recent changes
 
+**6.5 (2016-02-21)**
+
+- Supports file-like object and filename when sending files
+- Moved all exceptions to module `telepot.exception`
+- Expanded testing to Python 3.5
+
 **6.4 (2016-02-16)**
 
 - Introduced automatic message routing to `Bot.handle()` and `ZZZHandler.on_message()`. Messages are routed to sub-handlers according to flavor, by default.
@@ -69,7 +75,7 @@
 
 ------
 
-Telepot has been tested on **Raspbian** and **CentOS**, using **Python 2.7 - 3.4**. Below discussions are based on Raspbian and Python 2.7, except noted otherwise.
+Telepot has been tested on **Raspbian** and **CentOS**, using **Python 2.7 - 3.5**. Below discussions are based on Raspbian and Python 2.7, except noted otherwise.
 
 <a id="installation"></a>
 ## Installation
@@ -92,9 +98,9 @@ $ easy_install --upgrade telepot  # UPGRADE
 Download manually:
 
 ```
-$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.4.zip
-$ unzip telepot-6.4.zip
-$ cd telepot-6.4
+$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.5.zip
+$ unzip telepot-6.5.zip
+$ cd telepot-6.5
 $ python setup.py install
 ```
 
