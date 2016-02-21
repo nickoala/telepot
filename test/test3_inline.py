@@ -45,53 +45,52 @@ def examine(result, type):
         if answer != 'y':
             exit(1)
 
-def answer(msg):
-    flavor = telepot.flavor(msg)
+def on_inline_query(msg):
+    query_id, from_id, query = telepot.glance(msg, flavor='inline_query')
 
-    if flavor == 'inline_query':
-        query_id, from_id, query = telepot.glance2(msg, flavor=flavor)
+    if from_id != USER_ID:
+        print('Unauthorized user:', from_id)
+        return
 
-        if from_id != USER_ID:
-            print('Unauthorized user:', from_id)
-            return
+    examine(msg, 'InlineQuery')
+    answerer.answer(msg)
 
-        examine(msg, 'InlineQuery')
 
-        articles = [InlineQueryResultArticle(
-                       id='abc', title='HK', message_text='Hong Kong', url='https://www.google.com', hide_url=True),
-                   {'type': 'article',
-                       'id': 'def', 'title': 'SZ', 'message_text': 'Shenzhen', 'url': 'https://www.yahoo.com'}]
+def on_chosen_inline_result(msg):
+    result_id, from_id, query = telepot.glance(msg, flavor='chosen_inline_result')
 
-        photos = [InlineQueryResultPhoto(
-                      id='123', photo_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf', thumb_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf'),
-                  {'type': 'photo',
-                      'id': '345', 'photo_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'thumb_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'caption': 'Caption', 'title': 'Title', 'message_text': 'Message Text'}]
+    if from_id != USER_ID:
+        print('Unauthorized user:', from_id)
+        return
 
-        results = random.choice([articles, photos])
+    examine(msg, 'ChosenInlineResult')
 
-        bot.answerInlineQuery(query_id, results, cache_time=3, is_personal=True, next_offset='5')
+    print('Chosen inline query:')
+    pprint.pprint(msg)
 
-    elif flavor == 'chosen_inline_result':
-        result_id, from_id, query = telepot.glance2(msg, flavor=flavor)
 
-        if from_id != USER_ID:
-            print('Unauthorized user:', from_id)
-            return
+def compute(inline_query):
+    articles = [InlineQueryResultArticle(
+                   id='abc', title='HK', message_text='Hong Kong', url='https://www.google.com', hide_url=True),
+               {'type': 'article',
+                   'id': 'def', 'title': 'SZ', 'message_text': 'Shenzhen', 'url': 'https://www.yahoo.com'}]
 
-        examine(msg, 'ChosenInlineResult')
+    photos = [InlineQueryResultPhoto(
+                  id='123', photo_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf', thumb_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf'),
+              {'type': 'photo',
+                  'id': '345', 'photo_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'thumb_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'caption': 'Caption', 'title': 'Title', 'message_text': 'Message Text'}]
 
-        print('Chosen inline query:')
-        pprint.pprint(msg)
-
-    else:
-        raise telepot.BadFlavor(msg)
+    results = random.choice([articles, photos])
+    return results
 
 
 TOKEN = sys.argv[1]
 USER_ID = int(sys.argv[2])
 
 bot = telepot.Bot(TOKEN)
+answerer = telepot.helper.Answerer(bot, compute)
 
 bot.sendMessage(USER_ID, 'Please give me an inline query.')
 
-bot.notifyOnMessage(answer, run_forever=True)
+bot.notifyOnMessage({'inline_query': on_inline_query,
+                     'chosen_inline_result': on_chosen_inline_result}, run_forever=True)

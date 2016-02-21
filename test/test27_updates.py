@@ -49,7 +49,7 @@ def examine(result, type):
         assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
 
         if type == 'Message':
-            print 'Message glance2: %s' % str(telepot.glance2(result, long=True))
+            print 'Message glance: %s' % str(telepot.glance(result, long=True))
 
         pprint.pprint(result)
         pprint.pprint(nt)
@@ -72,7 +72,7 @@ def see_every_content_types(msg):
     flavor = telepot.flavor(msg)
     
     if flavor == 'normal':
-        content_type, chat_type, chat_id = telepot.glance2(msg)
+        content_type, chat_type, chat_id = telepot.glance(msg)
         from_id = msg['from']['id']
 
         if chat_id != USER_ID and from_id != USER_ID:

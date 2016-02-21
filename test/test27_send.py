@@ -5,6 +5,7 @@ import threading
 import pprint
 import sys
 import traceback
+import urllib2
 import telepot
 import telepot.namedtuple
 
@@ -119,6 +120,9 @@ def send_everything_on_contact(msg):
     bot.sendPhoto(chat_id, file_id, caption='Show original message and keyboard', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
 
     bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=hide_keyboard)
+
+    furl = urllib2.urlopen('http://i.imgur.com/B1fzGoh.jpg')
+    bot.sendPhoto(chat_id, ('abc.jpg', furl))
 
     ##### getFile
     

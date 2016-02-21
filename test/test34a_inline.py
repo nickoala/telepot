@@ -36,7 +36,7 @@ def examine(result, type):
         assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
 
         if type == 'Message':
-            print('Message glance2: %s' % str(telepot.glance2(result, long=True)))
+            print('Message glance: %s' % str(telepot.glance(result, long=True)))
 
         pprint.pprint(result)
         pprint.pprint(nt)
@@ -48,55 +48,54 @@ def examine(result, type):
         if answer != 'y':
             exit(1)
 
-@asyncio.coroutine
-def answer(msg):
-    flavor = telepot.flavor(msg)
 
-    if flavor == 'inline_query':
-        query_id, from_id, query = telepot.glance2(msg, flavor=flavor)
+def on_inline_query(msg):
+    query_id, from_id, query = telepot.glance(msg, flavor='inline_query')
 
-        if from_id != USER_ID:
-            print('Unauthorized user:', from_id)
-            return
+    if from_id != USER_ID:
+        print('Unauthorized user:', from_id)
+        return
 
-        examine(msg, 'InlineQuery')
+    examine(msg, 'InlineQuery')
+    answerer.answer(msg)
 
-        articles = [InlineQueryResultArticle(
-                       id='abc', title='HK', message_text='Hong Kong', url='https://www.google.com', hide_url=True),
-                   {'type': 'article',
-                       'id': 'def', 'title': 'SZ', 'message_text': 'Shenzhen', 'url': 'https://www.yahoo.com'}]
 
-        photos = [InlineQueryResultPhoto(
-                      id='123', photo_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf', thumb_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf'),
-                  {'type': 'photo',
-                      'id': '345', 'photo_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'thumb_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'caption': 'Caption', 'title': 'Title', 'message_text': 'Message Text'}]
+def on_chosen_inline_result(msg):
+    result_id, from_id, query = telepot.glance(msg, flavor='chosen_inline_result')
 
-        results = random.choice([articles, photos])
+    if from_id != USER_ID:
+        print('Unauthorized user:', from_id)
+        return
 
-        yield from bot.answerInlineQuery(query_id, results, cache_time=20, is_personal=True, next_offset='5')
+    examine(msg, 'ChosenInlineResult')
 
-    elif flavor == 'chosen_inline_result':
-        result_id, from_id, query = telepot.glance2(msg, flavor=flavor)
+    print('Chosen inline query:')
+    pprint.pprint(msg)
 
-        if from_id != USER_ID:
-            print('Unauthorized user:', from_id)
-            return
 
-        examine(msg, 'ChosenInlineResult')
+def compute(inline_query):
+    articles = [InlineQueryResultArticle(
+                   id='abc', title='HK', message_text='Hong Kong', url='https://www.google.com', hide_url=True),
+               {'type': 'article',
+                   'id': 'def', 'title': 'SZ', 'message_text': 'Shenzhen', 'url': 'https://www.yahoo.com'}]
 
-        print('Chosen inline query:')
-        pprint.pprint(msg)
+    photos = [InlineQueryResultPhoto(
+                  id='123', photo_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf', thumb_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf'),
+              {'type': 'photo',
+                  'id': '345', 'photo_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'thumb_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'caption': 'Caption', 'title': 'Title', 'message_text': 'Message Text'}]
 
-    else:
-        raise telepot.BadFlavor(msg)
+    results = random.choice([articles, photos])
+    return dict(results=results, cache_time=20, is_personal=True, next_offset='5')
 
 
 TOKEN = sys.argv[1]
 USER_ID = int(sys.argv[2])
 
 bot = telepot.async.Bot(TOKEN)
+answerer = telepot.async.helper.Answerer(bot, compute)
 loop = asyncio.get_event_loop()
 
 print('Give me an inline query.')
-loop.create_task(bot.messageLoop(answer))
+loop.create_task(bot.messageLoop({'inline_query': on_inline_query,
+                                  'chosen_inline_result': on_chosen_inline_result}))
 loop.run_forever()
