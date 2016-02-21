@@ -156,6 +156,15 @@ See: https://core.telegram.org/bots/api#forwardmessage
 
 Send photos.
 
+**photo**: May be one of the following:
+- a *string*, indicating a `file_id` on the server
+- a *file* object, as obtained by `open()`
+- a tuple of *(filename, file-like object)*
+    - filename: Telegram servers require to know the extension. So, the *name* doesn't really matter, as long as the extension is correct.
+    - file-like object: as obtained by `urllib2.urlopen()` (Python 2.7) or `urllib.request.urlopen()` (Python 3)
+
+**This works the same way with other `sendZZZ()` methods.**
+
 See: https://core.telegram.org/bots/api#sendphoto
 
 Examples:
@@ -165,6 +174,10 @@ bot.sendChatAction(chat_id, 'upload_photo')
 
 # Send a file that is stored locally.
 result = bot.sendPhoto(chat_id, open('lighthouse.jpg', 'rb'))
+
+# Send a file from the web. You have to supply a filename with a correct extension.
+f = urllib2.urlopen('http://i.imgur.com/B1fzGoh.jpg')
+result = bot.sendPhoto(chat_id, ('abc.jpg', f))
 
 # Get `file_id` from the Message object returned.
 file_id = result['photo'][0]['file_id']
@@ -1303,6 +1316,25 @@ See: https://core.telegram.org/bots/api#forwardmessage
 *coroutine* **sendPhoto(chat_id, photo, caption=None, reply_to_message_id=None, reply_markup=None)**
 
 Send photos.
+
+**photo**: May be one of the following:
+- a *string*, indicating a `file_id` on the server
+- a *file* object, as obtained by `open()`
+- a tuple of *(filename, file-like object)*
+    - filename: Telegram servers require to know the extension. So, the *name* doesn't really matter, as long as the extension is correct.
+    - file-like object: as obtained by `urllib.request.urlopen()`
+- a tuple of *(filename, bytes)*
+    - filename: same as above
+    - bytes: for example:
+
+```python
+response = yield from aiohttp.get('http://i.imgur.com/B1fzGoh.jpg')
+content = yield from response.read()
+
+yield from bot.sendPhoto(chat_id, ('abc.jpg', content))
+```
+
+**This works the same way with other `sendZZZ()` methods.**
 
 See: https://core.telegram.org/bots/api#sendphoto
 
