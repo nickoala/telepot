@@ -1,5 +1,11 @@
 # telepot changelog
 
+## 6.5 (2016-02-21)
+
+- Supports file-like object and filename when sending files
+- Moved all exceptions to module `telepot.exception`
+- Expanded testing to Python 3.5
+
 ## 6.4 (2016-02-16)
 
 - Introduced automatic message routing to `Bot.handle()` and `ZZZHandler.on_message()`. Messages are routed to sub-handlers according to flavor, by default.
