@@ -4,10 +4,12 @@ import time
 import asyncio
 import aiohttp
 import traceback
+from requests.utils import guess_filename
 from concurrent.futures._base import CancelledError
 import collections
 import telepot
 import telepot.async.helper
+from ..exception import BadFlavor, BadHTTPResponse, TelegramError
 
 
 def flavor_router(routing_table):
@@ -39,12 +41,12 @@ class Bot(telepot._BotBase):
             data = yield from response.json()
         except ValueError:
             text = yield from response.text()
-            raise telepot.BadHTTPResponse(response.status, text)
+            raise BadHTTPResponse(response.status, text)
 
         if data['ok']:
             return data['result']
         else:
-            raise telepot.TelegramError(data['description'], data['error_code'])
+            raise TelegramError(data['description'], data['error_code'])
 
     @asyncio.coroutine
     def getMe(self):
@@ -85,23 +87,34 @@ class Bot(telepot._BotBase):
                   'video':    'sendVideo',
                   'voice':    'sendVoice',}[filetype]
 
-        if isinstance(inputfile, io.IOBase):
-            files = {filetype: inputfile}
-            r = yield from aiohttp.post(
-                    self._methodurl(method), 
-                    params=self._rectify(params, allow_namedtuple=['reply_markup']), 
-                    data=files)
-
-            # `_http_timeout` is not used here because, for some reason, the larger the file, 
-            # the longer it takes for the server to respond (after upload is finished). It is hard to say
-            # what value `_http_timeout` should be. In the future, maybe I should let user specify.
-        else:
+        if telepot._isstring(inputfile):            
             params[filetype] = inputfile
             r = yield from asyncio.wait_for(
                     aiohttp.post(
                         self._methodurl(method), 
                         params=self._rectify(params, allow_namedtuple=['reply_markup'])), 
                     self._http_timeout)
+        else:
+            if isinstance(inputfile, tuple):
+                if len(inputfile) == 2:
+                    filename, fileobj = inputfile
+                else:
+                    raise ValueError('Tuple must have exactly 2 elements: filename, fileobj')
+            else:
+                filename, fileobj = guess_filename(inputfile) or filetype, inputfile
+
+            mpwriter = aiohttp.MultipartWriter('form-data')
+            part = mpwriter.append(fileobj)
+            part.set_content_disposition('form-data', name=filetype, filename=filename)
+
+            r = yield from aiohttp.post(
+                    self._methodurl(method), 
+                    params=self._rectify(params, allow_namedtuple=['reply_markup']), 
+                    data=mpwriter)
+
+            # `_http_timeout` is not used here because, for some reason, the larger the file, 
+            # the longer it takes for the server to respond (after upload is finished). It is hard to say
+            # what value `_http_timeout` should be. In the future, maybe I should let user specify.
 
         return (yield from self._parse(r))
 
@@ -217,7 +230,7 @@ class Bot(telepot._BotBase):
 
         # `file_path` is optional in File object
         if 'file_path' not in f:
-            raise telepot.TelegramError('No file_path returned', None)
+            raise TelegramError('No file_path returned', None)
 
         try:
             r = yield from asyncio.wait_for(
@@ -275,7 +288,7 @@ class Bot(telepot._BotBase):
                     callback(update['chosen_inline_result'])
                 else:
                     # Do not swallow. Make sure developer knows.
-                    raise telepot.BadFlavor(update)
+                    raise BadFlavor(update)
             except:
                 # Localize the error so message thread can keep going.
                 traceback.print_exc()
