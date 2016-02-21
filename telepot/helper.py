@@ -4,6 +4,7 @@ import threading
 import logging
 import telepot
 import telepot.filtering
+from .exception import WaitTooLong, StopListening
 from functools import partial
 
 try:
@@ -38,10 +39,6 @@ class Microphone(object):
                 q.put_nowait(msg)
             except queue.Full:
                 traceback.print_exc()
-
-
-class WaitTooLong(telepot.TelepotException):
-    pass
 
 
 class Listener(object):
@@ -232,19 +229,6 @@ class UserContext(ListenerContext):
     @property
     def sender(self):
         return self._sender
-
-
-class StopListening(telepot.TelepotException):
-    def __init__(self, code=None, reason=None):
-        super(StopListening, self).__init__(code, reason)
-
-    @property
-    def code(self):
-        return self.args[0]
-
-    @property
-    def reason(self):
-        return self.args[1]
 
 
 def openable(cls):

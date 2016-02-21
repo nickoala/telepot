@@ -4,6 +4,7 @@ import time
 import telepot
 import telepot.helper
 import telepot.filtering
+from ..exception import WaitTooLong
 
 
 @asyncio.coroutine
@@ -65,12 +66,12 @@ class Listener(telepot.helper.Listener):
                 timeleft = end - time.time()
 
                 if timeleft < 0:
-                    raise telepot.helper.WaitTooLong()
+                    raise WaitTooLong()
 
                 try:
                     msg = yield from asyncio.wait_for(self._queue.get(), timeleft)
                 except asyncio.TimeoutError:
-                    raise telepot.helper.WaitTooLong()
+                    raise WaitTooLong()
 
                 if meet_some_criteria(msg):
                     return msg

@@ -1,7 +1,7 @@
 import asyncio
 import telepot.delegate
-from telepot.helper import WaitTooLong, StopListening
-from telepot.async.helper import _yell
+from ..exception import WaitTooLong, StopListening
+from .helper import _yell
 
 # aliases for convenience
 per_chat_id = telepot.delegate.per_chat_id

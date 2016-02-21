@@ -1,6 +1,6 @@
 import traceback
 from telepot import flavor
-from telepot.helper import WaitTooLong, StopListening
+from .exception import WaitTooLong, StopListening
 
 def _wrap_none(fn):
     def w(*args, **kwargs):
