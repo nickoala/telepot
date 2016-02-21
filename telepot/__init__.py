@@ -12,20 +12,10 @@ try:
 except ImportError:
     import queue
 
+from .exception import BadFlavor, BadHTTPResponse, TelegramError
+
 # Suppress InsecurePlatformWarning
 requests.packages.urllib3.disable_warnings()
-
-
-class TelepotException(Exception):
-    pass
-
-class BadFlavor(TelepotException):
-    def __init__(self, offender):
-        super(BadFlavor, self).__init__(offender)
-
-    @property
-    def offender(self):
-        return self.args[0]
 
 
 def flavor(msg):
@@ -100,31 +90,6 @@ def flavor_router(routing_table):
     return router.route
 
 
-class BadHTTPResponse(TelepotException):
-    def __init__(self, status, text):
-        super(BadHTTPResponse, self).__init__(status, text)
-
-    @property
-    def status(self):
-        return self.args[0]
-
-    @property
-    def text(self):
-        return self.args[1]
-
-class TelegramError(TelepotException):
-    def __init__(self, description, error_code):
-        super(TelegramError, self).__init__(description, error_code)
-
-    @property
-    def description(self):
-        return self.args[0]
-
-    @property
-    def error_code(self):
-        return self.args[1]
-
-
 class _BotBase(object):
     def __init__(self, token):
         self._token = token
@@ -158,7 +123,7 @@ class _BotBase(object):
         def flatten(value, possible_namedtuple):
             v = ensure_dict(value) if possible_namedtuple else value
 
-            if isinstance(v, dict) or isinstance(v, list):
+            if isinstance(v, (dict, list)):
                 # json-serialize for non-simple values
                 return json.dumps(v, separators=(',',':'))
             else:
@@ -166,6 +131,17 @@ class _BotBase(object):
 
         # remove None, then json-serialize if needed
         return {k: flatten(v, k in allow_namedtuple) for k,v in params.items() if v is not None}
+
+
+PY_3 = sys.version_info.major >= 3
+_string_type = str if PY_3 else basestring
+_file_type = io.IOBase if PY_3 else file
+
+def _isstring(s):
+    return isinstance(s, _string_type)
+
+def _isfile(f):
+    return isinstance(f, _file_type)
 
 
 class Bot(_BotBase):
@@ -212,12 +188,6 @@ class Bot(_BotBase):
                           timeout=self._http_timeout)
         return self._parse(r)
 
-    def _isfile(self, f):
-        if sys.version_info.major >= 3:
-            return isinstance(f, io.IOBase)
-        else:
-            return type(f) is file
-
     def _sendFile(self, inputfile, filetype, params):
         method = {'photo':    'sendPhoto',
                   'audio':    'sendAudio',
@@ -226,7 +196,12 @@ class Bot(_BotBase):
                   'video':    'sendVideo',
                   'voice':    'sendVoice',}[filetype]
 
-        if self._isfile(inputfile):
+        if _isstring(inputfile):
+            params[filetype] = inputfile
+            r = requests.post(self._methodurl(method),
+                              params=self._rectify(params, allow_namedtuple=['reply_markup']),
+                              timeout=self._http_timeout)
+        else:
             files = {filetype: inputfile}
             r = requests.post(self._methodurl(method),
                               params=self._rectify(params, allow_namedtuple=['reply_markup']),
@@ -235,11 +210,6 @@ class Bot(_BotBase):
             # `self._http_timeout` is not used here because, for some reason, the larger the file,
             # the longer it takes for the server to respond (after upload is finished). It is hard to say
             # what value `self._http_timeout` should be. In the future, maybe I should let user specify.
-        else:
-            params[filetype] = inputfile
-            r = requests.post(self._methodurl(method),
-                              params=self._rectify(params, allow_namedtuple=['reply_markup']),
-                              timeout=self._http_timeout)
 
         return self._parse(r)
 
@@ -328,14 +298,14 @@ class Bot(_BotBase):
         try:
             r = requests.get(self._fileurl(f['file_path']), stream=True, timeout=self._http_timeout)
 
-            d = dest if self._isfile(dest) else open(dest, 'wb')
+            d = dest if _isfile(dest) else open(dest, 'wb')
 
             for chunk in r.iter_content(chunk_size=self._file_chunk_size):
                 if chunk:
                     d.write(chunk)
                     d.flush()
         finally:
-            if not self._isfile(dest) and 'd' in locals():
+            if not _isfile(dest) and 'd' in locals():
                 d.close()
 
             if 'r' in locals():
