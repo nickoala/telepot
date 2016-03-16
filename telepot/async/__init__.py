@@ -57,7 +57,7 @@ class Bot(telepot._BotBase):
         return (yield from self._parse(r))
 
     @asyncio.coroutine
-    def sendMessage(self, chat_id, text, parse_mode=None, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None):
+    def sendMessage(self, chat_id, text, parse_mode=None, disable_web_page_preview=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = self._strip(locals())
         r = yield from asyncio.wait_for(
                 aiohttp.post(
@@ -119,37 +119,37 @@ class Bot(telepot._BotBase):
         return (yield from self._parse(r))
 
     @asyncio.coroutine
-    def sendPhoto(self, chat_id, photo, caption=None, reply_to_message_id=None, reply_markup=None):
+    def sendPhoto(self, chat_id, photo, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = self._strip(locals(), more=['photo'])
         return (yield from self._sendFile(photo, 'photo', p))
 
     @asyncio.coroutine
-    def sendAudio(self, chat_id, audio, duration=None, performer=None, title=None, reply_to_message_id=None, reply_markup=None):
+    def sendAudio(self, chat_id, audio, duration=None, performer=None, title=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = self._strip(locals(), more=['audio'])
         return (yield from self._sendFile(audio, 'audio', p))
 
     @asyncio.coroutine
-    def sendDocument(self, chat_id, document, reply_to_message_id=None, reply_markup=None):
+    def sendDocument(self, chat_id, document, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = self._strip(locals(), more=['document'])
         return (yield from self._sendFile(document, 'document', p))
 
     @asyncio.coroutine
-    def sendSticker(self, chat_id, sticker, reply_to_message_id=None, reply_markup=None):
+    def sendSticker(self, chat_id, sticker, disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = self._strip(locals(), more=['sticker'])
         return (yield from self._sendFile(sticker, 'sticker', p))
 
     @asyncio.coroutine
-    def sendVideo(self, chat_id, video, duration=None, caption=None, reply_to_message_id=None, reply_markup=None):
+    def sendVideo(self, chat_id, video, duration=None, width=None, height=None, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = self._strip(locals(), more=['video'])
         return (yield from self._sendFile(video, 'video', p))
 
     @asyncio.coroutine
-    def sendVoice(self, chat_id, voice, duration=None, reply_to_message_id=None, reply_markup=None):
+    def sendVoice(self, chat_id, voice, duration=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = self._strip(locals(), more=['voice'])
         return (yield from self._sendFile(voice, 'voice', p))
 
     @asyncio.coroutine
-    def sendLocation(self, chat_id, latitude, longitude, reply_to_message_id=None, reply_markup=None):
+    def sendLocation(self, chat_id, latitude, longitude, disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = self._strip(locals())
         r = yield from asyncio.wait_for(
                 aiohttp.post(
