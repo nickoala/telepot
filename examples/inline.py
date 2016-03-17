@@ -3,7 +3,7 @@ import telepot
 from telepot.delegate import per_inline_from_id, create_open
 
 """
-$ python3.2 inline.py <token>
+$ python3.4 inline.py <token>
 
 A bot that only cares about inline stuff.
 """
@@ -11,16 +11,19 @@ A bot that only cares about inline stuff.
 class InlineHandler(telepot.helper.UserHandler):
     def __init__(self, seed_tuple, timeout):
         super(InlineHandler, self).__init__(seed_tuple, timeout, flavors=['inline_query', 'chosen_inline_result'])
+        self._answerer = telepot.helper.Answerer(self.bot)
 
     def on_inline_query(self, msg):
-        query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
-        print(self.id, ':', 'Inline Query:', query_id, from_id, query_string)
+        def compute_answer():
+            query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
+            print(self.id, ':', 'Inline Query:', query_id, from_id, query_string)
 
-        articles = [{'type': 'article',
-                         'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+            articles = [{'type': 'article',
+                             'id': 'abc', 'title': query_string, 'message_text': query_string}]
 
-        self.bot.answerInlineQuery(query_id, articles)
-        print(self.id, ':', 'Answers sent.')
+            return articles
+
+        self._answerer.answer(msg, compute_answer)
 
     def on_chosen_inline_result(self, msg):
         result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')

@@ -18,7 +18,8 @@ class UserTracker(telepot.async.helper.UserHandler):
                         'inline_query': 0,
                         'chosen_inline_result': 0}
 
-    @asyncio.coroutine
+        self._answerer = telepot.async.helper.Answerer(self.bot)
+
     def on_message(self, msg):
         flavor = telepot.flavor(msg)
         self._counts[flavor] += 1
@@ -30,12 +31,15 @@ class UserTracker(telepot.async.helper.UserHandler):
 
         # Have to answer inline query to receive chosen result
         if flavor == 'inline_query':
-            query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
+            def compute_answer():
+                query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
 
-            articles = [{'type': 'article',
-                             'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+                articles = [{'type': 'article',
+                                 'id': 'abc', 'title': query_string, 'message_text': query_string}]
 
-            yield from self.bot.answerInlineQuery(query_id, articles)
+                return articles
+
+            self._answerer.answer(msg, compute_answer)
 
 
 TOKEN = sys.argv[1]
