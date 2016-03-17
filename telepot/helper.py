@@ -125,13 +125,12 @@ class Sender(object):
 
 
 class Answerer(object):
-    def __init__(self, bot, compute):
+    def __init__(self, bot):
         self._bot = bot
-        self._compute = compute
         self._workers = {}  # map: user id --> worker thread
         self._lock = threading.Lock()  # control access to `self._workers`
 
-    def answer(outerself, inline_query):
+    def answer(outerself, inline_query, compute_fn, *compute_args, **compute_kwargs):
         from_id = inline_query['from']['id']
 
         class Worker(threading.Thread):
@@ -150,19 +149,19 @@ class Answerer(object):
                         return
 
                     # Important: compute function must be thread-safe.
-                    r = outerself._compute(inline_query)
+                    ans = compute_fn(*compute_args, **compute_kwargs)
 
                     if innerself._cancelled:
                         return
 
-                    if isinstance(r, list):
-                        outerself._bot.answerInlineQuery(query_id, r)
-                    elif isinstance(r, tuple):
-                        outerself._bot.answerInlineQuery(query_id, *r)
-                    elif isinstance(r, dict):
-                        outerself._bot.answerInlineQuery(query_id, **r)
+                    if isinstance(ans, list):
+                        outerself._bot.answerInlineQuery(query_id, ans)
+                    elif isinstance(ans, tuple):
+                        outerself._bot.answerInlineQuery(query_id, *ans)
+                    elif isinstance(ans, dict):
+                        outerself._bot.answerInlineQuery(query_id, **ans)
                     else:
-                        raise ValueError('Invalid result format')
+                        raise ValueError('Invalid answer format')
                 finally:
                     with outerself._lock:
                         # Delete only if I have NOT been cancelled.
@@ -277,7 +276,7 @@ class Router(object):
     def route(self, msg):
         k = self._digest(msg)
         
-        if isinstance(k, tuple):
+        if isinstance(k, (tuple, list)):
             key, args = k[0], k[1:]
         else:
             key, args = k, ()
