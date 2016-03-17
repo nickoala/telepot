@@ -148,16 +148,14 @@ class Bot(_BotBase):
     def __init__(self, token):
         super(Bot, self).__init__(token)
 
-        try:
-            getattr(self, 'handle')
+        self._router = telepot.helper.Router(flavor, {'normal': lambda msg: self.on_chat_message(msg),
+                                                      'inline_query': lambda msg: self.on_inline_query(msg),
+                                                      'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
+                                                      # use lambda to delay evaluation of self.on_ZZZ to runtime because 
+                                                      # I don't want to require defining all methods right here.
 
-        # If self.handle is not defined, automatically route messages to sub-handlers.
-        except AttributeError:
-            self.handle = flavor_router({'normal': lambda msg: self.on_chat_message(msg),
-                                         'inline_query': lambda msg: self.on_inline_query(msg),
-                                         'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
-                                         # use lambda to delay evaluation of self.on_ZZZ to runtime because 
-                                         # I don't want to require defining all methods right here.
+    def handle(self, msg):
+        self._router.route(msg)
 
     def _parse(self, response):
         try:

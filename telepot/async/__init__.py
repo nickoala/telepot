@@ -22,18 +22,17 @@ class Bot(telepot._BotBase):
         super(Bot, self).__init__(token)
         self._loop = loop if loop is not None else asyncio.get_event_loop()
 
-        try:
-            getattr(self, 'handle')
-
-        # If self.handle is not defined, automatically route messages to sub-handlers.
-        except AttributeError:
-            self.handle = flavor_router({'normal': telepot.async.helper._delay_yell(self, 'on_chat_message'),
-                                         'inline_query': telepot.async.helper._delay_yell(self, 'on_inline_query'),
-                                         'chosen_inline_result': telepot.async.helper._delay_yell(self, 'on_chosen_inline_result')})
+        self._router = telepot.async.helper.Router(telepot.flavor, {'normal': telepot.async.helper._delay_yell(self, 'on_chat_message'),
+                                                                    'inline_query': telepot.async.helper._delay_yell(self, 'on_inline_query'),
+                                                                    'chosen_inline_result': telepot.async.helper._delay_yell(self, 'on_chosen_inline_result')})
 
     @property
     def loop(self):
         return self._loop
+
+    @asyncio.coroutine
+    def handle(self, msg):
+        yield from self._router.route(msg)
 
     @asyncio.coroutine
     def _parse(self, response):
