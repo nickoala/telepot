@@ -519,22 +519,16 @@ An `Answerer` takes an inline query, inspects its `from` `id` (the originating u
 
 `Answerer` also frees you from having to call `bot.answerInlineQuery()` every time. You supply it with an *answer-computing function*. It takes that function's returned value and calls `bot.answerInlineQuery()` to send the results. Being accessible by multiple threads, the answer-computing function must be **thread-safe**.
 
-To use an `Answerer`, you construct it with an answer-computing function:
-
 ```python
-def compute_answer(inline_query):
-    articles = [{'type': 'article',
-                     'id': 'abc', 'title': 'ABC', 'message_text': 'XYZ'}]
-    return articles
+answerer = telepot.helper.Answerer(bot)
 
-answerer = telepot.helper.Answerer(bot, compute_answer)
-```
-
-Then, you dump inline queries to it. It will ensure at most one active thread per user.
-
-```python
 def on_inline_query(msg):
-    answerer.answer(msg)
+    def compute_answer():
+        articles = [{'type': 'article',
+                         'id': 'abc', 'title': 'ABC', 'message_text': 'XYZ'}]
+        return articles
+
+    answerer.answer(msg, compute_answer)
 ```
 
 If you use telepot's [async version](#async) (Python 3.4.2 or newer), you should also use the async version of `Answerer`. In that case, it will create *tasks* instead of spawning threads, and you don't have to worry about thread safety. 
