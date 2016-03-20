@@ -1,12 +1,12 @@
 import traceback
-from telepot import flavor
-from .exception import WaitTooLong, StopListening
+import telepot
+from .exception import BadFlavor, WaitTooLong, StopListening
 
 def _wrap_none(fn):
     def w(*args, **kwargs):
         try:
             return fn(*args, **kwargs)
-        except KeyError:
+        except (KeyError, BadFlavor):
             return None
     return w
 
@@ -29,7 +29,7 @@ def per_from_id_except(s):
     return _wrap_none(lambda msg: msg['from']['id'] if msg['from']['id'] not in s else None)
 
 def _isinline(msg):
-    return flavor(msg) in ['inline_query', 'chosen_inline_result']
+    return telepot.flavor(msg) in ['inline_query', 'chosen_inline_result']
 
 def per_inline_from_id():
     return _wrap_none(lambda msg: msg['from']['id'] if _isinline(msg) else None)
@@ -39,6 +39,12 @@ def per_inline_from_id_in(s):
 
 def per_inline_from_id_except(s):
     return _wrap_none(lambda msg: msg['from']['id'] if _isinline(msg) and msg['from']['id'] not in s else None)
+
+def per_application():
+    return lambda msg: 1
+
+def per_message(flavors='all'):
+    return _wrap_none(lambda msg: [] if flavors == 'all' or telepot.flavor(msg) in flavors else None)
 
 def call(func, *args, **kwargs):
     def f(seed_tuple):

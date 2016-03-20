@@ -16,7 +16,15 @@ per_inline_from_id = telepot.delegate.per_inline_from_id
 per_inline_from_id_in = telepot.delegate.per_inline_from_id_in
 per_inline_from_id_except = telepot.delegate.per_inline_from_id_except
 
+per_application = telepot.delegate.per_application
+per_message = telepot.delegate.per_message
+
+
+def _ensure_coroutine_function(fn):
+    return fn if asyncio.iscoroutinefunction(fn) else asyncio.coroutine(fn)
+
 def call(corofunc, *args, **kwargs):
+    corofunc = _ensure_coroutine_function(corofunc)
     def f(seed_tuple):
         return corofunc(seed_tuple, *args, **kwargs)
     return f
@@ -24,7 +32,7 @@ def call(corofunc, *args, **kwargs):
 def create_run(cls, *args, **kwargs):
     def f(seed_tuple):
         j = cls(seed_tuple, *args, **kwargs)
-        return j.run()
+        return _ensure_coroutine_function(j.run)()
     return f
 
 def create_open(cls, *args, **kwargs):
