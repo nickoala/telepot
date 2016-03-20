@@ -175,14 +175,14 @@ class Bot(_BotBase):
     def sendMessage(self, chat_id, text, parse_mode=None, disable_web_page_preview=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = self._strip(locals())
         r = requests.post(self._methodurl('sendMessage'),
-                          params=self._rectify(p, allow_namedtuple=['reply_markup']),
+                          data=self._rectify(p, allow_namedtuple=['reply_markup']),
                           timeout=self._http_timeout)
         return self._parse(r)
 
-    def forwardMessage(self, chat_id, from_chat_id, message_id):
+    def forwardMessage(self, chat_id, from_chat_id, message_id, disable_notification=None):
         p = self._strip(locals())
         r = requests.post(self._methodurl('forwardMessage'),
-                          params=self._rectify(p),
+                          data=self._rectify(p),
                           timeout=self._http_timeout)
         return self._parse(r)
 
@@ -197,12 +197,12 @@ class Bot(_BotBase):
         if _isstring(inputfile):
             params[filetype] = inputfile
             r = requests.post(self._methodurl(method),
-                              params=self._rectify(params, allow_namedtuple=['reply_markup']),
+                              data=self._rectify(params, allow_namedtuple=['reply_markup']),
                               timeout=self._http_timeout)
         else:
             files = {filetype: inputfile}
             r = requests.post(self._methodurl(method),
-                              params=self._rectify(params, allow_namedtuple=['reply_markup']),
+                              data=self._rectify(params, allow_namedtuple=['reply_markup']),
                               files=files)
 
             # `self._http_timeout` is not used here because, for some reason, the larger the file,
@@ -238,35 +238,35 @@ class Bot(_BotBase):
     def sendLocation(self, chat_id, latitude, longitude, disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = self._strip(locals())
         r = requests.post(self._methodurl('sendLocation'),
-                          params=self._rectify(p, allow_namedtuple=['reply_markup']),
+                          data=self._rectify(p, allow_namedtuple=['reply_markup']),
                           timeout=self._http_timeout)
         return self._parse(r)
 
     def sendChatAction(self, chat_id, action):
         p = self._strip(locals())
         r = requests.post(self._methodurl('sendChatAction'),
-                          params=self._rectify(p),
+                          data=self._rectify(p),
                           timeout=self._http_timeout)
         return self._parse(r)
 
     def getUserProfilePhotos(self, user_id, offset=None, limit=None):
         p = self._strip(locals())
         r = requests.post(self._methodurl('getUserProfilePhotos'),
-                          params=self._rectify(p),
+                          data=self._rectify(p),
                           timeout=self._http_timeout)
         return self._parse(r)
 
     def getFile(self, file_id):
         p = self._strip(locals())
         r = requests.post(self._methodurl('getFile'),
-                          params=self._rectify(p),
+                          data=self._rectify(p),
                           timeout=self._http_timeout)
         return self._parse(r)
 
     def getUpdates(self, offset=None, limit=None, timeout=None):
         p = self._strip(locals())
         r = requests.post(self._methodurl('getUpdates'),
-                          params=self._rectify(p),
+                          data=self._rectify(p),
                           timeout=self._http_timeout+(0 if timeout is None else timeout))
         return self._parse(r)
 
@@ -276,12 +276,12 @@ class Bot(_BotBase):
         if certificate:
             files = {'certificate': certificate}
             r = requests.post(self._methodurl('setWebhook'),
-                              params=self._rectify(p),
+                              data=self._rectify(p),
                               files=files,
                               timeout=self._http_timeout)
         else:
             r = requests.post(self._methodurl('setWebhook'),
-                              params=self._rectify(p),
+                              data=self._rectify(p),
                               timeout=self._http_timeout)
 
         return self._parse(r)
@@ -312,7 +312,7 @@ class Bot(_BotBase):
     def answerInlineQuery(self, inline_query_id, results, cache_time=None, is_personal=None, next_offset=None):
         p = self._strip(locals())
         r = requests.post(self._methodurl('answerInlineQuery'),
-                          params=self._rectify(p, allow_namedtuple=['results']),
+                          data=self._rectify(p, allow_namedtuple=['results']),
                           timeout=self._http_timeout)
         return self._parse(r)
 

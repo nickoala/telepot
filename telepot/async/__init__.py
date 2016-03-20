@@ -61,18 +61,18 @@ class Bot(telepot._BotBase):
         r = yield from asyncio.wait_for(
                 aiohttp.post(
                     self._methodurl('sendMessage'), 
-                    params=self._rectify(p, allow_namedtuple=['reply_markup'])), 
+                    data=self._rectify(p, allow_namedtuple=['reply_markup'])), 
                 self._http_timeout
             )
         return (yield from self._parse(r))
 
     @asyncio.coroutine
-    def forwardMessage(self, chat_id, from_chat_id, message_id):
+    def forwardMessage(self, chat_id, from_chat_id, message_id, disable_notification=None):
         p = self._strip(locals())
         r = yield from asyncio.wait_for(
                 aiohttp.post(
                     self._methodurl('forwardMessage'), 
-                    params=self._rectify(p)), 
+                    data=self._rectify(p)), 
                 self._http_timeout
             )
         return (yield from self._parse(r))
@@ -91,7 +91,7 @@ class Bot(telepot._BotBase):
             r = yield from asyncio.wait_for(
                     aiohttp.post(
                         self._methodurl(method), 
-                        params=self._rectify(params, allow_namedtuple=['reply_markup'])), 
+                        data=self._rectify(params, allow_namedtuple=['reply_markup'])), 
                     self._http_timeout)
         else:
             if isinstance(inputfile, tuple):
@@ -153,7 +153,7 @@ class Bot(telepot._BotBase):
         r = yield from asyncio.wait_for(
                 aiohttp.post(
                     self._methodurl('sendLocation'), 
-                    params=self._rectify(p, allow_namedtuple=['reply_markup'])), 
+                    data=self._rectify(p, allow_namedtuple=['reply_markup'])), 
                 self._http_timeout
             )
         return (yield from self._parse(r))
@@ -164,7 +164,7 @@ class Bot(telepot._BotBase):
         r = yield from asyncio.wait_for(
                 aiohttp.post(
                     self._methodurl('sendChatAction'), 
-                    params=self._rectify(p)), 
+                    data=self._rectify(p)), 
                 self._http_timeout
             )
         return (yield from self._parse(r))
@@ -175,7 +175,7 @@ class Bot(telepot._BotBase):
         r = yield from asyncio.wait_for(
                 aiohttp.post(
                     self._methodurl('getUserProfilePhotos'), 
-                    params=self._rectify(p)), 
+                    data=self._rectify(p)), 
                 self._http_timeout
             )
         return (yield from self._parse(r))
@@ -186,7 +186,7 @@ class Bot(telepot._BotBase):
         r = yield from asyncio.wait_for(
                 aiohttp.post(
                     self._methodurl('getFile'), 
-                    params=self._rectify(p)), 
+                    data=self._rectify(p)), 
                 self._http_timeout
             )
         return (yield from self._parse(r))
@@ -197,7 +197,7 @@ class Bot(telepot._BotBase):
         r = yield from asyncio.wait_for(
                 aiohttp.post(
                     self._methodurl('getUpdates'), 
-                    params=self._rectify(p)), 
+                    data=self._rectify(p)), 
                 self._http_timeout+(0 if timeout is None else timeout)
             )
         return (yield from self._parse(r))
@@ -218,7 +218,7 @@ class Bot(telepot._BotBase):
             r = yield from asyncio.wait_for(
                     aiohttp.post(
                         self._methodurl('setWebhook'), 
-                        params=self._rectify(p)), 
+                        data=self._rectify(p)), 
                     self._http_timeout)
 
         return (yield from self._parse(r))
@@ -257,7 +257,7 @@ class Bot(telepot._BotBase):
         r = yield from asyncio.wait_for(
                 aiohttp.post(
                     self._methodurl('answerInlineQuery'), 
-                    params=self._rectify(p, allow_namedtuple=['results'])),
+                    data=self._rectify(p, allow_namedtuple=['results'])),
                 timeout=self._http_timeout
             )
         return (yield from self._parse(r))
