@@ -1,6 +1,6 @@
 import sys
 import telepot
-from telepot.delegate import per_chat_id_in, call, create_open
+from telepot.delegate import per_chat_id_in, per_application, call, create_open
 
 """
 $ python3.2 chatbox_nodb.py <token> <owner_id>
@@ -157,8 +157,8 @@ class ChatBox(telepot.DelegatorBot):
             # Here is a delegate to specially handle owner commands.
             (per_chat_id_in([owner_id]), create_open(OwnerHandler, 20, self._store)),
 
-            # Seed is always the same, meaning only one MessageSaver is ever spawned for entire application.
-            (lambda msg: 1, create_open(MessageSaver, self._store, exclude=[owner_id])),
+            # Only one MessageSaver is ever spawned for entire application.
+            (per_application(), create_open(MessageSaver, self._store, exclude=[owner_id])),
 
             # For senders never seen before, send him a welcome message.
             (self._is_newcomer, custom_thread(call(self._send_welcome))),
