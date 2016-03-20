@@ -1,4 +1,4 @@
-# telepot 6.5 reference
+# telepot 6.6 reference
 
 **[telepot](#telepot)**
 - [Bot](#telepot-Bot)
@@ -848,22 +848,23 @@ Parameters:
 
 On receiving an inline query, it spawns a thread to compute results and send them. If a preceding thread is already working for a user, it is cancelled. This ensures **at most one active thread** per user id.
 
-**Answerer(bot, compute_function)**
+**Answerer(bot)**
+
+**answer(inline_query, compute_fn, \*compute_args, \*\*compute_kwargs)**
+
+Spawns a thread that calls the *compute function* (along with additional arguments), then applies the returned value to `bot.answerInlineQuery()`, in effect answering the inline query. If a preceding thread is already working for a user, that thread is cancelled, thus ensuring at most one active thread per user id.
 
 Parameters:
-- **bot** - the parent bot.
-- **compute_function** - an answer-computing function.
-    - It must take one argument, the *inline query*.
+- **inline_query** - from which the `from` `id` and query `id` will be inferred
+- **compute_fn** - an answer-computing function.
     - Its returned value is given to `bot.answerInlineQuery()` to send.
     - It may return one of the following:
         - a *list* of [InlineQueryResult](https://core.telegram.org/bots/api#inlinequeryresult)
         - a *tuple*, whose first element is a list of InlineQueryResult, followed by positional arguments to be supplied to `bot.answerInlineQuery()`
         - a *dict* representing keyword arguments to be supplied to `bot.answerInlineQuery()`
     - It must be **thread-safe**, because many threads may access it as the same time.
-
-**answer(inline_query)**
-
-Spawns a thread that calls the `compute_function` (specified in constructor), then applies the returned value to `bot.answerInlineQuery()`, in effect answering the inline query. If a preceding thread is already working for a user, that thread is cancelled, thus ensuring at most one active thread per user id.
+- **\*compute_args** - positional arguments to *compute_fn*
+- **\*\*compute_kwargs** - keyword arguments to *compute_fn*
 
 <a id="telepot-helper-Router"></a>
 ### `telepot.helper.Router`
@@ -1642,23 +1643,22 @@ The only difference with traditional `telepot.helper.Listener` is that it uses `
 
 On receiving an inline query, it creates a new task to compute results and send them. If a preceding task is already working for a user, it is cancelled. This ensures **at most one active task** per user id.
 
-**Answerer(bot, compute_function, loop=None)**
+**Answerer(bot, loop=None)**
+
+**answer(inline_query, compute_fn, \*compute_args, \*\*compute_kwargs)**
+
+Creates a task that calls the *compute function* (along with additional arguments), then applies the returned value to `bot.answerInlineQuery()`, in effect answering the inline query. If a preceding task is already working for a user, that task is cancelled, thus ensuring at most one active task per user id.
 
 Parameters:
-- **bot** - the parent bot.
-- **compute_function** - an answer-computing function.
-    - It may be a regular function or a coroutine.
-    - It must take one argument, the *inline query*.
+- **inline_query** - from which the `from` `id` and query `id` will be inferred
+- **compute_fn** - an answer-computing function. May be coroutine.
     - Its returned value is given to `bot.answerInlineQuery()` to send.
     - It may return one of the following:
         - a *list* of [InlineQueryResult](https://core.telegram.org/bots/api#inlinequeryresult)
         - a *tuple*, whose first element is a list of InlineQueryResult, followed by positional arguments to be supplied to `bot.answerInlineQuery()`
         - a *dict* representing keyword arguments to be supplied to `bot.answerInlineQuery()`
-- **loop** - the event loop. If `None`, use `asyncio`'s default event loop.
-
-**answer(inline_query)**
-
-Creates a task that calls the `compute_function` (specified in constructor), then applies the returned value to `bot.answerInlineQuery()`, in effect answering the inline query. If a preceding task is already working for a user, that task is cancelled, thus ensuring at most one active task per user id.
+- **\*compute_args** - positional arguments to *compute_fn*
+- **\*\*compute_kwargs** - keyword arguments to *compute_fn*
 
 <a id="telepot-async-helper-Router"></a>
 ### `telepot.async.helper.Router`
