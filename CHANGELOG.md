@@ -6,6 +6,7 @@
 - Added parameter `disable_notification` to methods `sendZZZ()`
 - Added function `telepot.delegate.per_application()` and `per_message()`
 - Used `data` to pass POST parameters to prevent too-long query strings on URL
+- Async version support pushed back to Python 3.4.2
 
 ## 6.5 (2016-02-21)
 
