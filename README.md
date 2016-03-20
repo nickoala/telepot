@@ -7,7 +7,7 @@
 **[Maintain Threads of Conversation](#threads-conversation)**  
 **[Follow User's Every Action](#follow-user)**  
 **[Inline-only Handler](#inline-only)**  
-**[Async Version](#async)** (Python 3.4.3 or newer)  
+**[Async Version](#async)** (Python 3.4.2 or newer)  
 **[Webhook Interface](#webhook)**  
 **[Deep Linking](#deep-linking)**  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
@@ -23,12 +23,19 @@
 - [Chatbox - a Mailbox for Chats](#examples-chatbox)
 - [User Tracker](#examples-user-tracker)
 - [Inline-only Handler](#examples-inline-only-handler)
-- [Answerer Usage](#examples-answerer-usage)
 - [Pairing Patterns](#examples-pairing-patterns)
 - [Webhooks](#examples-webhooks)
 - [Deep Linking](#examples-deep-linking)
 
 ### Recent changes
+
+**6.6 (2016-03-20)**
+
+- Changed `Answerer` interface. Compute function is now passed to method `answer()`, not to the constructor.
+- Added parameter `disable_notification` to methods `sendZZZ()`.
+- Added function `telepot.delegate.per_application()` and `per_message()`.
+- Used `data` to pass POST parameters to prevent too-long query strings on URL
+- Async version support pushed back to Python 3.4.2
 
 **6.5 (2016-02-21)**
 
@@ -44,32 +51,6 @@
 - `notifyOnMessage()` and `messageLoop()` accept a dict as callback, routing messages according to flavor.
 - Added function `telepot.flavor_router()`, classes `telepot.helper.Router` and `telepot.helper.DefaultRouterMixin`, and their async counterparts to facilitate message routing.
 - Many functions in `telepot.delegate` and `telepot.helper` now have aliases in their respective async modules, making imports more symmetric.
-
-**6.3 (2016-02-06)**
-
-- Added `Answerer` class to better deal with inline queries
-- Made `telepot.glance()` equivalent to `telepot.glance2()`. Developers are encouraged to use `telepot.glance()` from now on.
-- Added `telepot.flance()`, a combination of `telepot.flavor()` and `telepot.glance()`.
-
-**6.2 (2016-01-18)**
-
-- Handle new field `chosen_inline_result` in Update object
-- `telepot.flavor()` returns a new flavor `chosen_inline_result`
-- Added `telepot.namedtuple.ChosenInlineResult` class
-
-**6.1 (2016-01-13)**
-
-- Changed normal message's flavor to `normal`
-
-**6.0 (2016-01-13)**
-
-- Moved all namedtuple-related stuff to a new module `telepot.namedtuple`. All calls to the function `telepot.namedtuple()` should be changed to `telepot.namedtuple.namedtuple()`
-- Added a function `telepot.flavor()` to differentiate between a normal message and an inline query
-- Added `flavor` parameter to `telepot.glance2()` to extract info according to message flavor
-- `notifyOnMessage()` and `messageLoop()` can handle inline query as well as normal chat messages
-- Added a few `per_XXX_id()` functions useful for spawning delegates for inline queries
-- Added `UserHandler`
-- `reply_markup` parameter can accept namedtuples `ReplyKeyboardMarkup`, `ReplyKeyboardHide`, `ForceReply` as values
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
@@ -98,9 +79,9 @@ $ easy_install --upgrade telepot  # UPGRADE
 Download manually:
 
 ```
-$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.5.zip
-$ unzip telepot-6.5.zip
-$ cd telepot-6.5
+$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.6.zip
+$ unzip telepot-6.6.zip
+$ cd telepot-6.6
 $ python setup.py install
 ```
 
@@ -556,9 +537,9 @@ def on_inline_query(msg):
     answerer.answer(msg)
 ```
 
-If you use telepot's [async version](#async) (Python 3.4.3 or newer), you should also use the async version of `Answerer`. In that case, it will create *tasks* instead of spawning threads, and you don't have to worry about thread safety. 
+If you use telepot's [async version](#async) (Python 3.4.2 or newer), you should also use the async version of `Answerer`. In that case, it will create *tasks* instead of spawning threads, and you don't have to worry about thread safety. 
 
-`Answerer` may be used in a global context (as above), or within an [Inline User Handler](#inline-only). For a full demonstration of its usage, please see the [examples](#examples-answerer-usage).
+`Answerer` may be used in a global context (as above), or within an [Inline User Handler](#inline-only).
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
@@ -806,12 +787,10 @@ This inline bot does the job, but not ideally. As the user types and pauses, typ
 
 [As mentioned earlier](#inline-query-answerer), a solution is to use `Answerer`. It inspects an inline query's `from` `id` (the originating user id), cancels any unfinished thread of the same user, and ensures **at most one** active inline-query-processing thread per user.
 
-For a full demonstration of `Answerer`'s uage, please see the [examples](#examples-answerer-usage).
-
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
 <a id="async"></a>
-## Async Version (Python 3.4.3 or newer)
+## Async Version (Python 3.4.2 or newer)
 
 Everything discussed so far assumes traditional Python. That is, network operations are blocking; if you want to serve many users at the same time, some kind of threads are usually needed. Another option is to use an asynchronous or event-driven framework, such as [Twisted](http://twistedmatrix.com/).
 
@@ -1080,9 +1059,9 @@ Telegram website's introduction refers often to "Memcache", by which they only m
 A starting point for your telepot programs.
 
 **[Traditional version 1 »](https://github.com/nickoala/telepot/blob/master/examples/skeleton.py)**   
-**[Traditional version 2 »](https://github.com/nickoala/telepot/blob/master/examples/skeleton_extend.py)**   
+**[Traditional version 2 »](https://github.com/nickoala/telepot/blob/master/examples/skeleton_class.py)**   
 **[Async version 1 »](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)**  
-**[Async version 2 »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_extend.py)**
+**[Async version 2 »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_class.py)**
 
 <a id="examples-indoor"></a>
 #### Indoor climate monitor
@@ -1176,16 +1155,6 @@ Only handles a user's inline-related messages.
 
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/inline.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/inlinea.py)**
-
-<a id="examples-answerer-usage"></a>
-#### Answerer Usage
-
-`Answerer` lets you conveniently deal with inline queries. It may be used globally or within a `UserHandler`. Give it an answer-computing function, and dump inline queries to its `answer()` method. These examples demonstrate how to do it.
-
-**[Traditional `Answerer` in a global context »](https://github.com/nickoala/telepot/blob/master/examples/answerer_global.py)**  
-**[Traditional `Answerer` in a `UserHandler` »](https://github.com/nickoala/telepot/blob/master/examples/answerer_handler.py)**  
-**[Async `Answerer` in a global context »](https://github.com/nickoala/telepot/blob/master/examples/answerera_global.py)**  
-**[Async `Answerer` in a `UserHandler` »](https://github.com/nickoala/telepot/blob/master/examples/answerera_handler.py)**  
 
 <a id="examples-pairing-patterns"></a>
 #### Pairing Patterns
