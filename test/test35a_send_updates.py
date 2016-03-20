@@ -49,7 +49,7 @@ def examine(result, type):
             exit(1)
 
 async def send_everything(msg):
-    content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance2(msg, long=True)
+    content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance(msg, long=True)
 
     if chat_id != USER_ID:
         print('Unauthorized user:', chat_id)
@@ -173,11 +173,20 @@ async def send_everything(msg):
     r = await bot.sendVideo(chat_id, open('hktraffic.mp4', 'rb'))
     examine(r, 'Message')
 
-    file_id = r['video']['file_id']
+    try:
+        file_id = r['video']['file_id']
 
-    await bot.sendVideo(chat_id, file_id, duration=5, caption='Hong Kong traffic', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
+        await bot.sendVideo(chat_id, file_id, duration=5, caption='Hong Kong traffic', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
+        await bot.sendVideo(chat_id, file_id, reply_markup=hide_keyboard)
 
-    await bot.sendVideo(chat_id, file_id, reply_markup=hide_keyboard)
+    except KeyError:
+        # For some reason, Telegram servers may return a document.
+        print('****** sendVideo returns a DOCUMENT !!!!!')
+
+        file_id = r['document']['file_id']
+
+        await bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
+        await bot.sendDocument(chat_id, file_id, reply_markup=hide_keyboard)
 
     ##### downloadFile, multiple chunks
 

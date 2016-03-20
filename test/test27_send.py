@@ -186,11 +186,20 @@ def send_everything_on_contact(msg):
     r = bot.sendVideo(chat_id, open('hktraffic.mp4', 'rb'))
     examine(r, 'Message')
 
-    file_id = r['video']['file_id']
+    try:
+        file_id = r['video']['file_id']
 
-    bot.sendVideo(chat_id, file_id, duration=5, caption='Hong Kong traffic', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
+        bot.sendVideo(chat_id, file_id, duration=5, caption='Hong Kong traffic', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
+        bot.sendVideo(chat_id, file_id, reply_markup=hide_keyboard)
 
-    bot.sendVideo(chat_id, file_id, reply_markup=hide_keyboard)
+    except KeyError:
+        # For some reason, Telegram servers may return a document.
+        print '****** sendVideo returns a DOCUMENT !!!!!'
+
+        file_id = r['document']['file_id']
+
+        bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
+        bot.sendDocument(chat_id, file_id, reply_markup=hide_keyboard)
 
     ##### downloadFile, multiple chunks
 
