@@ -1,5 +1,12 @@
 # telepot changelog
 
+## 6.6 (2016-03-20)
+
+- Changed `Answerer` interface. Compute function is now passed to method `answer()`, not to the constructor.
+- Added parameter `disable_notification` to methods `sendZZZ()`
+- Added function `telepot.delegate.per_application()` and `per_message()`
+- Used `data` to pass POST parameters to prevent too-long query strings on URL
+
 ## 6.5 (2016-02-21)
 
 - Supports file-like object and filename when sending files
