@@ -1,7 +1,7 @@
 import sys
 import random
 import telepot
-from telepot.delegate import per_chat_id, per_from_id, per_inline_from_id, create_open
+from telepot.delegate import per_chat_id, per_from_id, per_inline_from_id, per_application, per_message, create_open, call
 
 """
 $ python2.7 pairing.py <token>
@@ -52,6 +52,23 @@ class UserHandlerSubclassInlineOnly(telepot.helper.UserHandler):
     def on_close(self, exception):
         print '%s %d: closed' % (type(self).__name__, self.id)
 
+# Captures all messages, to be paired with per_application()
+class OnlyOneInstance(telepot.helper.Monitor):
+    def __init__(self, seed_tuple):
+        super(OnlyOneInstance, self).__init__(seed_tuple, capture=[{'_': lambda msg: True}])
+        self._count = 0
+
+    def on_message(self, msg):
+        self._count += 1
+        flavor = telepot.flavor(msg)
+
+        print '%s %d: %d: %s: %s' % (type(self).__name__, self.id, self._count, flavor, telepot.glance(msg, flavor=flavor))
+
+# Do some simple stuff for every message, to be paired with per_message()
+def simple_function(seed_tuple):
+    bot, msg, id = seed_tuple
+    print 'Simply print:', msg
+
 
 TOKEN = sys.argv[1]
 
@@ -61,5 +78,9 @@ bot = telepot.DelegatorBot(TOKEN, [
     (per_from_id(), create_open(UserHandlerSubclass, timeout=20)),
 
     (per_inline_from_id(), create_open(UserHandlerSubclassInlineOnly, timeout=10)),
+
+    (per_application(), create_open(OnlyOneInstance)),
+
+    (per_message(), call(simple_function)),
 ])
 bot.notifyOnMessage(run_forever=True)
