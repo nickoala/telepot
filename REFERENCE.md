@@ -39,13 +39,13 @@
 - [create_run](#telepot-delegate-create-run)
 - [create_open](#telepot-delegate-create-open)
 
-**[telepot.async](#telepot-async)** (Python 3.4.3 or newer)
+**[telepot.async](#telepot-async)** (Python 3.4.2 or newer)
 - [Bot](#telepot-async-Bot)
 - [SpeakerBot](#telepot-async-SpeakerBot)
 - [DelegatorBot](#telepot-async-DelegatorBot)
 - [Functions](#telepot-async-functions)
 
-**[telepot.async.helper](#telepot-async-helper)** (Python 3.4.3 or newer)
+**[telepot.async.helper](#telepot-async-helper)** (Python 3.4.2 or newer)
 - [Microphone](#telepot-async-helper-Microphone)
 - [Listener](#telepot-async-helper-Listener)
 - [Answerer](#telepot-async-helper-Answerer)
@@ -56,7 +56,7 @@
 - [UserHandler](#telepot-async-helper-UserHandler)
 - [@openable](#telepot-async-helper-openable)
 
-**[telepot.async.delegate](#telepot-async-delegate)**  (Python 3.4.3 or newer)
+**[telepot.async.delegate](#telepot-async-delegate)**  (Python 3.4.2 or newer)
 - [per_chat_id](#telepot-async-delegate-per-chat-id)
 - [per_chat_id_in](#telepot-async-delegate-per-chat-id-in)
 - [per_chat_id_except](#telepot-async-delegate-per-chat-id-except)
@@ -1277,7 +1277,7 @@ def create_open(cls, *args, **kwargs):
 ```
 
 <a id="telepot-async"></a>
-## `telepot.async` module (Python 3.4.3 or newer)
+## `telepot.async` module (Python 3.4.2 or newer)
 
 This package mirrors the traditional version of telepot to make use of the `asyncio` module of Python 3.4. Nearly all methods share identical signatures with their traditional siblings, except that blocking methods now become **coroutines** and are often called with `yield from`.
 
@@ -1598,7 +1598,7 @@ Returns a *coroutine* that takes one argument (a message), and depending on the 
 The *routing_table* is a dict of the form: `{'normal': f1, 'inline_query': f2, 'chosen_inline_result': f3}`, where `f1`, `f2`, `f3` are functions/coroutines that take one argument (the message). You don't have to include all flavors in the dict, only the ones you need.
 
 <a id="telepot-async-helper"></a>
-## `telepot.async.helper` module (Python 3.4.3 or newer)
+## `telepot.async.helper` module (Python 3.4.2 or newer)
 
 <a id="telepot-async-helper-Microphone"></a>
 ### `telepot.async.helper.Microphone`
@@ -1703,7 +1703,7 @@ This object implements these methods:
 This is an alias to [telepot.helper.openable](#telepot-helper-openable).
 
 <a id="telepot-async-delegate"></a>
-## `telepot.async.delegate` module (Python 3.4.3 or newer)
+## `telepot.async.delegate` module (Python 3.4.2 or newer)
 
 This module provides functions used in conjunction with `telepot.async.DelegatorBot` to specify delegation patterns. See `telepot.async.DelegatorBot` for more details.
 
