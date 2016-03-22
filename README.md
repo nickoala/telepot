@@ -508,8 +508,6 @@ while 1:
 
 There is one more problem: dealing with inline queries this way is not ideal. As you types and pauses, types and pauses, types and pauses ... closely bunched inline queries arrive. In fact, a new inline query often arrives *before* we finish processing a preceding one. With only a single thread of execution, we can only process the (closely bunched) inline queries sequentially. Ideally, whenever we see a new inline query from the same user, it should override and cancel any preceding inline queries being processed (that belong to the same user).
 
-Don't worry. Telepot has a ready-made solution for you ...
-
 <a id="inline-query-answerer"></a>
 #### Use `Answerer` to answer inline queries
 
@@ -529,9 +527,52 @@ def on_inline_query(msg):
     answerer.answer(msg, compute_answer)
 ```
 
+The skeleton becomes:
+
+```python
+import sys
+import time
+import telepot
+
+def on_chat_message(msg):
+    content_type, chat_type, chat_id = telepot.glance(msg)
+    print 'Chat Message:', content_type, chat_type, chat_id
+
+def on_inline_query(msg):
+    def compute_answer():
+        query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
+        print 'Computing for: %s' % query_string
+
+        articles = [{'type': 'article',
+                         'id': 'abc', 'title': query_string, 'message_text': query_string}]
+
+        return articles
+
+    answerer.answer(msg, compute_answer)
+
+def on_chosen_inline_result(msg):
+    result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
+    print 'Chosen Inline Result:', result_id, from_id, query_string
+
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.Bot(TOKEN)
+answerer = telepot.helper.Answerer(bot)
+
+bot.notifyOnMessage({'normal': on_chat_message,
+                     'inline_query': on_inline_query,
+                     'chosen_inline_result': on_chosen_inline_result})
+print 'Listening ...'
+
+# Keep the program running.
+while 1:
+    time.sleep(10)
+```
+
 If you use telepot's [async version](#async) (Python 3.4.2 or newer), you should also use the async version of `Answerer`. In that case, it will create *tasks* instead of spawning threads, and you don't have to worry about thread safety. 
 
-The proper way to deal with inline query is always through an `Answerer`'s `answer()` method. If you don't like to use `Answerer` for some reason, then you should devise your own mechanism to deal with closely-bunched inline queries arriving, always remembering to let a latter one supercede earlier ones. If you decide to go that path, `Answerer` may be a good starting reference point.
+The proper way to deal with inline query is always through an `Answerer`'s `answer()` method. If you don't like to use `Answerer` for some reason, then you should devise your own mechanism to deal with closely-bunched inline queries, always remembering to let a latter one supercede earlier ones. If you decide to go that path, `Answerer` may be a good starting reference point.
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
@@ -716,7 +757,7 @@ class UserTracker(telepot.helper.UserHandler):
                         'inline_query': 0,
                         'chosen_inline_result': 0}
 
-        self._answerer = telepot.helper.Answerer(self)
+        self._answerer = telepot.helper.Answerer(self.bot)
 
     def on_message(self, msg):
         flavor = telepot.flavor(msg)
@@ -730,7 +771,7 @@ class UserTracker(telepot.helper.UserHandler):
                 query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
 
                 articles = [{'type': 'article',
-                                 'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+                                 'id': 'abc', 'title': query_string, 'message_text': query_string}]
 
                 return articles
 
@@ -766,7 +807,7 @@ from telepot.delegate import per_inline_from_id, create_open
 class InlineHandler(telepot.helper.UserHandler):
     def __init__(self, seed_tuple, timeout):
         super(InlineHandler, self).__init__(seed_tuple, timeout, flavors=['inline_query', 'chosen_inline_result'])
-        self._answerer = telepot.helper.Answerer(self)
+        self._answerer = telepot.helper.Answerer(self.bot)
 
     def on_inline_query(self, msg):
         query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
@@ -774,7 +815,7 @@ class InlineHandler(telepot.helper.UserHandler):
 
         def compute_answer():
             articles = [{'type': 'article',
-                             'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+                             'id': 'abc', 'title': query_string, 'message_text': query_string}]
 
             return articles
 
@@ -804,7 +845,7 @@ The function `per_inline_from_id()` digests a message down to its originating us
 
 Everything discussed so far assumes traditional Python. That is, network operations are blocking; if you want to serve many users at the same time, some kind of threads are usually needed. Another option is to use an asynchronous or event-driven framework, such as [Twisted](http://twistedmatrix.com/).
 
-Python 3.4 introduces its own asynchronous architecture, the `asyncio` module. Telepot supports that, too. If your bot is to serve many people, I strongly recommend doing it asynchronously. Threads, in my opinion, is a thing of yesteryears.
+Python 3.4 introduces its own asynchronous architecture, the `asyncio` module. Telepot supports that, too. If your bot is to serve many people, I strongly recommend doing it asynchronously.
 
 The latest Raspbian (Jessie) comes with Python 3.4.2. If you are using older Raspbian, or if you want to use the latest Python 3, you have to compile it yourself. For Python 3.5.1, follow these steps:
 
