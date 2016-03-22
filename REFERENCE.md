@@ -35,6 +35,8 @@
 - [per_inline_from_id](#telepot-delegate-per-inline-from-id)
 - [per_inline_from_id_in](#telepot-delegate-per-inline-from-id-in)
 - [per_inline_from_id_except](#telepot-delegate-per-inline-from-id-except)
+- [per_application](#telepot-delegate-per-application)
+- [per_message](#telepot-delegate-per-message)
 - [call](#telepot-delegate-call)
 - [create_run](#telepot-delegate-create-run)
 - [create_open](#telepot-delegate-create-open)
@@ -66,6 +68,8 @@
 - [per_inline_from_id](#telepot-async-delegate-per-inline-from-id)
 - [per_inline_from_id_in](#telepot-async-delegate-per-inline-from-id-in)
 - [per_inline_from_id_except](#telepot-async-delegate-per-inline-from-id-except)
+- [per_application](#telepot-async-delegate-per-application)
+- [per_message](#telepot-async-delegate-per-message)
 - [call](#telepot-async-delegate-call)
 - [create_run](#telepot-async-delegate-create-run)
 - [create_open](#telepot-async-delegate-create-open)
@@ -98,7 +102,7 @@ Returns basic information about the bot in form of a [User](https://core.telegra
 
 See: https://core.telegram.org/bots/api#getme
 
-**sendMessage(chat_id, text, parse_mode=None, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None)**
+**sendMessage(chat_id, text, parse_mode=None, disable_web_page_preview=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send text messages.
 
@@ -146,13 +150,13 @@ bot.sendMessage(chat_id, 'Hide keyboard', reply_markup=ReplyKeyboardHide())
 bot.sendMessage(chat_id, 'Force reply', reply_markup=ForceReply())
 ```
 
-**forwardMessage(chat_id, from_chat_id, message_id)**
+**forwardMessage(chat_id, from_chat_id, message_id, disable_notification=None)**
 
 Forward messages of any kind.
 
 See: https://core.telegram.org/bots/api#forwardmessage
 
-**sendPhoto(chat_id, photo, caption=None, reply_to_message_id=None, reply_markup=None)**
+**sendPhoto(chat_id, photo, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send photos.
 
@@ -186,7 +190,7 @@ file_id = result['photo'][0]['file_id']
 bot.sendPhoto(chat_id, file_id, caption='This is a lighthouse')
 ```
 
-**sendAudio(chat_id, audio, duration=None, performer=None, title=None, reply_to_message_id=None, reply_markup=None)**
+**sendAudio(chat_id, audio, duration=None, performer=None, title=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send audio files, if you want Telegram clients to display them in the music player. Your audio must be in the .mp3 format. For sending voice messages, use `sendVoice()` instead. 
 
@@ -210,7 +214,7 @@ file_id = result['audio']['file_id']
 bot.sendAudio(chat_id, file_id, duration=6, performer='Ding Dong')
 ```
 
-**sendDocument(chat_id, document, reply_to_message_id=None, reply_markup=None)**
+**sendDocument(chat_id, document, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send general files.
 
@@ -225,7 +229,7 @@ file_id = result['document']['file_id']
 bot.sendDocument(chat_id, file_id)
 ```
 
-**sendSticker(chat_id, sticker, reply_to_message_id=None, reply_markup=None)**
+**sendSticker(chat_id, sticker, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send .webp stickers.
 
@@ -240,7 +244,7 @@ file_id = result['sticker']['file_id']
 bot.sendSticker(chat_id, file_id)
 ```
 
-**sendVideo(chat_id, video, duration=None, caption=None, reply_to_message_id=None, reply_markup=None)**
+**sendVideo(chat_id, video, duration=None, width=None, height=None, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send video files. Telegram clients support mp4 videos. Other formats may be sent using `sendDocument()`.
 
@@ -259,7 +263,7 @@ file_id = result['video']['file_id']
 bot.sendVideo(chat_id, file_id, duration=5)
 ```
 
-**sendVoice(chat_id, audio, duration=None, reply_to_message_id=None, reply_markup=None)**
+**sendVoice(chat_id, audio, duration=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send audio files, if you want Telegram clients to display the file as a playable voice message. For this to work, your audio must be in an .ogg file encoded with OPUS. Other formats may be sent using `sendAudio()` or `sendDocument()`.
 
@@ -276,7 +280,7 @@ file_id = result['voice']['file_id']
 bot.sendVoice(chat_id, file_id, duration=6)
 ```
 
-**sendLocation(chat_id, latitude, longitude, reply_to_message_id=None, reply_markup=None)**
+**sendLocation(chat_id, latitude, longitude, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send point on the map.
 
@@ -823,23 +827,23 @@ Parameters:
 - **bot** - the parent bot
 - **chat_id** - the default chat id. All messages will be aimed at this chat id.
 
-**sendMessage(text, parse_mode=None, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None)**
+**sendMessage(text, parse_mode=None, disable_web_page_preview=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
-**forwardMessage(from_chat_id, message_id)**
+**forwardMessage(from_chat_id, message_id, disable_notification=None)**
 
-**sendPhoto(photo, caption=None, reply_to_message_id=None, reply_markup=None)**
+**sendPhoto(photo, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
-**sendAudio(audio, duration=None, performer=None, title=None, reply_to_message_id=None, reply_markup=None)**
+**sendAudio(audio, duration=None, performer=None, title=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
-**sendDocument(document, reply_to_message_id=None, reply_markup=None)**
+**sendDocument(document, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
-**sendSticker(sticker, reply_to_message_id=None, reply_markup=None)**
+**sendSticker(sticker, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
-**sendVideo(video, duration=None, caption=None, reply_to_message_id=None, reply_markup=None)**
+**sendVideo(video, duration=None, width=None, height=None, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
-**sendVoice(audio, duration=None, reply_to_message_id=None, reply_markup=None)**
+**sendVoice(audio, duration=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
-**sendLocation(latitude, longitude, reply_to_message_id=None, reply_markup=None)**
+**sendLocation(latitude, longitude, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 **sendChatAction(action)**
 
@@ -1207,6 +1211,18 @@ Returns a seed-calculating-function that returns `from` field's user id as the s
 
 Returns a seed-calculating-function that returns `from` field's user id as the seed, if that user id is *not* in the `set`, only for inline queries and chosen inline results.
 
+<a id="telepot-delegate-per-application"></a>
+**per_application()**
+
+Returns a seed-calculating-function that always returns `1`, ensuring at most one delegate for the entire application.
+
+<a id="telepot-delegate-per-message"></a>
+**per_message(flavors='all')**
+
+Returns a seed-calculating-function that returns `[]` if a message matches the specified `flavors`, causing one delegate to be spawned for each such message.
+
+`flavors` may be the string `all` (default), or a list of flavors, e.g. `['inline_query', 'chosen_inline_result']`.
+
 <a id="telepot-delegate-call"></a>
 **call(func, \*args, \*\*kwargs)**
 
@@ -1302,7 +1318,7 @@ Returns basic information about the bot in form of a [User](https://core.telegra
 
 See: https://core.telegram.org/bots/api#getme
 
-*coroutine* **sendMessage(chat_id, text, parse_mode=None, disable_web_page_preview=None, reply_to_message_id=None, reply_markup=None)**
+*coroutine* **sendMessage(chat_id, text, parse_mode=None, disable_web_page_preview=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send text messages.
 
@@ -1314,7 +1330,7 @@ Forward messages of any kind.
 
 See: https://core.telegram.org/bots/api#forwardmessage
 
-*coroutine* **sendPhoto(chat_id, photo, caption=None, reply_to_message_id=None, reply_markup=None)**
+*coroutine* **sendPhoto(chat_id, photo, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send photos.
 
@@ -1339,37 +1355,37 @@ yield from bot.sendPhoto(chat_id, ('abc.jpg', content))
 
 See: https://core.telegram.org/bots/api#sendphoto
 
-*coroutine* **sendAudio(chat_id, audio, duration=None, performer=None, title=None, reply_to_message_id=None, reply_markup=None)**
+*coroutine* **sendAudio(chat_id, audio, duration=None, performer=None, title=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send audio files, if you want Telegram clients to display them in the music player. Your audio must be in the .mp3 format. For sending voice messages, use `sendVoice()` instead. 
 
 See: https://core.telegram.org/bots/api#sendaudio
 
-*coroutine* **sendDocument(chat_id, document, reply_to_message_id=None, reply_markup=None)**
+*coroutine* **sendDocument(chat_id, document, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send general files.
 
 See: https://core.telegram.org/bots/api#senddocument
 
-*coroutine* **sendSticker(chat_id, sticker, reply_to_message_id=None, reply_markup=None)**
+*coroutine* **sendSticker(chat_id, sticker, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send .webp stickers.
 
 See: https://core.telegram.org/bots/api#sendsticker
 
-*coroutine* **sendVideo(chat_id, video, duration=None, caption=None, reply_to_message_id=None, reply_markup=None)**
+*coroutine* **sendVideo(chat_id, video, duration=None, width=None, height=None, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send video files. Telegram clients support mp4 videos. Other formats may be sent using `sendDocument()`.
 
 See: https://core.telegram.org/bots/api#sendvideo
 
-*coroutine* **sendVoice(chat_id, audio, duration=None, reply_to_message_id=None, reply_markup=None)**
+*coroutine* **sendVoice(chat_id, audio, duration=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send audio files, if you want Telegram clients to display the file as a playable voice message. For this to work, your audio must be in an .ogg file encoded with OPUS. Other formats may be sent using `sendAudio()` or `sendDocument()`.
 
 See: https://core.telegram.org/bots/api#sendvoice
 
-*coroutine* **sendLocation(chat_id, latitude, longitude, reply_to_message_id=None, reply_markup=None)**
+*coroutine* **sendLocation(chat_id, latitude, longitude, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
 Send point on the map.
 
@@ -1725,31 +1741,20 @@ This module provides functions used in conjunction with `telepot.async.Delegator
 **per_inline_from_id_in(set)** - alias to [telepot.delegate.per_inline_from_id_in(set)](#telepot-delegate-per-inline-from-id-in)  
 <a id="telepot-async-delegate-per-inline-from-id-except"></a>
 **per_inline_from_id_except(set)** - alias to [telepot.delegate.per_inline_from_id_except(set)](#telepot-delegate-per-inline-from-id-except)  
+<a id="telepot-async-delegate-per-application"></a>
+**per_application()** - alias to [telepot.delegate.per_application()](#telepot-delegate-per-application)
+<a id="telepot-async-delegate-per-message"></a>
+**per_message(flavors='all')** - alias to [telepot.delegate.per_message(flavors='all')](#telepot-delegate-per-message)
 
 <a id="telepot-async-delegate-call"></a>
-**call(corofunc, \*args, \*\*kwargs)**
+**call(func, \*args, \*\*kwargs)**
 
-Returns a coroutine-producing-function. `corofunc` should be a coroutine function that takes a *seed_tuple* as the first argument, followed by those explicitly supplied. Here is the source:
-
-```python
-def call(corofunc, *args, **kwargs):
-    def f(seed_tuple):
-        return corofunc(seed_tuple, *args, **kwargs)
-    return f
-```
+Returns a coroutine-producing-function. `func` can be a regular function or a coroutine function, that takes a *seed_tuple* as the first argument, followed by those explicitly supplied.
 
 <a id="telepot-async-delegate-create-run"></a>
 **create_run(cls, \*args, \*\*kwargs)**
 
-Returns a coroutine-producing-function that creates an object of `cls` and returns a coroutine object by calling its `run()` method. The `cls` constructor should take a *seed_tuple* as the first argument, followed by those explicitly supplied. The `run` method should be a coroutine function that takes no argument. Here is the source:
-
-```python
-def create_run(cls, *args, **kwargs):
-    def f(seed_tuple):
-        j = cls(seed_tuple, *args, **kwargs)
-        return j.run()
-    return f
-```
+Returns a coroutine-producing-function that creates an object of `cls` and returns a coroutine object by calling its `run()` method. The `cls` constructor should take a *seed_tuple* as the first argument, followed by those explicitly supplied. The `run` method requires no argument, can be a regular function or a coroutine function.
 
 <a id="telepot-async-delegate-create-open"></a>
 **create_open(cls, \*args, \*\*kwargs)**

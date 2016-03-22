@@ -63,9 +63,7 @@ Telepot has been tested on **Raspbian** and **CentOS**, using **Python 2.7 - 3.5
 
 pip:
 ```
-$ sudo apt-get install python-pip
 $ sudo pip install telepot
-
 $ sudo pip install telepot --upgrade  # UPGRADE
 ```
 
@@ -533,7 +531,7 @@ def on_inline_query(msg):
 
 If you use telepot's [async version](#async) (Python 3.4.2 or newer), you should also use the async version of `Answerer`. In that case, it will create *tasks* instead of spawning threads, and you don't have to worry about thread safety. 
 
-`Answerer` may be used in a global context (as above), or within an [Inline User Handler](#inline-only).
+The proper way to deal with inline query is always through an `Answerer`'s `answer()` method. If you don't like to use `Answerer` for some reason, then you should devise your own mechanism to deal with closely-bunched inline queries arriving, always remembering to let a latter one supercede earlier ones. If you decide to go that path, `Answerer` may be a good starting reference point.
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
@@ -542,7 +540,7 @@ If you use telepot's [async version](#async) (Python 3.4.2 or newer), you should
 
 Defining a global message handler may lead to proliferation of global variables quickly. Encapsulation may be achieved by extending the `Bot` class, defining a `handle` method, then calling `notifyOnMessage()` with no callback function. This way, the object's `handle` method will be used as the callback.
 
-Here is a Python 3 skeleton using this strategy. Remember that you may not need the blocks dealing with `inline_query` and `chosen_inline_result` if you have not `/setinline` or `/setinlinefeedback` on the bot.
+Here is a Python 3 skeleton using this strategy. You may not need `Answerer` and the blocks dealing with `inline_query` and `chosen_inline_result` if you have not `/setinline` or `/setinlinefeedback` on the bot.
 
 ```python
 import sys
@@ -550,6 +548,10 @@ import time
 import telepot
 
 class YourBot(telepot.Bot):
+    def __init__(self, *args, **kwargs):
+        super(YourBot, self).__init__(*args, **kwargs)
+        self._answerer = telepot.helper.Answerer(self)
+
     def handle(self, msg):
         flavor = telepot.flavor(msg)
 
@@ -565,11 +567,14 @@ class YourBot(telepot.Bot):
             query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
             print('Inline Query:', query_id, from_id, query_string)
 
-            # Compose your own answers
-            articles = [{'type': 'article',
-                            'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+            def compute_answer():
+                # Compose your own answers
+                articles = [{'type': 'article',
+                                'id': 'abc', 'title': query_string, 'message_text': query_string}]
 
-            bot.answerInlineQuery(query_id, articles)
+                return articles
+
+            self._answerer.answer(msg, compute_answer)
 
         # chosen inline result - need `/setinlinefeedback`
         elif flavor == 'chosen_inline_result':
@@ -601,6 +606,10 @@ import time
 import telepot
 
 class YourBot(telepot.Bot):
+    def __init__(self, *args, **kwargs):
+        super(YourBot, self).__init__(*args, **kwargs)
+        self._answerer = telepot.helper.Answerer(self)
+
     def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
         print('Normal Message:', content_type, chat_type, chat_id)
@@ -609,11 +618,14 @@ class YourBot(telepot.Bot):
         query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
         print('Inline Query:', query_id, from_id, query_string)
 
-        # Compose your own answers
-        articles = [{'type': 'article',
-                        'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+        def compute_answer():
+            # Compose your own answers
+            articles = [{'type': 'article',
+                            'id': 'abc', 'title': query_string, 'message_text': query_string}]
 
-        bot.answerInlineQuery(query_id, articles)
+            return articles
+
+        self._answerer.answer(msg, compute_answer)
 
     def on_chosen_inline_result(self, msg):
         result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
@@ -704,6 +716,8 @@ class UserTracker(telepot.helper.UserHandler):
                         'inline_query': 0,
                         'chosen_inline_result': 0}
 
+        self._answerer = telepot.helper.Answerer(self)
+
     def on_message(self, msg):
         flavor = telepot.flavor(msg)
         self._counts[flavor] += 1
@@ -712,12 +726,15 @@ class UserTracker(telepot.helper.UserHandler):
 
         # Have to answer inline query to receive chosen result
         if flavor == 'inline_query':
-            query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
+            def compute_answer():
+                query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
 
-            articles = [{'type': 'article',
-                             'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+                articles = [{'type': 'article',
+                                 'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
 
-            self.bot.answerInlineQuery(query_id, articles)
+                return articles
+
+            self._answerer.answer(msg, compute_answer)
 
 
 TOKEN = sys.argv[1]
@@ -730,7 +747,7 @@ bot.notifyOnMessage(run_forever=True)
 
 All messages, regardless of flavor, as long as it is originating from a user, would have a `from` field containing an `id`. The function `per_from_id()` digests a message down to its originating user id, thus ensuring there is one and only one `UserTracker` *per user id*.
 
-`UserTracker`, being a subclass of `UserHandler`, is automatically set up to capture messages originating from a certain user, regardless of flavor. Because the handling logic is similar for all flavors, it overrides `on_message()` instead of implementing `on_ZZZ()` separately.
+`UserTracker`, being a subclass of `UserHandler`, is automatically set up to capture messages originating from a certain user, regardless of flavor. Because the handling logic is similar for all flavors, it overrides `on_message()` instead of implementing `on_ZZZ()` separately. Note the use of an `Answerer` to properly deal with inline queries.
 
 `per_from_id()` and `UserHandler` combined, we can track a user's every step.
 
@@ -749,16 +766,19 @@ from telepot.delegate import per_inline_from_id, create_open
 class InlineHandler(telepot.helper.UserHandler):
     def __init__(self, seed_tuple, timeout):
         super(InlineHandler, self).__init__(seed_tuple, timeout, flavors=['inline_query', 'chosen_inline_result'])
+        self._answerer = telepot.helper.Answerer(self)
 
     def on_inline_query(self, msg):
         query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
         print(self.id, ':', 'Inline Query:', query_id, from_id, query_string)
 
-        articles = [{'type': 'article',
-                         'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+        def compute_answer():
+            articles = [{'type': 'article',
+                             'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
 
-        self.bot.answerInlineQuery(query_id, articles)
-        print(self.id, ':', 'Answers sent.')
+            return articles
+
+        self._answerer.answer(msg, compute_answer)
 
     def on_chosen_inline_result(self, msg):
         result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
@@ -777,10 +797,6 @@ The function `per_inline_from_id()` digests a message down to its originating us
 
 `InlineHandler`, again, is a subclass of `UserHandler`. But it specifies which message flavors to capture (in the constructor). In this case, it only cares about **inline query** and **chosen inline result**. Then, it implements `on_inline_query()` and `on_chosen_inline_result()` to handle incoming messages.
 
-This inline bot does the job, but not ideally. As the user types and pauses, types and pauses, types and pauses ... closely bunched inline queries arrive. In fact, a new inline query often arrives *before* we finish processing a preceding one. With only a single thread of execution *per user id*, we can only process the (closely bunched) inline queries sequentially. Ideally, whenever we see a new inline query from the same user, it should override and cancel any preceding inline queries being processed (that belong to the same user).
-
-[As mentioned earlier](#inline-query-answerer), a solution is to use `Answerer`. It inspects an inline query's `from` `id` (the originating user id), cancels any unfinished thread of the same user, and ensures **at most one** active inline-query-processing thread per user.
-
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
 <a id="async"></a>
@@ -790,16 +806,16 @@ Everything discussed so far assumes traditional Python. That is, network operati
 
 Python 3.4 introduces its own asynchronous architecture, the `asyncio` module. Telepot supports that, too. If your bot is to serve many people, I strongly recommend doing it asynchronously. Threads, in my opinion, is a thing of yesteryears.
 
-Raspbian does not come with Python 3.4. You have to compile it yourself.
+The latest Raspbian (Jessie) comes with Python 3.4.2. If you are using older Raspbian, or if you want to use the latest Python 3, you have to compile it yourself. For Python 3.5.1, follow these steps:
 
 ```
 $ sudo apt-get update
 $ sudo apt-get upgrade
 $ sudo apt-get install libssl-dev openssl libreadline-dev
 $ cd ~
-$ wget https://www.python.org/ftp/python/3.4.3/Python-3.4.3.tgz
-$ tar zxf Python-3.4.3.tgz
-$ cd Python-3.4.3
+$ wget https://www.python.org/ftp/python/3.5.1/Python-3.5.1.tgz
+$ tar zxf Python-3.5.1.tgz
+$ cd Python-3.5.1
 $ ./configure
 $ make
 $ sudo make install
@@ -808,7 +824,7 @@ $ sudo make install
 Finally:
 
 ```
-$ sudo pip3.4 install telepot
+$ sudo pip3.5 install telepot
 ```
 
 In case you are not familiar with asynchronous programming, let's start by learning about generators and coroutines:
@@ -840,7 +856,50 @@ The async version of `Bot`, `SpeakerBot`, and `DelegatorBot` basically mirror th
 
 Because of that (and this is true of asynchronous Python in general), a lot of methods will not work in the interactive Python interpreter like regular functions would. They will have to be driven by an event loop.
 
-#### Skeleton, by extending the basic `Bot`
+#### Skeleton, with a routing table
+
+```python
+import sys
+import asyncio
+import telepot
+import telepot.async
+
+def on_chat_message(msg):
+    content_type, chat_type, chat_id = telepot.glance(msg)
+    print('Normal Message:', content_type, chat_type, chat_id)
+
+def on_inline_query(msg):
+    query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
+    print('Inline Query:', query_id, from_id, query_string)
+
+    def compute_answer():
+        articles = [{'type': 'article',
+                        'id': 'abc', 'title': query_string, 'message_text': query_string}]
+
+        return articles
+
+    answerer.answer(msg, compute_answer)
+
+def on_chosen_inline_result(msg):
+    result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
+    print('Chosen Inline Result:', result_id, from_id, query_string)
+
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+bot = telepot.async.Bot(TOKEN)
+answerer = telepot.async.helper.Answerer(bot)
+
+loop = asyncio.get_event_loop()
+loop.create_task(bot.messageLoop({'normal': on_chat_message,
+                                  'inline_query': on_inline_query,
+                                  'chosen_inline_result': on_chosen_inline_result}))
+print('Listening ...')
+
+loop.run_forever()
+```
+
+#### Skeleton, class-based
 
 ```python
 import sys
@@ -849,20 +908,25 @@ import telepot
 import telepot.async
 
 class YourBot(telepot.async.Bot):
+    def __init__(self, *args, **kwargs):
+        super(YourBot, self).__init__(*args, **kwargs)
+        self._answerer = telepot.async.helper.Answerer(self)
+
     def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
         print('Normal Message:', content_type, chat_type, chat_id)
 
-    @asyncio.coroutine
     def on_inline_query(self, msg):
         query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
         print('Inline Query:', query_id, from_id, query_string)
 
-        # Compose your own answers
-        articles = [{'type': 'article',
-                        'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
+        def compute_answer():
+            articles = [{'type': 'article',
+                            'id': 'abc', 'title': query_string, 'message_text': query_string}]
 
-        yield from bot.answerInlineQuery(query_id, articles)
+            return articles
+
+        self._answerer.answer(msg, compute_answer)
 
     def on_chosen_inline_result(self, msg):
         result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
@@ -875,47 +939,6 @@ bot = YourBot(TOKEN)
 loop = asyncio.get_event_loop()
 
 loop.create_task(bot.messageLoop())
-print('Listening ...')
-
-loop.run_forever()
-```
-
-#### Skeleton, by defining global handlers
-
-```python
-import sys
-import asyncio
-import telepot
-import telepot.async
-
-def on_chat_message(msg):
-    content_type, chat_type, chat_id = telepot.glance(msg)
-    print('Normal Message:', content_type, chat_type, chat_id)
-
-@asyncio.coroutine
-def on_inline_query(msg):
-    query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
-    print('Inline Query:', query_id, from_id, query_string)
-
-    # Compose your own answers
-    articles = [{'type': 'article',
-                    'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
-
-    yield from bot.answerInlineQuery(query_id, articles)
-
-def on_chosen_inline_result(msg):
-    result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
-    print('Chosen Inline Result:', result_id, from_id, query_string)
-
-
-TOKEN = sys.argv[1]  # get token from command-line
-
-bot = telepot.async.Bot(TOKEN)
-loop = asyncio.get_event_loop()
-
-loop.create_task(bot.messageLoop({'normal': on_chat_message,
-                                  'inline_query': on_inline_query,
-                                  'chosen_inline_result': on_chosen_inline_result}))
 print('Listening ...')
 
 loop.run_forever()
@@ -1052,10 +1075,12 @@ Telegram website's introduction refers often to "Memcache", by which they only m
 
 A starting point for your telepot programs.
 
-**[Traditional version 1 »](https://github.com/nickoala/telepot/blob/master/examples/skeleton.py)**   
-**[Traditional version 2 »](https://github.com/nickoala/telepot/blob/master/examples/skeleton_class.py)**   
-**[Async version 1 »](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)**  
-**[Async version 2 »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_class.py)**
+**[Traditional, Simple »](https://github.com/nickoala/telepot/blob/master/examples/skeleton.py)**   
+**[Traditional, Routing table »](https://github.com/nickoala/telepot/blob/master/examples/skeleton_route.py)**   
+**[Traditional, Class-based »](https://github.com/nickoala/telepot/blob/master/examples/skeleton_class.py)**   
+**[Async, Simple »](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)**  
+**[Async, Routing table »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_route.py)**  
+**[Async, Class-based »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_class.py)**  
 
 <a id="examples-indoor"></a>
 #### Indoor climate monitor
