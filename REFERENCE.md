@@ -1742,7 +1742,7 @@ This module provides functions used in conjunction with `telepot.async.Delegator
 <a id="telepot-async-delegate-per-inline-from-id-except"></a>
 **per_inline_from_id_except(set)** - alias to [telepot.delegate.per_inline_from_id_except(set)](#telepot-delegate-per-inline-from-id-except)  
 <a id="telepot-async-delegate-per-application"></a>
-**per_application()** - alias to [telepot.delegate.per_application()](#telepot-delegate-per-application)
+**per_application()** - alias to [telepot.delegate.per_application()](#telepot-delegate-per-application)  
 <a id="telepot-async-delegate-per-message"></a>
 **per_message(flavors='all')** - alias to [telepot.delegate.per_message(flavors='all')](#telepot-delegate-per-message)
 
