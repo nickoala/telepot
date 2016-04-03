@@ -6,6 +6,7 @@ import requests
 import threading
 import traceback
 import collections
+import re
 
 try:
     import Queue as queue
@@ -166,7 +167,16 @@ class Bot(_BotBase):
         if data['ok']:
             return data['result']
         else:
-            raise TelegramError(data['description'], data['error_code'])
+            description, error_code = data['description'], data['error_code']
+
+            # Look for specific error ...
+            for e in TelegramError.__subclasses__():
+                n = len(e.DESCRIPTION_PATTERNS)
+                if any(map(re.search, e.DESCRIPTION_PATTERNS, n*[description], n*[re.IGNORECASE])):
+                    raise e(description, error_code)
+
+            # ... or raise generic error
+            raise TelegramError(description, error_code)
 
     def getMe(self):
         r = requests.post(self._methodurl('getMe'), timeout=self._http_timeout)

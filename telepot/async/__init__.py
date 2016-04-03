@@ -4,6 +4,7 @@ import time
 import asyncio
 import aiohttp
 import traceback
+import re
 from requests.utils import guess_filename
 from concurrent.futures._base import CancelledError
 import collections
@@ -45,7 +46,16 @@ class Bot(telepot._BotBase):
         if data['ok']:
             return data['result']
         else:
-            raise TelegramError(data['description'], data['error_code'])
+            description, error_code = data['description'], data['error_code']
+
+            # Look for specific error ...
+            for e in TelegramError.__subclasses__():
+                n = len(e.DESCRIPTION_PATTERNS)
+                if any(map(re.search, e.DESCRIPTION_PATTERNS, n*[description], n*[re.IGNORECASE])):
+                    raise e(description, error_code)
+
+            # ... or raise generic error
+            raise TelegramError(description, error_code)
 
     @asyncio.coroutine
     def getMe(self):

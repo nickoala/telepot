@@ -21,6 +21,13 @@ class BadHTTPResponse(TelepotException):
     def text(self):
         return self.args[1]
 
+    def __unicode__(self):
+        return 'Status %d - First 500 characters are shown below:\n%s' % (self.status, self.text[:500])
+        
+    def __str__(self):
+        return unicode(self).encode('utf-8')
+
+
 class TelegramError(TelepotException):
     def __init__(self, description, error_code):
         super(TelegramError, self).__init__(description, error_code)
@@ -32,6 +39,16 @@ class TelegramError(TelepotException):
     @property
     def error_code(self):
         return self.args[1]
+
+class UnauthorizedError(TelegramError):
+    DESCRIPTION_PATTERNS = ['unauthorized']
+
+class BotWasKickedError(TelegramError):
+    DESCRIPTION_PATTERNS = ['bot.*kicked']
+
+class BotWasBlockedError(TelegramError):
+    DESCRIPTION_PATTERNS = ['bot.*blocked']
+
 
 class WaitTooLong(TelepotException):
     pass
