@@ -1,5 +1,10 @@
 # telepot changelog
 
+## 6.7 (2016-04-03)
+
+- Added a few `TelegramError` subclasses to indicate specific errors
+- Override `BadHTTPResponse`'s `__unicode__()` and `__str__()` to shorten traceback
+
 ## 6.6 (2016-03-20)
 
 - Changed `Answerer` interface. Compute function is now passed to method `answer()`, not to the constructor.
