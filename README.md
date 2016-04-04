@@ -1,5 +1,14 @@
 # telepot - Python framework for Telegram Bot API
 
+#### To all Async Version Users
+I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** All `@asyncio.coroutine` and `yield from` currently in the library will be changed to the keywords `async` and `await` in the future. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
+
+Currently, telepot's async version already works with Python 3.5.1.
+
+**This announcement only concerns telepot's async version. Traditional version is not affected.**
+
+---
+
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
 **[Dealing with Inline Query](#inline-query)**  
@@ -847,6 +856,15 @@ The function `per_inline_from_id()` digests a message down to its originating us
 
 <a id="async"></a>
 ## Async Version (Python 3.4.2 or newer)
+
+#### To all Async Version Users
+I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** All `@asyncio.coroutine` and `yield from` currently in the library will be changed to the keywords `async` and `await` in the future. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
+
+Currently, telepot's async version already works with Python 3.5.1.
+
+**This announcement only concerns telepot's async version. Traditional version is not affected.**
+
+---
 
 Everything discussed so far assumes traditional Python. That is, network operations are blocking; if you want to serve many users at the same time, some kind of threads are usually needed. Another option is to use an asynchronous or event-driven framework, such as [Twisted](http://twistedmatrix.com/).
 
