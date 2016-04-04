@@ -1,5 +1,14 @@
 # telepot 6.6 reference
 
+#### To all Async Version Users
+I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** All `@asyncio.coroutine` and `yield from` currently in the library will be changed to the keywords `async` and `await` in the future. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
+
+Currently, telepot's async version already works with Python 3.5.1.
+
+**This announcement only concerns telepot's async version. Traditional version is not affected.**
+
+---
+
 **[telepot](#telepot)**
 - [Bot](#telepot-Bot)
 - [SpeakerBot](#telepot-SpeakerBot)
@@ -1295,6 +1304,15 @@ def create_open(cls, *args, **kwargs):
 <a id="telepot-async"></a>
 ## `telepot.async` module (Python 3.4.2 or newer)
 
+#### To all Async Version Users
+I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** All `@asyncio.coroutine` and `yield from` currently in the library will be changed to the keywords `async` and `await` in the future. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
+
+Currently, telepot's async version already works with Python 3.5.1.
+
+**This announcement only concerns telepot's async version. Traditional version is not affected.**
+
+---
+
 This package mirrors the traditional version of telepot to make use of the `asyncio` module of Python 3.4. Nearly all methods share identical signatures with their traditional siblings, except that blocking methods now become **coroutines** and are often called with `yield from`.
 
 If you find this part of documentations wanting, always refer back to the traditional counterparts. It is easy to adapt examples from there to here - just remember to `yield from` coroutines.
@@ -1616,6 +1634,15 @@ The *routing_table* is a dict of the form: `{'normal': f1, 'inline_query': f2, '
 <a id="telepot-async-helper"></a>
 ## `telepot.async.helper` module (Python 3.4.2 or newer)
 
+#### To all Async Version Users
+I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** All `@asyncio.coroutine` and `yield from` currently in the library will be changed to the keywords `async` and `await` in the future. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
+
+Currently, telepot's async version already works with Python 3.5.1.
+
+**This announcement only concerns telepot's async version. Traditional version is not affected.**
+
+---
+
 <a id="telepot-async-helper-Microphone"></a>
 ### `telepot.async.helper.Microphone`
 
@@ -1720,6 +1747,15 @@ This is an alias to [telepot.helper.openable](#telepot-helper-openable).
 
 <a id="telepot-async-delegate"></a>
 ## `telepot.async.delegate` module (Python 3.4.2 or newer)
+
+#### To all Async Version Users
+I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** All `@asyncio.coroutine` and `yield from` currently in the library will be changed to the keywords `async` and `await` in the future. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
+
+Currently, telepot's async version already works with Python 3.5.1.
+
+**This announcement only concerns telepot's async version. Traditional version is not affected.**
+
+---
 
 This module provides functions used in conjunction with `telepot.async.DelegatorBot` to specify delegation patterns. See `telepot.async.DelegatorBot` for more details.
 
