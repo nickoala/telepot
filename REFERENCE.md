@@ -1,4 +1,4 @@
-# telepot 6.6 reference
+# telepot 6.7 reference
 
 #### To all Async Version Users
 I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** All `@asyncio.coroutine` and `yield from` currently in the library will be changed to the keywords `async` and `await` in the future. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
@@ -49,6 +49,14 @@ Currently, telepot's async version already works with Python 3.5.1.
 - [call](#telepot-delegate-call)
 - [create_run](#telepot-delegate-create-run)
 - [create_open](#telepot-delegate-create-open)
+
+**[telepot.exception](#telepot-exception)**
+- [TelepotException](#telepot-exception-TelepotException)
+- [BadHTTPResponse](#telepot-exception-BadHTTPResponse)
+- [TelegramError](#telepot-exception-TelegramError)
+- [UnauthorizedError](#telepot-exception-UnauthorizedError)
+- [BotWasKickedError](#telepot-exception-BotWasKickedError)
+- [BotWasBlockedError](#telepot-exception-BotWasBlockedError)
 
 **[telepot.async](#telepot-async)** (Python 3.4.2 or newer)
 - [Bot](#telepot-async-Bot)
@@ -1300,6 +1308,73 @@ def create_open(cls, *args, **kwargs):
         return wait_loop
     return f
 ```
+
+<a id="telepot-exception"></a>
+## `telepot.exception` module
+
+<a id="telepot-exception-TelepotException"></a>
+### `TelepotException`
+
+Superclass of all exceptions raised by telepot.
+
+<a id="telepot-exception-BadHTTPResponse"></a>
+### `BadHTTPResponse`
+
+*property* **status**
+
+*property* **text**
+
+All requests to Bot API should result in a JSON response. Otherwise, a `BadHTTPResponse` is raised. While it is hard to pinpoint exactly when this might happen, the following situations have been observed to give rise to a `BadHTTPResponse`:
+
+- an unreasonable token, e.g. `abc`, `123`, anything that does not even remotely resemble a correct token.
+
+- a bad gateway, e.g. when Telegram servers are down.
+
+<a id="telepot-exception-TelegramError"></a>
+### `TelegramError`
+
+*property* **description**
+
+*property* **error_code**
+
+In response to erroneous situations, Telegram would return a JSON object containing an *error code* and a *description*, causing telepot to raise a `TelegramError`. Before raising a generic `TelegramError`, however, telepot would look at all `TelegramError`'s subclasses and check if the error "matches" any of them. If so, an exception of that specific subclass is raised. This allows developers the choice to either catch specific errors (one of the subclasses) or to cast a wide net (to catch a `TelegramError`).
+
+This is how telepot finds out if an error "matches" a subclass:
+
+1. A `TelegramError` subclass always has a class variable `DESCRIPTION_PATTERNS`, which is a list of regular expressions.
+
+2. If an error's `description` matches any of a subclass's `DESCRIPTION_PATTERNS`, a match occurs.
+
+Telepot provides 3 subclasses: [`UnauthorizedError`](#telepot-exception-UnauthorizedError), [`BotWasKickedError`](#telepot-exception-BotWasKickedError), and [`BotWasBlockedError`](#telepot-exception-BotWasBlockedError). Users may define his own if he wishes to isolate more errors. For example:
+
+```python
+class ParseMessageTextError(telepot.exception.TelegramError):
+    DESCRIPTION_PATTERNS = ['parse message text']
+
+class FileTypeMismatchError(telepot.exception.TelegramError):
+    DESCRIPTION_PATTERNS = ['file.*type.*mismatch', 'type.*file.*mismatch']
+```
+
+<a id="telepot-exception-UnauthorizedError"></a>
+### `UnauthorizedError`
+
+*Superclass:* [`TelegramError`](#telepot-exception-TelegramError)  
+
+*DESCRIPTION_PATTERNS:* [`unauthorized`]
+
+<a id="telepot-exception-BotWasKickedError"></a>
+### `BotWasKickedError`
+
+*Superclass:* [`TelegramError`](#telepot-exception-TelegramError)  
+
+*DESCRIPTION_PATTERNS:* [`bot.*kicked`]
+
+<a id="telepot-exception-BotWasBlockedError"></a>
+### `BotWasBlockedError`
+
+*Superclass:* [`TelegramError`](#telepot-exception-TelegramError)  
+
+*DESCRIPTION_PATTERNS:* [`bot.*blocked`]
 
 <a id="telepot-async"></a>
 ## `telepot.async` module (Python 3.4.2 or newer)
