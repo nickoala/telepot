@@ -1,7 +1,7 @@
 # telepot 6.7 reference
 
 #### To all Async Version Users
-I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** All `@asyncio.coroutine` and `yield from` currently in the library will be changed to the keywords `async` and `await` in the future. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
+I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** Keyword `async` and `await` will be used. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
 
 Currently, telepot's async version already works with Python 3.5.1.
 
@@ -1380,7 +1380,7 @@ class FileTypeMismatchError(telepot.exception.TelegramError):
 ## `telepot.async` module (Python 3.4.2 or newer)
 
 #### To all Async Version Users
-I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** All `@asyncio.coroutine` and `yield from` currently in the library will be changed to the keywords `async` and `await` in the future. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
+I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** Keyword `async` and `await` will be used. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
 
 Currently, telepot's async version already works with Python 3.5.1.
 
@@ -1710,7 +1710,7 @@ The *routing_table* is a dict of the form: `{'normal': f1, 'inline_query': f2, '
 ## `telepot.async.helper` module (Python 3.4.2 or newer)
 
 #### To all Async Version Users
-I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** All `@asyncio.coroutine` and `yield from` currently in the library will be changed to the keywords `async` and `await` in the future. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
+I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** Keyword `async` and `await` will be used. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
 
 Currently, telepot's async version already works with Python 3.5.1.
 
@@ -1824,7 +1824,7 @@ This is an alias to [telepot.helper.openable](#telepot-helper-openable).
 ## `telepot.async.delegate` module (Python 3.4.2 or newer)
 
 #### To all Async Version Users
-I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** All `@asyncio.coroutine` and `yield from` currently in the library will be changed to the keywords `async` and `await` in the future. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
+I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** Keyword `async` and `await` will be used. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
 
 Currently, telepot's async version already works with Python 3.5.1.
 
