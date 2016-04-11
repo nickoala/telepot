@@ -1,5 +1,10 @@
 # telepot changelog
 
+## 6.8 (2016-04-11)
+
+- Added underlying response object to `BadHTTPResponse` and underlying JSON object to `TelegramError`
+- Added `TooManyRequestsError` as a subclass to `TelegramError`
+
 ## 6.7 (2016-04-03)
 
 - Added a few `TelegramError` subclasses to indicate specific errors
