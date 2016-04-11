@@ -41,7 +41,7 @@ class Bot(telepot._BotBase):
             data = yield from response.json()
         except ValueError:
             text = yield from response.text()
-            raise BadHTTPResponse(response.status, text)
+            raise BadHTTPResponse(response.status, text, response)
 
         if data['ok']:
             return data['result']
@@ -52,10 +52,10 @@ class Bot(telepot._BotBase):
             for e in TelegramError.__subclasses__():
                 n = len(e.DESCRIPTION_PATTERNS)
                 if any(map(re.search, e.DESCRIPTION_PATTERNS, n*[description], n*[re.IGNORECASE])):
-                    raise e(description, error_code)
+                    raise e(description, error_code, data)
 
             # ... or raise generic error
-            raise TelegramError(description, error_code)
+            raise TelegramError(description, error_code, data)
 
     @asyncio.coroutine
     def getMe(self):
@@ -239,7 +239,7 @@ class Bot(telepot._BotBase):
 
         # `file_path` is optional in File object
         if 'file_path' not in f:
-            raise TelegramError('No file_path returned', None)
+            raise TelegramError('No `file_path` returned', None, None)
 
         try:
             r = yield from asyncio.wait_for(

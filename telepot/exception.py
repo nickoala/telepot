@@ -10,8 +10,8 @@ class BadFlavor(TelepotException):
         return self.args[0]
 
 class BadHTTPResponse(TelepotException):
-    def __init__(self, status, text):
-        super(BadHTTPResponse, self).__init__(status, text)
+    def __init__(self, status, text, response):
+        super(BadHTTPResponse, self).__init__(status, text, response)
 
     @property
     def status(self):
@@ -21,6 +21,10 @@ class BadHTTPResponse(TelepotException):
     def text(self):
         return self.args[1]
 
+    @property
+    def response(self):
+        return self.args[2]
+
     def __unicode__(self):
         return 'Status %d - First 500 characters are shown below:\n%s' % (self.status, self.text[:500])
         
@@ -29,8 +33,8 @@ class BadHTTPResponse(TelepotException):
 
 
 class TelegramError(TelepotException):
-    def __init__(self, description, error_code):
-        super(TelegramError, self).__init__(description, error_code)
+    def __init__(self, description, error_code, json):
+        super(TelegramError, self).__init__(description, error_code, json)
 
     @property
     def description(self):
@@ -40,6 +44,10 @@ class TelegramError(TelepotException):
     def error_code(self):
         return self.args[1]
 
+    @property
+    def json(self):
+        return self.args[2]
+
 class UnauthorizedError(TelegramError):
     DESCRIPTION_PATTERNS = ['unauthorized']
 
@@ -48,6 +56,9 @@ class BotWasKickedError(TelegramError):
 
 class BotWasBlockedError(TelegramError):
     DESCRIPTION_PATTERNS = ['bot.*blocked']
+
+class TooManyRequestsError(TelegramError):
+    DESCRIPTION_PATTERNS = ['too *many *requests']
 
 
 class WaitTooLong(TelepotException):

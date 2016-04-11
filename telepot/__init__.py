@@ -162,7 +162,7 @@ class Bot(_BotBase):
         try:
             data = response.json()
         except ValueError:  # No JSON object could be decoded
-            raise BadHTTPResponse(response.status_code, response.text)
+            raise BadHTTPResponse(response.status_code, response.text, response)
 
         if data['ok']:
             return data['result']
@@ -173,10 +173,10 @@ class Bot(_BotBase):
             for e in TelegramError.__subclasses__():
                 n = len(e.DESCRIPTION_PATTERNS)
                 if any(map(re.search, e.DESCRIPTION_PATTERNS, n*[description], n*[re.IGNORECASE])):
-                    raise e(description, error_code)
+                    raise e(description, error_code, data)
 
             # ... or raise generic error
-            raise TelegramError(description, error_code)
+            raise TelegramError(description, error_code, data)
 
     def getMe(self):
         r = requests.post(self._methodurl('getMe'), timeout=self._http_timeout)
@@ -301,7 +301,7 @@ class Bot(_BotBase):
 
         # `file_path` is optional in File object
         if 'file_path' not in f:
-            raise TelegramError('No file_path returned', None)
+            raise TelegramError('No `file_path` returned', None, None)
 
         try:
             r = requests.get(self._fileurl(f['file_path']), stream=True, timeout=self._http_timeout)
