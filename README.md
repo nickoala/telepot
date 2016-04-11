@@ -38,6 +38,11 @@ Currently, telepot's async version already works with Python 3.5.1.
 
 ### Recent changes
 
+**6.8 (2016-04-11)**
+
+- Added underlying response object to `BadHTTPResponse` and underlying JSON object to `TelegramError`
+- Added `TooManyRequestsError` as a subclass to `TelegramError`
+
 **6.7 (2016-04-03)**
 
 - Added a few `TelegramError` subclasses to indicate specific errors
@@ -91,9 +96,9 @@ $ easy_install --upgrade telepot  # UPGRADE
 Download manually:
 
 ```
-$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.7.zip
-$ unzip telepot-6.7.zip
-$ cd telepot-6.7
+$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.8.zip
+$ unzip telepot-6.8.zip
+$ cd telepot-6.8
 $ python setup.py install
 ```
 
