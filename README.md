@@ -1,5 +1,11 @@
 # telepot - Python framework for Telegram Bot API
 
+#### Bot API 2.0 coming soon!
+
+If everything goes well, expect **[Bot API 2.0](https://core.telegram.org/bots/2-0-intro)** support on or before **19<sup>th</sup> April, 2016**. Also expect some backward-incompatible naming changes. I am taking this opportunity to make names more consistent across telepot. Don't worry. The naming changes only involve replacing old names with new names. I will provide a migration guide once the new version is up.
+
+---
+
 #### To all Async Version Users
 I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** Keyword `async` and `await` will be used. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
 
