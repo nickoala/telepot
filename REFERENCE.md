@@ -543,14 +543,7 @@ Thanks to **[Tornado](http://www.tornadoweb.org/)** for inspiration.
 
 **flavor(msg)**
 
-Returns the flavor of a message:
-
-- a chat message is `chat`
-- a callback query is `callback_query`
-- an inline query is `inline_query`
-- a chosen inline result is `chosen_inline_result`
-
-If the bot can receive inline queries and/or chosen inline results, you should always check the flavor before further processing. See `glance()` below for an example.
+Returns the flavor of a message, one of `chat`, `callback_query`, `inline_query`, `chosen_inline_result`.
 
 **glance(msg, flavor='chat', long=False)**
 
