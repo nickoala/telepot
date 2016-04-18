@@ -18,20 +18,20 @@ This separation makes it clear where to look for information. I don't believe te
 
 I am also taking this opportunity to reverse some not-so-good decisions. They are not huge changes, but I apologise for any inconvenience. Without further ado, here are what you need to do to move to telepot 7.0:
 
-1. Flavor `normal` becomes `chat`
-    What to do: Search for the string `normal`, then replace with the string `chat`
+1. Flavor `normal` becomes `chat`  
+    What to do :scream: : Search for the string `normal`, then replace with the string `chat`
 
-2. Method `notifyOnMessage` becomes `message_loop`
-    What to do: Search for the method `notifyOnMessage`, then change the method name to `message_loop`
+2. Method `notifyOnMessage` becomes `message_loop`  
+    :scream: What to do: Search for the method `notifyOnMessage`, then change the method name to `message_loop`
 
-3. Method `messageLoop` becomes `message_loop`
-    What to do: Search for the method `messageLoop`, then change the method name to `message_loop`
+3. Method `messageLoop` becomes `message_loop`  
+    What to do :scream: : Search for the method `messageLoop`, then change the method name to `message_loop`
 
-4. Method `downloadFile` becomes `download_file`
-    What to do: Search for the method `downloadFile`, then change the method name to `download_file`
+4. Method `downloadFile` becomes `download_file`  
+    :scream: What to do: Search for the method `downloadFile`, then change the method name to `download_file`
 
-5. Function `telepot.namedtuple.namedtuple` was removed. Create namedtuples using their constructors directly, by unpacking a dict into keyword arguments.
-    What to do: Where you did this before:
+5. Function `telepot.namedtuple.namedtuple` was removed. Create namedtuples using their constructors directly, by unpacking a dict into keyword arguments.  
+    What to do :scream: : Where you did this before:
 
     ```python
     import telepot.namedtuple
@@ -47,14 +47,14 @@ I am also taking this opportunity to reverse some not-so-good decisions. They ar
     obj = telepot.namedtuple.Message(**msg)
     ```
 
-6. Function `telepot.glance2` was removed. Use `telepot.glance`.
-    What to do: Search for the function `glance2`, then change the function name to `glance`
+6. Function `telepot.glance2` was removed. Use `telepot.glance`.  
+    :scream: What to do: Search for the function `glance2`, then change the function name to `glance`
 
-7. Content type `new_chat_participant` becomes `new_chat_member`
-    What to do: Search for the string `new_chat_participant`, then replace with the string `new_chat_member`
+7. Content type `new_chat_participant` becomes `new_chat_member`  
+    What to do :scream: : Search for the string `new_chat_participant`, then replace with the string `new_chat_member`
 
-8. Content type `left_chat_participant` becomes `left_chat_member`
-    What to do: Search for the string `left_chat_participant`, then replace with the string `left_chat_member`
+8. Content type `left_chat_participant` becomes `left_chat_member`  
+    :scream: What to do: Search for the string `left_chat_participant`, then replace with the string `left_chat_member`
 
 Note: (7) and (8) are actually dictated by Bot API 2.0, not telepot.
 
