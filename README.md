@@ -1231,6 +1231,9 @@ The bot works like this:
     - `b` - to see a button above the inline results to switch back to a private chat with the bot
 - Play around with the bot for an afternoon ...
 
+**[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/skeleton_route.py)**   
+**[Async version »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_route.py)**  
+
 <a id="examples-indoor"></a>
 #### Indoor climate monitor
 
