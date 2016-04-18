@@ -23,4 +23,4 @@ TOKEN = sys.argv[1]  # get token from command-line
 bot = telepot.DelegatorBot(TOKEN, [
     (per_chat_id(), create_open(MessageCounter, timeout=10)),
 ])
-bot.notifyOnMessage(run_forever=True)
+bot.message_loop(run_forever=True)

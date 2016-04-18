@@ -36,7 +36,7 @@ update_queue = Queue()  # channel between `app` and `bot`
 bot = telepot.DelegatorBot(TOKEN, [
     (per_chat_id(), create_open(MessageCounter, timeout=10)),
 ])
-bot.notifyOnMessage(source=update_queue)  # take updates from queue
+bot.message_loop(source=update_queue)  # take updates from queue
 
 @app.route('/abc', methods=['GET', 'POST'])
 def pass_update():

@@ -149,7 +149,8 @@ class Router(telepot.helper.Router):
 class DefaultRouterMixin(object):
     def __init__(self):
         super(DefaultRouterMixin, self).__init__()
-        self._router = Router(telepot.flavor, {'normal': _delay_yell(self, 'on_chat_message'),
+        self._router = Router(telepot.flavor, {'chat': _delay_yell(self, 'on_chat_message'),
+                                               'callback_query': _delay_yell(self, 'on_callback_query'),
                                                'inline_query': _delay_yell(self, 'on_inline_query'),
                                                'chosen_inline_result': _delay_yell(self, 'on_chosen_inline_result')})
 

@@ -34,7 +34,7 @@ def equivalent(data, nt):
 
         # map `from` to `from_`
         fields = list(map(lambda k: k+'_' if k in ['from'] else k, keys))
-        
+
         return all(map(equivalent, [data[k] for k in keys], [getattr(nt, f) for f in fields]))
     elif type(data) is list:
         return all(map(equivalent, data, nt))
@@ -45,11 +45,8 @@ def examine(result, type):
     try:
         print 'Examining %s ......' % type
 
-        nt = telepot.namedtuple.namedtuple(result, type)
+        nt = type(**result)
         assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
-
-        if type == 'Message':
-            print 'Message glance: %s' % str(telepot.glance(result, long=True))
 
         pprint.pprint(result)
         pprint.pprint(nt)
@@ -63,15 +60,15 @@ def examine(result, type):
 expected_content_type = None
 content_type_iterator = iter([
     'text', 'voice', 'sticker', 'photo', 'audio' ,'document', 'video', 'contact', 'location',
-    'new_chat_participant',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo', 'left_chat_participant'
+    'new_chat_member',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo', 'left_chat_member'
 ])
 
 def see_every_content_types(msg):
     global expected_content_type, content_type_iterator
 
     flavor = telepot.flavor(msg)
-    
-    if flavor == 'normal':
+
+    if flavor == 'chat':
         content_type, chat_type, chat_id = telepot.glance(msg)
         from_id = msg['from']['id']
 
@@ -79,7 +76,7 @@ def see_every_content_types(msg):
             print 'Unauthorized user:', chat_id, from_id
             return
 
-        examine(msg, 'Message')
+        examine(msg, telepot.namedtuple.Message)
         try:
             if content_type == expected_content_type:
                 expected_content_type = content_type_iterator.next()
@@ -102,4 +99,4 @@ bot = telepot.Bot(TOKEN)
 expected_content_type = content_type_iterator.next()
 bot.sendMessage(USER_ID, 'Please give me a %s.' % expected_content_type)
 
-bot.notifyOnMessage(see_every_content_types, run_forever=True)
+bot.message_loop(see_every_content_types, run_forever=True)

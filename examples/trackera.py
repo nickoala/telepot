@@ -14,7 +14,7 @@ class UserTracker(telepot.async.helper.UserHandler):
         super(UserTracker, self).__init__(seed_tuple, timeout)
 
         # keep track of how many messages of each flavor
-        self._counts = {'normal': 0,
+        self._counts = {'chat': 0,
                         'inline_query': 0,
                         'chosen_inline_result': 0}
 
@@ -25,9 +25,9 @@ class UserTracker(telepot.async.helper.UserHandler):
         self._counts[flavor] += 1
 
         # Display message counts separated by flavors
-        print(self.id, ':', 
-              flavor, '+1', ':', 
-              ', '.join([str(self._counts[f]) for f in ['normal', 'inline_query', 'chosen_inline_result']]))
+        print(self.id, ':',
+              flavor, '+1', ':',
+              ', '.join([str(self._counts[f]) for f in ['chat', 'inline_query', 'chosen_inline_result']]))
 
         # Have to answer inline query to receive chosen result
         if flavor == 'inline_query':
@@ -49,7 +49,7 @@ bot = telepot.async.DelegatorBot(TOKEN, [
 ])
 loop = asyncio.get_event_loop()
 
-loop.create_task(bot.messageLoop())
+loop.create_task(bot.message_loop())
 print('Listening ...')
 
 loop.run_forever()

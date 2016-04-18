@@ -27,7 +27,7 @@ key_id_map = { 'ghijk' : 123 }
 
 def handle(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
-    print 'Normal Message:', content_type, chat_type, chat_id
+    print 'Chat Message:', content_type, chat_type, chat_id
 
     if content_type == 'text':
         text = msg['text']
@@ -57,7 +57,7 @@ app = Flask(__name__)
 bot = telepot.Bot(TOKEN)
 update_queue = Queue()  # channel between `app` and `bot`
 
-bot.notifyOnMessage(handle, source=update_queue)  # take updates from queue
+bot.message_loop(handle, source=update_queue)  # take updates from queue
 
 @app.route('/link', methods=['GET', 'POST'])
 def display_link():

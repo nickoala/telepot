@@ -1,4 +1,8 @@
-# telepot 6.8 reference
+# telepot 7.0 reference
+
+#### 7.0 introduces some backward-incompatible naming changes. See [Migration Guide](https://github.com/nickoala/telepot/blob/master/migration-7-0.md) for details.
+
+---
 
 #### To all Async Version Users
 I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** Keyword `async` and `await` will be used. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
@@ -17,12 +21,13 @@ Currently, telepot's async version already works with Python 3.5.1.
 
 **[telepot.namedtuple](#telepot-namedtuple)**
 - [Convert dictionary to namedtuple](#telepot-namedtuple-convert)
-- [Use namedtuple constructors](#telepot-namedtuple-construct)
+- [Create namedtuples from scratch](#telepot-namedtuple-construct)
 
 **[telepot.helper](#telepot-helper)**
 - [Microphone](#telepot-helper-Microphone)
 - [Listener](#telepot-helper-Listener)
 - [Sender](#telepot-helper-Sender)
+- [Administrator](#telepot-helper-Administrator)
 - [Answerer](#telepot-helper-Answerer)
 - [Router](#telepot-helper-Router)
 - [DefaultRouterMixin](#telepot-helper-DefaultRouterMixin)
@@ -54,10 +59,6 @@ Currently, telepot's async version already works with Python 3.5.1.
 - [TelepotException](#telepot-exception-TelepotException)
 - [BadHTTPResponse](#telepot-exception-BadHTTPResponse)
 - [TelegramError](#telepot-exception-TelegramError)
-- [UnauthorizedError](#telepot-exception-UnauthorizedError)
-- [BotWasKickedError](#telepot-exception-BotWasKickedError)
-- [BotWasBlockedError](#telepot-exception-BotWasBlockedError)
-- [TooManyRequestsError](#telepot-exception-TooManyRequestsError)
 
 **[telepot.async](#telepot-async)** (Python 3.4.2 or newer)
 - [Bot](#telepot-async-Bot)
@@ -102,7 +103,7 @@ Currently, telepot's async version already works with Python 3.5.1.
 
 This class is mostly a wrapper around Telegram Bot API methods, and is the most ancient part of telepot.
 
-Aside from `downloadFile()` and `notifyOnMessage()`, all methods are straight mappings from **[Telegram Bot API](https://core.telegram.org/bots/api)**. No point to duplicate all the details here. I only give brief descriptions below, and encourage you to visit the underlying API's documentations. Full power of the Bot API can be exploited only by understanding the API itself.
+Most methods are straight mappings from **[Telegram Bot API](https://core.telegram.org/bots/api)**. No point to duplicate all the details here. I only give brief descriptions below, and encourage you to visit the underlying API's documentations. Full power of the Bot API can be exploited only by understanding the API itself.
 
 **Bot(token)**
 
@@ -312,6 +313,14 @@ bot.sendLocation(chat_id, 49.25, -123.1)   # Vancouver
 bot.sendLocation(chat_id, -37.82, 144.97)  # Melbourne
 ```
 
+**sendVenue(chat_id, latitude, longitude, title, address, foursquare_id=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
+
+See: https://core.telegram.org/bots/api#sendvenue
+
+**sendContact(chat_id, phone_number, first_name, last_name=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
+
+See: https://core.telegram.org/bots/api#sendcontact
+
 **sendChatAction(chat_id, action)**
 
 Tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status).
@@ -328,9 +337,54 @@ See: https://core.telegram.org/bots/api#getuserprofilephotos
 
 **getFile(file_id)**
 
-Get a [File](https://core.telegram.org/bots/api#file) object, usually as a prelude to downloading a file. If you just want to download a file, call `downloadFile()` instead.
+Get a [File](https://core.telegram.org/bots/api#file) object, usually as a prelude to downloading a file. If you just want to download a file, call `download_file()` instead.
 
 See: https://core.telegram.org/bots/api#getfile
+
+**kickChatMember(chat_id, user_id)**
+
+See: https://core.telegram.org/bots/api#kickchatmember
+
+**unbanChatMember(chat_id, user_id)**
+
+See: https://core.telegram.org/bots/api#unbanchatmember
+
+**answerCallbackQuery(callback_query_id, text=None, show_alert=None)**
+
+See: https://core.telegram.org/bots/api#answercallbackquery
+
+**editMessageText(msgid_form, text, parse_mode=None, disable_web_page_preview=None, reply_markup=None)**
+
+**msgid_form** can be:
+- a tuple of *(chat_id, message_id)*
+- a tuple of *(inline_message_id)*
+- a single value - *inline_message_id*
+
+See: https://core.telegram.org/bots/api#editmessagetext
+
+**editMessageCaption(msgid_form, caption=None, reply_markup=None)**
+
+**msgid_form** can be:
+- a tuple of *(chat_id, message_id)*
+- a tuple of *(inline_message_id)*
+- a single value - *inline_message_id*
+
+See: https://core.telegram.org/bots/api#editmessagecaption
+
+**editMessageReplyMarkup(msgid_form, reply_markup=None)**
+
+**msgid_form** can be:
+- a tuple of *(chat_id, message_id)*
+- a tuple of *(inline_message_id)*
+- a single value - *inline_message_id*
+
+See: https://core.telegram.org/bots/api#editmessagereplymarkup
+
+**answerInlineQuery(inline_query_id, results, cache_time=None, is_personal=None, next_offset=None)**
+
+Send answers to an inline query. `results` is a list of [InlineQueryResult](https://core.telegram.org/bots/api#inlinequeryresult).
+
+See: https://core.telegram.org/bots/api#answerinlinequery
 
 **getUpdates(offset=None, limit=None, timeout=None)**
 
@@ -356,55 +410,25 @@ bot.setWebhook('https://www.domain.com/webhook', open('domain.cert', 'rb'))
 bot.setWebhook()
 ```
 
-**downloadFile(file_id, dest)**
+**download_file(file_id, dest)**
 
 Download a file. `dest` can be a path (string) or a Python file object.
 
 Examples:
 ```python
-bot.downloadFile('ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJ', 'save/to/path')
+bot.download_file('ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJ', 'save/to/path')
 
 # If you open the file yourself, you are responsible for closing it.
 with open('save/to/path', 'wb') as f:
-    bot.downloadFile('ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJ', f)
+    bot.download_file('ABcdEfGhijkLm_NopQRstuvxyZabcdEFgHIJ', f)
 ```
 
-**answerInlineQuery(inline_query_id, results, cache_time=None, is_personal=None, next_offset=None)**
-
-Send answers to an inline query. `results` is a list of [InlineQueryResult](https://core.telegram.org/bots/api#inlinequeryresult). As is the custom in telepot, you may construct those objects as **dictionaries**. A potentially easier alternative is to use the namedtuple classes provided by `telepot.namedtuple` module.
-
-See: https://core.telegram.org/bots/api#answerinlinequery
-
-Examples:
-
-```python
-from telepot.namedtuple import InlineQueryResultArticle
-
-articles = [{'type': 'article',
-                'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'},
-            InlineQueryResultArticle(
-                id='xyz', title='ZZZZZ', message_text='Good night')]
-
-bot.answerInlineQuery(query_id, articles)
-```
-
-```python
-from telepot.namedtuple import InlineQueryResultPhoto
-
-photos = [{'type': 'photo',
-              'id': '123', 'photo_url': '...', 'thumb_url': '...'},
-          InlineQueryResultPhoto(
-              id='999', photo_url='...', thumb_url='...')]
-
-bot.answerInlineQuery(query_id, photos)
-```
-
-**notifyOnMessage(callback=None, relax=0.1, timeout=20, source=None, ordered=True, maxhold=3, run_forever=False)**
+**message_loop(callback=None, relax=0.1, timeout=20, source=None, ordered=True, maxhold=3, run_forever=False)**
 
 Spawn a thread to constantly check for updates. Apply `callback` to every message received. `callback` may be:
 
 - a *function* that takes one argument, the message.
-- a *dict* in the form: `{'normal': f1, 'inline_query': f2, 'chosen_inline_result': f3}`, where `f1`, `f2`, `f3` are functions that take one argument, the message. Which function gets called is determined by the flavor of a message. You don't have to include all flavors in the dict, only the ones you need.
+- a *dict* in the form: `{'chat': f1, 'callback_query': f2, 'inline_query': f3, 'chosen_inline_result': f4}`, where `f1`, `f2`, `f3`, `f4` are functions that take one argument, the message. Which function gets called is determined by the flavor of a message. You don't have to include all flavors in the dict, only the ones you need.
 - `None` (default), in which case you have to define some instance methods for the bot to be used as callbacks. You have two options:
     - implement the bot's `handle(msg)` method.
     - implement one or more of `on_chat_message(msg)`, `on_inline_query(msg)`, and `on_chosen_inline_result(msg)`. Which gets called is determined by the flavor of a message.
@@ -484,9 +508,7 @@ Parameters:
 
 All *seed_calculating_functions* are evaluated in order. One message may cause multiple delegates to be spawned.
 
-This class implements the above logic in its `handle` method. Once you supply a list of *(seed_calculating_function, delegate_producing_function)* pairs to the constructor and invoke `notifyOnMessage()`, the above logic will be executed for every message received.
-
-**Even if you use a webhook** and don't need `notifyOnMessage()`, you may always call `bot.handle(msg)` directly to take advantage of the above logic, if you find it useful.
+This class implements the above logic in its `handle` method. Once you supply a list of *(seed_calculating_function, delegate_producing_function)* pairs to the constructor and invoke `message_loop()`, the above logic will be executed for every message received.
 
 The power of delegation is most easily exploited when used in combination with the `telepot.delegate` module (which contains a number of ready-made *seed_calculating_functions* and *delegate_producing_functions*) and the `ChatHandler` class (which provides a connection-like interface to deal with individual chats).
 
@@ -511,7 +533,7 @@ TOKEN = sys.argv[1]  # get token from command-line
 bot = telepot.DelegatorBot(TOKEN, [
     (per_chat_id(), create_open(MessageCounter, timeout=10)),
 ])
-bot.notifyOnMessage(run_forever=True)
+bot.message_loop(run_forever=True)
 ```
 
 Thanks to **[Tornado](http://www.tornadoweb.org/)** for inspiration.
@@ -523,25 +545,28 @@ Thanks to **[Tornado](http://www.tornadoweb.org/)** for inspiration.
 
 Returns the flavor of a message:
 
-- a normal message is `normal`
+- a chat message is `chat`
+- a callback query is `callback_query`
 - an inline query is `inline_query`
 - a chosen inline result is `chosen_inline_result`
 
 If the bot can receive inline queries and/or chosen inline results, you should always check the flavor before further processing. See `glance()` below for an example.
 
-**glance(msg, flavor='normal', long=False)**
-
-*This function has an alias, `glance2()`, for backward compatibility. Developers are encouraged to use `glance()` from now on.*
+**glance(msg, flavor='chat', long=False)**
 
 Extracts "headline" information about a message.
 
-When `flavor` is `normal`:
+When `flavor` is `chat`:
 - returns a tuple of *(content_type, chat_type, msg['chat']['id'])*.
 - if `long` is `True`, returns a tuple of *(content_type, chat_type, msg['chat']['id'], msg['date'], msg['message_id'])*.
 
-*content_type* can be one of: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, `group_chat_created`, `supergroup_chat_created`, `migrate_to_chat_id`, `migrate_from_chat_id`, or `channel_chat_created`.
+*content_type* can be one of: `text`, `audio`, `document`, `photo`, `sticker`, `video`, `voice`, `contact`, `location`, `venue`, `new_chat_member`, `left_chat_member`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, `group_chat_created`, `supergroup_chat_created`, `channel_chat_created`, `migrate_to_chat_id`, `migrate_from_chat_id`, `pinned_message`.
 
 *chat_type* can be one of: `private`, `group`, `supergroup`, or `channel`.
+
+When `flavor` is `callback_query`:
+- returns a tuple of *(msg['id'], msg['from']['id'], msg['data'])*.
+- parameter `long` has no effect in this case
 
 When `flavor` is `inline_query`:
 - returns a tuple of *(msg['id'], msg['from']['id'], msg['query'])*.
@@ -560,11 +585,15 @@ import telepot
 
 flavor = telepot.flavor(msg)
 
-if flavor == 'message':
+if flavor == 'chat':
     content_type, chat_type, chat_id = telepot.glance(msg)
     content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance(msg, long=True)
 
     # Do you stuff according to `content_type`
+
+elif flavor == 'callback_query':
+    query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
+    print 'Callback query:', query_id, from_id, query_data
 
 elif flavor == 'inline_query':
     query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
@@ -586,7 +615,7 @@ A combination of `flavor()` and `glance()`, it returns a tuple of two elements: 
 
 Returns a *function* that takes one argument (a message), and depending on the flavor, routes that message to another function according to the *routing_table*.
 
-The *routing_table* is a dict of the form: `{'normal': f1, 'inline_query': f2, 'chosen_inline_result': f3}`, where `f1`, `f2`, `f3` are functions that take one argument (the message). You don't have to include all flavors in the dict, only the ones you need.
+The *routing_table* is a dict of the form: `{'chat': f1, 'callback_query': f2, 'inline_query': f3, 'chosen_inline_result': f4}`, where `f1`, `f2`, `f3`, `f4` are functions that take one argument (the message). You don't have to include all flavors in the dict, only the ones you need.
 
 <a id="telepot-namedtuple"></a>
 ## `telepot.namedtuple` module
@@ -620,82 +649,98 @@ The *routing_table* is a dict of the form: `{'normal': f1, 'inline_query': f2, '
 The reasons for having namedtuple classes are twofold:
 
 - Under some situations, you may want an object with a complete set of fields, including those whose values are `None`. A dictionary, as translated from Bot API's response, would have those `None` fields absent. By converting such a dictionary to a namedtuple, all fields are guaranteed to be present, even if their values are `None`.
-- While you may construct `ReplyKeyboardMarkup`, `ReplyKeyboardHide`, `ForceReply`, and `InlineQueryResultZZZ` using dictionaries, it may be easier to use the namedtuple constructors.
+- While you may construct `ReplyKeyboardMarkup`, `ReplyKeyboardHide`, `ForceReply`, and `InlineQueryResult*` using dictionaries, it may be easier to use the namedtuple constructors.
 
 *Beware of a peculiarity.* Namedtuple field names cannot be Python keywords, but the [Message](https://core.telegram.org/bots/api#message) object and a few others have a `from` field, which is a Python keyword. I choose to append an underscore to it. That is, the dictionary value `dict['from']` becomes `namedtuple.from_` when converted to a namedtuple.
 
 <a id="telepot-namedtuple-convert"></a>
 ### Convert dictionary to namedtuple
 
-Suppose you have received a message in the form a dictionary, here are two ways to obtain its namedtuple:
+Suppose you have received a message in the form a dictionary, here is how to obtain its namedtuple:
 
 ```python
-from telepot.namedtuple import namedtuple, Message
+from telepot.namedtuple import Message
 
-# Unpack dict, give it to constructor
-ntuple1 = Message(**msg)
-
-# Use namedtuple() function, give it the class name
-ntuple2 = namedtuple(msg, 'Message')
-
-# ntuple1 == ntuple2
+# Unpack dict into keyword arguments
+ntuple = Message(**msg)
 
 # `from` becomes `from_` due to keyword collision
-print ntuple1.from_.id  # == msg['from']['id']
+print ntuple.from_.id  # == msg['from']['id']
 
 # other field names unchanged
-print ntuple2.chat.id   # == msg['chat']['id']
+print ntuple.chat.id   # == msg['chat']['id']
 ```
 
 You may also choose to convert only part of the message:
 
 ```python
-from telepot.namedtuple import namedtuple, User, Chat
+from telepot.namedtuple import User, Chat
 
-ntuple3 = User(**msg['from'])              # these two lines
-ntuple4 = namedtuple(msg['from'], 'User')  # are equivalent
-
-ntuple5 = Chat(**msg['chat'])              # these two lines
-ntuple6 = namedtuple(msg['chat'], 'Chat')  # are equivalent
+user = User(**msg['from'])
+chat = Chat(**msg['chat'])
 ```
 
-**namedtuple(dict, type)**
-
-Convert a dictionary to a namedtuple of a given object type.
-
-**type** can be one of the Bot API object types listed above.
-
 <a id="telepot-namedtuple-construct"></a>
-### Use namedtuple constructors
+### Create namedtuples from scratch
 
-When creating reply markup (for `sendZZZ()`) or inline query results (for `answerInlineQuery()`), telepot's custom is to use dictionaries. An alternative is to use namedtuples.
+To create custom keyboards, inline keyboards, or inline query results, you may use the appropriate namedtuples or just a dict with the appropriate structures.
 
 Examples:
 
 ```python
-from telepot.namedtuple import ReplyKeyboardMarkup, ReplyKeyboardHide, ForceReply
+from telepot.namedtuple import ReplyKeyboardMarkup, KeyboardButton
 
-bot.sendMessage(chat_id, 'Show keyboard', reply_markup=ReplyKeyboardMarkup(keyboard=[['Yes', 'No']]))
-bot.sendMessage(chat_id, 'Hide keyboard', reply_markup=ReplyKeyboardHide())
-bot.sendMessage(chat_id, 'Force reply', reply_markup=ForceReply())
+markup = ReplyKeyboardMarkup(keyboard=[
+             ['Plain text', KeyboardButton(text='Text only')],
+             [dict(text='Phone', request_contact=True), KeyboardButton(text='Location', request_location=True)],
+         ])
+bot.sendMessage(chat_id, 'Custom keyboard with various buttons', reply_markup=markup)
 ```
 ```python
-from telepot.namedtuple import InlineQueryResultArticle
+from telepot.namedtuple import ReplyKeyboardHide
 
-articles = [{'type': 'article',
-                'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'},
-            InlineQueryResultArticle(
-                id='xyz', title='ZZZZZ', message_text='Good night')]
+markup = ReplyKeyboardHide()
+bot.sendMessage(chat_id, 'Hide custom keyboard', reply_markup=markup)
+```
+```python
+from telepot.namedtuple import ForceReply
+
+markup = ForceReply()
+bot.sendMessage(chat_id, 'Force reply', reply_markup=markup)
+```
+```python
+from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
+
+markup = InlineKeyboardMarkup(inline_keyboard=[
+             [dict(text='Telegram URL', url='https://core.telegram.org/')],
+             [InlineKeyboardButton(text='Callback - show notification', callback_data='notification')],
+             [dict(text='Callback - show alert', callback_data='alert')],
+             [InlineKeyboardButton(text='Callback - edit message', callback_data='edit')],
+             [dict(text='Switch to using bot inline', switch_inline_query='initial query')],
+         ])
+bot.sendMessage(chat_id, 'Inline keyboard with various buttons', reply_markup=markup)
+```
+```python
+from telepot.namedtuple import InlineQueryResultArticle, InputTextMessageContent
+
+articles = [InlineQueryResultArticle(
+                 id='abcde', title='Telegram', 
+                 input_message_content=InputTextMessageContent(message_text='Telegram is a messaging app')),
+            dict(type='article',
+                 id='fghij', title='Google', 
+                 input_message_content=dict(message_text='Google is a search engine'))]
 
 bot.answerInlineQuery(query_id, articles)
 ```
 ```python
 from telepot.namedtuple import InlineQueryResultPhoto
 
-photos = [{'type': 'photo',
-              'id': '123', 'photo_url': '...', 'thumb_url': '...'},
-          InlineQueryResultPhoto(
-              id='999', photo_url='...', thumb_url='...')]
+photo1_url = 'https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf'
+photo2_url = 'https://www.telegram.org/img/t_logo.png'
+photos = [InlineQueryResultPhoto(
+              id='12345', photo_url=photo1_url, thumb_url=photo1_url),
+          dict(type='photo',
+              id='67890', photo_url=photo2_url, thumb_url=photo2_url)]
 
 bot.answerInlineQuery(query_id, photos)
 ```
@@ -863,7 +908,18 @@ Parameters:
 
 **sendLocation(latitude, longitude, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
 
+**sendVenue(latitude, longitude, title, address, foursquare_id=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
+
+**sendContact(phone_number, first_name, last_name=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
+
 **sendChatAction(action)**
+
+<a id="telepot-helper-Administrator"></a>
+### `telepot.helper.Administrator`
+
+**kickChatMember(user_id)**
+
+**unbanChatMember(user_id)**
 
 <a id="telepot-helper-Answerer"></a>
 ### `telepot.helper.Answerer`
@@ -903,7 +959,7 @@ Parameters:
     - a tuple: the first element being the key, the rest being *extra arguments* to be passed along
 - **routing_table** - a dict of the form: `{key1: f1, key2: f2, ..., None: fd}`, where `f1`, `f2` ... are functions that take a message as the first argument, followed by *extra arguments* returned by `key_function`. The dict may optionally contain a `None` key that leads to a *default* function, `fd`. If `key_function` returns a key that does not match any in the dict, the default function is used.
 
-In the majority of cases, we would like to route messages by flavor. As a result, `key_function` often is `telepot.flavor`, and `routing_table` often looks like `{'normal': f1, 'inline_query': f2, 'chosen_inline_result': f3}`. Bare in mind this routing mechanism is more general than that.
+In the majority of cases, we would like to route messages by flavor. As a result, `key_function` often is `telepot.flavor`, and `routing_table` often looks like `{'chat': f1, 'callback_query': f2, 'inline_query': f3, 'chosen_inline_result': f4}`. Bare in mind this routing mechanism is more general than that.
 
 **set_key_function(fn)**
 
@@ -916,7 +972,7 @@ Obtain a key by applying *key function* to `msg`. Use the key to find a function
 <a id="telepot-helper-DefaultRouterMixin"></a>
 ### `telepot.helper.DefaultRouterMixin`
 
-The class introduces a `Router` member into subclasses. This `Router` uses `telepot.flavor` as the key function, and has a routing table similar to: `{'normal': self.on_chat_message, 'inline_query': self.on_inline_query, 'chosen_inline_result': self.on_chosen_inline_result}`. But you don't have to implement all of those `self.on_ZZZ()` method, only implement the ones you need.
+The class introduces a `Router` member into subclasses. This `Router` uses `telepot.flavor` as the key function, and has a routing table similar to: `{'chat': self.on_chat_message, 'callback_query': self.on_callback_query, 'inline_query': self.on_inline_query, 'chosen_inline_result': self.on_chosen_inline_result}`. But you don't have to implement all of those `self.on_***()` method, only implement the ones you need.
 
 *Subclass:* [`telepot.helper.Monitor`](#telepot-helper-Monitor) [`telepot.helper.ChatHandler`](#telepot-helper-ChatHandler) [`telepot.helper.UserHandler`](#telepot-helper-UserHandler) 
 
@@ -958,6 +1014,7 @@ Parameters:
 This object exposes these properties:
 - **chat_id**
 - **sender** - a `Sender` object aimed at the target chat
+- **administrator** - a `Administrator` object aimed at the target chat
 
 <a id="telepot-helper-UserContext"></a>
 ### `telepot.helper.UserContext`
@@ -1018,7 +1075,7 @@ bot = telepot.DelegatorBot(TOKEN, [
     # Seed is always the same, meaning only one MessagePrinter is ever spawned.
     (lambda msg: 1, create_open(MessagePrinter)),
 ])
-bot.notifyOnMessage(run_forever=True)
+bot.message_loop(run_forever=True)
 ```
 
 **open(initial_msg, seed)**
@@ -1077,7 +1134,7 @@ TOKEN = sys.argv[1]  # get token from command-line
 bot = telepot.DelegatorBot(TOKEN, [
     (per_chat_id(), create_open(MessageCounter, timeout=10)),
 ])
-bot.notifyOnMessage(run_forever=True)
+bot.message_loop(run_forever=True)
 ```
 
 **open(initial_msg, seed)**
@@ -1350,7 +1407,15 @@ This is how telepot finds out if an error "matches" a subclass:
 
 2. If an error's `description` matches any of a subclass's `DESCRIPTION_PATTERNS`, a match occurs.
 
-Telepot provides these subclasses: [`UnauthorizedError`](#telepot-exception-UnauthorizedError), [`BotWasKickedError`](#telepot-exception-BotWasKickedError), [`BotWasBlockedError`](#telepot-exception-BotWasBlockedError), and [`TooManyRequestsError`](#telepot-exception-TooManyRequestsError). Users may define his own if he wishes to isolate more errors. For example:
+Telepot has these built-in subclasses (and their `DESCRIPTION_PATTERNS`):
+
+- `UnauthorizedError` - `['unauthorized']`
+- `BotWasKickedError` - `['bot.*kicked']`
+- `BotWasBlockedError` - `['bot.*blocked']`
+- `TooManyRequestsError` - `['too *many *requests']`
+- `MigratedToSupergroupChatError` - `['migrated.*supergroup *chat']`
+
+Users may define his own if he wishes to isolate more errors. For example:
 
 ```python
 class ParseMessageTextError(telepot.exception.TelegramError):
@@ -1361,7 +1426,6 @@ try:
 except ParseMessageTextError as e:
     print e
 
-
 class FileTypeMismatchError(telepot.exception.TelegramError):
     DESCRIPTION_PATTERNS = ['file.*type.*mismatch', 'type.*file.*mismatch']
 
@@ -1370,34 +1434,6 @@ try:
 except FileTypeMismatchError as e:
     print e
 ```
-
-<a id="telepot-exception-UnauthorizedError"></a>
-### `UnauthorizedError`
-
-*Superclass:* [`TelegramError`](#telepot-exception-TelegramError)  
-
-*DESCRIPTION_PATTERNS:* [`unauthorized`]
-
-<a id="telepot-exception-BotWasKickedError"></a>
-### `BotWasKickedError`
-
-*Superclass:* [`TelegramError`](#telepot-exception-TelegramError)  
-
-*DESCRIPTION_PATTERNS:* [`bot.*kicked`]
-
-<a id="telepot-exception-BotWasBlockedError"></a>
-### `BotWasBlockedError`
-
-*Superclass:* [`TelegramError`](#telepot-exception-TelegramError)  
-
-*DESCRIPTION_PATTERNS:* [`bot.*blocked`]
-
-<a id="telepot-exception-TooManyRequestsError"></a>
-### `TooManyRequestsError`
-
-*Superclass:* [`TelegramError`](#telepot-exception-TelegramError)  
-
-*DESCRIPTION_PATTERNS:* [`too *many *requests`]
 
 <a id="telepot-async"></a>
 ## `telepot.async` module (Python 3.4.2 or newer)
@@ -1507,6 +1543,14 @@ Send point on the map.
 
 See: https://core.telegram.org/bots/api#sendlocation
 
+*coroutine* **sendVenue(chat_id, latitude, longitude, title, address, foursquare_id=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
+
+See: https://core.telegram.org/bots/api#sendvenue
+
+*coroutine* **sendContact(chat_id, phone_number, first_name, last_name=None, disable_notification=None, reply_to_message_id=None, reply_markup=None)**
+
+See: https://core.telegram.org/bots/api#sendcontact
+
 *coroutine* **sendChatAction(chat_id, action)**
 
 Tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status).
@@ -1521,9 +1565,54 @@ See: https://core.telegram.org/bots/api#getuserprofilephotos
 
 *coroutine* **getFile(file_id)**
 
-Get a [File](https://core.telegram.org/bots/api#file) object, usually as a prelude to downloading a file. If you just want to download a file, call `downloadFile()` instead.
+Get a [File](https://core.telegram.org/bots/api#file) object, usually as a prelude to downloading a file. If you just want to download a file, call `download_file()` instead.
 
 See: https://core.telegram.org/bots/api#getfile
+
+*coroutine* **kickChatMember(chat_id, user_id)**
+
+See: https://core.telegram.org/bots/api#kickchatmember
+
+*coroutine* **unbanChatMember(chat_id, user_id)**
+
+See: https://core.telegram.org/bots/api#unbanchatmember
+
+*coroutine* **answerCallbackQuery(callback_query_id, text=None, show_alert=None)**
+
+See: https://core.telegram.org/bots/api#answercallbackquery
+
+*coroutine* **editMessageText(msgid_form, text, parse_mode=None, disable_web_page_preview=None, reply_markup=None)**
+
+**msgid_form** can be:
+- a tuple of *(chat_id, message_id)*
+- a tuple of *(inline_message_id)*
+- a single value - *inline_message_id*
+
+See: https://core.telegram.org/bots/api#editmessagetext
+
+*coroutine* **editMessageCaption(msgid_form, caption=None, reply_markup=None)**
+
+**msgid_form** can be:
+- a tuple of *(chat_id, message_id)*
+- a tuple of *(inline_message_id)*
+- a single value - *inline_message_id*
+
+See: https://core.telegram.org/bots/api#editmessagecaption
+
+*coroutine* **editMessageReplyMarkup(msgid_form, reply_markup=None)**
+
+**msgid_form** can be:
+- a tuple of *(chat_id, message_id)*
+- a tuple of *(inline_message_id)*
+- a single value - *inline_message_id*
+
+See: https://core.telegram.org/bots/api#editmessagereplymarkup
+
+*coroutine* **answerInlineQuery(inline_query_id, results, cache_time=None, is_personal=None, next_offset=None)**
+
+Send answers to an inline query. `results` is a list of [InlineQueryResult](https://core.telegram.org/bots/api#inlinequeryresult).
+
+See: https://core.telegram.org/bots/api#answerinlinequery
 
 *coroutine* **getUpdates(offset=None, limit=None, timeout=None)**
 
@@ -1537,23 +1626,17 @@ Specify a url and receive incoming updates via an outgoing webhook.
 
 See: https://core.telegram.org/bots/api#setwebhook
 
-*coroutine* **downloadFile(file_id, dest)**
+*coroutine* **download_file(file_id, dest)**
 
 Download a file. `dest` can be a path (string) or a Python file object.
 
-*coroutine* **answerInlineQuery(self, inline_query_id, results, cache_time=None, is_personal=None, next_offset=None)**
+*coroutine* **message_loop(handler=None, source=None, ordered=True, maxhold=3)**
 
-Send answers to an inline query. `results` is a list of [InlineQueryResult](https://core.telegram.org/bots/api#inlinequeryresult). As is the custom in telepot, you may construct those objects as **dictionaries**. A potentially easier alternative is to use the namedtuple classes provided by `telepot.namedtuple` module.
-
-See: https://core.telegram.org/bots/api#answerinlinequery
-
-*coroutine* **messageLoop(handler=None, source=None, ordered=True, maxhold=3)**
-
-Functionally equivalent to `notifyOnMessage()`, this method constantly checks for updates and applies `handler` to each message received. `handler` may be:
+Constantly checks for updates and applies `handler` to each message received. `handler` may be:
 
 - a regular *function* that takes one argument, the message. It will be called directly, like all regular functions.
 - a *coroutine* that takes one argument, the message. It will be allocated a task using `BaseEventLoop.create_task()`.
-- a *dict* in the form: `{'normal': f1, 'inline_query': f2, 'chosen_inline_result': f3}`, where `f1`, `f2`, `f3` may be regular functions or coroutines that take one argument, the message. Which gets called is determined by the flavor of a message. You don't have to include all flavors in the dict, only the ones you need.
+- a *dict* in the form: `{'chat': f1, 'callback_query': f2, 'inline_query': f3, 'chosen_inline_result': f4}`, where `f1`, `f2`, `f3`, `f4` may be regular functions or coroutines that take one argument, the message. Which gets called is determined by the flavor of a message. You don't have to include all flavors in the dict, only the ones you need.
 - `None` (default), in which case you have to define some instance methods for the bot to be used as callbacks. You have two options:
     - implement the bot's `handle(msg)` method.
     - implement one or more of `on_chat_message(msg)`, `on_inline_query(msg)`, and `on_chosen_inline_result(msg)`. Which gets called is determined by the flavor of a message.
@@ -1599,7 +1682,7 @@ TOKEN = sys.argv[1]  # get token from command-line
 bot = YourBot(TOKEN)
 loop = asyncio.get_event_loop()
 
-loop.create_task(bot.messageLoop())
+loop.create_task(bot.message_loop())
 print('Listening ...')
 
 loop.run_forever()
@@ -1625,7 +1708,7 @@ TOKEN = sys.argv[1]  # get token from command-line
 bot = telepot.async.Bot(TOKEN)
 loop = asyncio.get_event_loop()
 
-loop.create_task(bot.messageLoop(handle))
+loop.create_task(bot.message_loop(handle))
 print('Listening ...')
 
 loop.run_forever()
@@ -1682,9 +1765,7 @@ Parameters:
 
 All *seed_calculating_functions* are evaluated in order. One message may cause multiple tasks to be created.
 
-This class implements the above logic in its `handle` method. Once you supply a list of *(seed_calculating_function, coroutine_producing_function)* pairs to the constructor and invoke `messageLoop()`, the above logic will be executed for every message received.
-
-**Even if you use a webhook** and don't need `messageLoop()`, you may always call `bot.handle(msg)` directly to take advantage of the above logic, if you find it useful.
+This class implements the above logic in its `handle` method. Once you supply a list of *(seed_calculating_function, coroutine_producing_function)* pairs to the constructor and invoke `message_loop()`, the above logic will be executed for every message received.
 
 The power of delegation is most easily exploited when used in combination with the `telepot.delegate` module (which contains a number of ready-made *seed_calculating_functions*), the `telepot.async.delegate` module (which contains a number of ready-made *coroutine_producing_functions*), and the `ChatHandler` class (which provides a connection-like interface to deal with individual chats).
 
@@ -1714,7 +1795,7 @@ bot = telepot.async.DelegatorBot(TOKEN, [
 ])
 
 loop = asyncio.get_event_loop()
-loop.create_task(bot.messageLoop())
+loop.create_task(bot.message_loop())
 print('Listening ...')
 
 loop.run_forever()
@@ -1727,7 +1808,7 @@ loop.run_forever()
 
 Returns a *coroutine* that takes one argument (a message), and depending on the flavor, routes that message to another function/coroutine according to the *routing_table*.
 
-The *routing_table* is a dict of the form: `{'normal': f1, 'inline_query': f2, 'chosen_inline_result': f3}`, where `f1`, `f2`, `f3` are functions/coroutines that take one argument (the message). You don't have to include all flavors in the dict, only the ones you need.
+The *routing_table* is a dict of the form: `{'chat': f1, 'callback_query': f2, 'inline_query': f3, 'chosen_inline_result': f4}`, where `f1`, `f2`, `f3`, `f4` are functions/coroutines that take one argument (the message). You don't have to include all flavors in the dict, only the ones you need.
 
 <a id="telepot-async-helper"></a>
 ## `telepot.async.helper` module (Python 3.4.2 or newer)
@@ -1813,7 +1894,7 @@ This class is basically identical to its superclass, except that it overrides th
 <a id="telepot-async-helper-DefaultRouterMixin"></a>
 ### `telepot.async.helper.DefaultRouterMixin`
 
-The class introduces a `Router` member into subclasses. This `Router` uses `telepot.flavor` as the key function, and has a routing table similar to: `{'normal': self.on_chat_message, 'inline_query': self.on_inline_query, 'chosen_inline_result': self.on_chosen_inline_result}`. But you don't have to implement all of those `self.on_ZZZ()` method, only implement the ones you need.
+The class introduces a `Router` member into subclasses. This `Router` uses `telepot.flavor` as the key function, and has a routing table similar to: `{'chat': self.on_chat_message, 'callback_query': self.on_callback_query, 'inline_query': self.on_inline_query, 'chosen_inline_result': self.on_chosen_inline_result}`. But you don't have to implement all of those `self.on_***()` method, only implement the ones you need.
 
 *Subclass:* [`telepot.async.helper.Monitor`](#telepot-async-helper-Monitor) [`telepot.async.helper.ChatHandler`](#telepot-async-helper-ChatHandler) [`telepot.async.helper.UserHandler`](#telepot-async-helper-UserHandler) 
 

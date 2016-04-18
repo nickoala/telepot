@@ -14,7 +14,11 @@ Webhook path is '/abc' (see below), therefore:
 
 def on_chat_message(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
-    print('Normal Message:', content_type, chat_type, chat_id)
+    print('Chat Message:', content_type, chat_type, chat_id)
+
+def on_callback_query(msg):
+    query_id, from_id, data = telepot.glance(msg, flavor='callback_query')
+    print('Callback query:', query_id, from_id, data)
 
 # need `/setinline`
 @asyncio.coroutine
@@ -62,9 +66,10 @@ def init(loop):
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(init(loop))
-loop.create_task(bot.messageLoop({'normal': on_chat_message,
-                                  'inline_query': on_inline_query,
-                                  'chosen_inline_result': on_chosen_inline_result}, source=update_queue))  # take updates from queue
+loop.create_task(bot.message_loop({'chat': on_chat_message,
+                                   'callback_query': on_callback_query,
+                                   'inline_query': on_inline_query,
+                                   'chosen_inline_result': on_chosen_inline_result}, source=update_queue))  # take updates from queue
 try:
     loop.run_forever()
 except KeyboardInterrupt:

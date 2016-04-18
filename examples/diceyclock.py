@@ -27,7 +27,7 @@ def handle(msg):
         bot.sendMessage(chat_id, str(datetime.datetime.now()))
 
 bot = telepot.Bot('*** INSERT TOKEN ***')
-bot.notifyOnMessage(handle)
+bot.message_loop(handle)
 print 'I am listening ...'
 
 while 1:

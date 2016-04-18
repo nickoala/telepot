@@ -9,7 +9,7 @@ $ python2.7 pairing.py <token>
 Demonstrates pairing patterns between per_ZZZ() and handler classes.
 """
 
-# Captures only normal chat messages, to be paired with per_chat_id()
+# Captures only chat messages, to be paired with per_chat_id()
 class ChatHandlerSubclass(telepot.helper.ChatHandler):
     def __init__(self, seed_tuple, timeout):
         super(ChatHandlerSubclass, self).__init__(seed_tuple, timeout)
@@ -17,7 +17,7 @@ class ChatHandlerSubclass(telepot.helper.ChatHandler):
 
     def on_message(self, msg):
         self._count += 1
-        print '%s %d: %d: %s' % (type(self).__name__, self.id, self._count, telepot.glance(msg, flavor='normal'))
+        print '%s %d: %d: %s' % (type(self).__name__, self.id, self._count, telepot.glance(msg, flavor='chat'))
 
     def on_close(self, exception):
         print '%s %d: closed' % (type(self).__name__, self.id)
@@ -83,4 +83,4 @@ bot = telepot.DelegatorBot(TOKEN, [
 
     (per_message(), call(simple_function)),
 ])
-bot.notifyOnMessage(run_forever=True)
+bot.message_loop(run_forever=True)

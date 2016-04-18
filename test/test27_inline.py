@@ -7,7 +7,7 @@ import sys
 import traceback
 import random
 import telepot
-from telepot.namedtuple import namedtuple, InlineQueryResultArticle, InlineQueryResultPhoto, InlineQueryResultGif, InlineQueryResultVideo
+from telepot.namedtuple import InlineQuery, ChosenInlineResult, InlineQueryResultArticle, InlineQueryResultPhoto, InputTextMessageContent
 
 def equivalent(data, nt):
     if type(data) is dict:
@@ -30,11 +30,8 @@ def examine(result, type):
     try:
         print 'Examining %s ......' % type
 
-        nt = namedtuple(result, type)
+        nt = type(**result)
         assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
-
-        if type == 'Message':
-            print 'Message glance: %s' % str(telepot.glance(result, long=True))
 
         pprint.pprint(result)
         pprint.pprint(nt)
@@ -47,14 +44,28 @@ def examine(result, type):
 
 
 def on_inline_query(msg):
+    def compute():
+        articles = [InlineQueryResultArticle(
+                       id='abc', title='HK', input_message_content=InputTextMessageContent(message_text='Hong Kong'), url='https://www.google.com', hide_url=True),
+                   {'type': 'article',
+                       'id': 'def', 'title': 'SZ', 'input_message_content': {'message_text': 'Shenzhen'}, 'url': 'https://www.yahoo.com'}]
+
+        photos = [InlineQueryResultPhoto(
+                      id='123', photo_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf', thumb_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf'),
+                  {'type': 'photo',
+                      'id': '345', 'photo_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'thumb_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'caption': 'Caption', 'title': 'Title', 'input_message_content': {'message_text': 'Shenzhen'}}]
+
+        results = random.choice([articles, photos])
+        return results
+
     query_id, from_id, query = telepot.glance(msg, flavor='inline_query')
 
     if from_id != USER_ID:
         print 'Unauthorized user:', from_id
         return
 
-    examine(msg, 'InlineQuery')
-    answerer.answer(msg)
+    examine(msg, InlineQuery)
+    answerer.answer(msg, compute)
 
 
 def on_chosen_inline_result(msg):
@@ -64,34 +75,19 @@ def on_chosen_inline_result(msg):
         print 'Unauthorized user:', from_id
         return
 
-    examine(msg, 'ChosenInlineResult')
+    examine(msg, ChosenInlineResult)
 
     print 'Chosen inline query:'
     pprint.pprint(msg)
-
-
-def compute(inline_query):
-    articles = [InlineQueryResultArticle(
-                   id='abc', title='HK', message_text='Hong Kong', url='https://www.google.com', hide_url=True),
-               {'type': 'article',
-                   'id': 'def', 'title': 'SZ', 'message_text': 'Shenzhen', 'url': 'https://www.yahoo.com'}]
-
-    photos = [InlineQueryResultPhoto(
-                  id='123', photo_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf', thumb_url='https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf'),
-              {'type': 'photo',
-                  'id': '345', 'photo_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'thumb_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'caption': 'Caption', 'title': 'Title', 'message_text': 'Message Text'}]
-
-    results = random.choice([articles, photos])
-    return results
 
 
 TOKEN = sys.argv[1]
 USER_ID = long(sys.argv[2])
 
 bot = telepot.Bot(TOKEN)
-answerer = telepot.helper.Answerer(bot, compute)
+answerer = telepot.helper.Answerer(bot)
 
 bot.sendMessage(USER_ID, 'Please give me an inline query.')
 
-bot.notifyOnMessage({'inline_query': on_inline_query,
-                     'chosen_inline_result': on_chosen_inline_result}, run_forever=True)
+bot.message_loop({'inline_query': on_inline_query,
+                  'chosen_inline_result': on_chosen_inline_result}, run_forever=True)

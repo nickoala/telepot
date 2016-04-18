@@ -1,8 +1,6 @@
 # telepot - Python framework for Telegram Bot API
 
-#### Bot API 2.0 coming soon!
-
-If everything goes well, expect **[Bot API 2.0](https://core.telegram.org/bots/2-0-intro)** support on or before **19<sup>th</sup> April, 2016**. Also expect some backward-incompatible naming changes. I am taking this opportunity to make names more consistent across telepot. Don't worry. The naming changes only involve replacing old names with new names. I will provide a migration guide once the new version is up.
+#### 7.0 introduces some backward-incompatible naming changes. See [Migration Guide](https://github.com/nickoala/telepot/blob/master/migration-7-0.md) for details.
 
 ---
 
@@ -17,6 +15,8 @@ Currently, telepot's async version already works with Python 3.5.1.
 
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
+**[Custom Keyboard and Inline Keyboard](#inline-keyboard)**  
+**[Messages have Many Flavors](#message-flavors)**  
 **[Dealing with Inline Query](#inline-query)**  
 **[Class-based Message Handling](#classbased)**  
 **[Maintain Threads of Conversation](#threads-conversation)**  
@@ -30,6 +30,7 @@ Currently, telepot's async version already works with Python 3.5.1.
 **[Examples](#examples)**  
 - [Dicey Clock](#examples-dicey-clock)
 - [Skeletons](#examples-skeletons)
+- [Custom Keyboard and Inline Keyboard](#examples-inline-keyboard)
 - [Indoor climate monitor](#examples-indoor)
 - [IP Cam using Telegram as DDNS](#examples-ipcam)
 - [Emodi - an Emoji Unicode Decoder](#examples-emodi)
@@ -44,38 +45,28 @@ Currently, telepot's async version already works with Python 3.5.1.
 
 ### Recent changes
 
-**6.8 (2016-04-11)**
+**7.0 (2016-04-18)**
 
-- Added underlying response object to `BadHTTPResponse` and underlying JSON object to `TelegramError`
-- Added `TooManyRequestsError` as a subclass to `TelegramError`
-
-**6.7 (2016-04-03)**
-
-- Added a few `TelegramError` subclasses to indicate specific errors
-- Override `BadHTTPResponse`'s `__unicode__()` and `__str__()` to shorten traceback
-
-**6.6 (2016-03-20)**
-
-- Changed `Answerer` interface. Compute function is now passed to method `answer()`, not to the constructor.
-- Added parameter `disable_notification` to methods `sendZZZ()`.
-- Added function `telepot.delegate.per_application()` and `per_message()`.
-- Used `data` to pass POST parameters to prevent too-long query strings on URL
-- Async version support pushed back to Python 3.4.2
-
-**6.5 (2016-02-21)**
-
-- Supports file-like object and filename when sending files
-- Moved all exceptions to module `telepot.exception`
-- Expanded testing to Python 3.5
-
-**6.4 (2016-02-16)**
-
-- Introduced automatic message routing to `Bot.handle()` and `ZZZHandler.on_message()`. Messages are routed to sub-handlers according to flavor, by default.
-- As an alternative to implementing `Bot.handle(msg)`, you may implement `Bot.on_chat_message(msg)`, `Bot.on_inline_query(msg)`, and `Bot.on_chosen_inline_result(msg)` as needed.
-- As an alternative to implementing `ZZZHandler.on_message()`, you may implement `ZZZHandler.on_chat_message(msg)`, `ZZZHandler.on_inline_query(msg)`, and `ZZZHandler.on_chosen_inline_result(msg)` as needed.
-- `notifyOnMessage()` and `messageLoop()` accept a dict as callback, routing messages according to flavor.
-- Added function `telepot.flavor_router()`, classes `telepot.helper.Router` and `telepot.helper.DefaultRouterMixin`, and their async counterparts to facilitate message routing.
-- Many functions in `telepot.delegate` and `telepot.helper` now have aliases in their respective async modules, making imports more symmetric.
+- **Bot API 2.0**
+    - Added new flavor `callback_query`
+    - Added a bunch of namedtuples to reflect new objects in Bot API
+    - Added methods:
+        - `sendVenue()`, `sendContact()`
+        - `kickChatMember()`, `unbanChatMember()`
+        - `answerCallbackQuery()`
+        - `editMessageText()`, `editMessageCaption()`, `editMessageReplyMarkup()`
+    - To `ChatContext`, added a property `administrator`
+- Added `telepot.exception.MigratedToSupergroupChatError`
+- **Backward-incompatible name changes** (See **[Migration Guide](https://github.com/nickoala/telepot/blob/master/migration-7-0.md)**)
+    - Flavor `normal` → `chat`
+    - Method `notifyOnMessage` → `message_loop`
+    - Method `messageLoop` → `message_loop`
+    - Method `downloadFile` → `download_file`
+    - Function `telepot.namedtuple.namedtuple` was removed. Create namedtuples using their constructors directly.
+    - Function `telepot.glance2` was removed. Use `telepot.glance`.
+    - Chat messages' content type returned by `telepot.glance`:
+        - `new_chat_participant` → `new_chat_member`
+        - `left_chat_participant` → `left_chat_member`
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
@@ -164,10 +155,10 @@ It is troublesome to keep checking messages and managing `offset`. Fortunately, 
 
 ```python
 >>> from pprint import pprint
->>> def handle_message(msg):
+>>> def handle(msg):
 ...     pprint(msg)
 ...
->>> bot.notifyOnMessage(handle_message)
+>>> bot.message_loop(handle)
 ```
 
 After setting up this callback, sit back and monitor the arriving messages.
@@ -190,7 +181,7 @@ def handle(msg):
 TOKEN = sys.argv[1]
 
 bot = telepot.Bot(TOKEN)
-bot.notifyOnMessage(handle)
+bot.message_loop(handle)
 print 'Listening ...'
 
 # Keep the program running.
@@ -202,7 +193,7 @@ while 1:
 
 When processing a message, a few pieces of information are so central that you almost always have to extract them. Use `glance()` to extract a tuple of *(content_type, chat_type, chat_id)* from a message.
 
-*content_type* can be: `text`, `voice`, `sticker`, `photo`, `audio`, `document`, `video`, `contact`, `location`, `new_chat_participant`, `left_chat_participant`, `new_chat_title`, `new_chat_photo`, `delete_chat_photo`, or `group_chat_created`.
+*content_type* can be `text`, `audio`, `document`, `photo`, `sticker`, `video`, `voice`, `contact`, `location`, `venue`, `new_chat_member`, `left_chat_member`, etc.
 
 *chat_type* can be: `private`, `group`, or `channel`.
 
@@ -224,7 +215,7 @@ def handle(msg):
 TOKEN = sys.argv[1]  # get token from command-line
 
 bot = telepot.Bot(TOKEN)
-bot.notifyOnMessage(handle)
+bot.message_loop(handle)
 print 'Listening ...'
 
 # Keep the program running.
@@ -262,7 +253,7 @@ For a `voice`, `sticker`, `photo`, `audio`, `document`, or `video` message, look
 It has a number of `file_id`s, with various file sizes. These are thumbnails of the same image. Download one of them by:
 
 ```python
->>> bot.downloadFile(u'JiLOABNODdbdP_q2vwXLtLxHFnUxNq2zszIABEn8PaFUzRhBGHQAAgI', 'save/to/path')
+>>> bot.download_file(u'JiLOABNODdbdP_q2vwXLtLxHFnUxNq2zszIABEn8PaFUzRhBGHQAAgI', 'save/to/path')
 ```
 
 #### Send messages
@@ -281,7 +272,7 @@ After being added as an **administrator** to a channel, the bot can send message
 
 #### Send a custom keyboard
 
-A custom keyboard presents custom buttons for users to tap. Check it out.
+A custom keyboard presents custom buttons for users to tap.
 
 ```python
 >>> show_keyboard = {'keyboard': [['Yes','No'], ['Maybe','Maybe not']]}
@@ -331,22 +322,52 @@ Besides sending photos, you may also `sendAudio()`, `sendDocument()`, `sendStick
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
-<a id="inline-query"></a>
-## Dealing with Inline Query
+<a id="inline-keyboard"></a>
+## Custom Keyboard and Inline Keyboard
 
-By default, a bot only receives messages through a private chat, a group, or a channel. These are what I call *normal messages* or *chat messages*.
+Bot API 2.0 allows much richer interactions through the use of **custom keyboard** and **inline keyboard**. Here is a summary:
 
-By sending a `/setinline` command to BotFather, you enable the bot to receive *[inline queries](https://core.telegram.org/bots/inline)* as well. Inline query is a way for users to ask your bot questions, even if they have not opened a chat with your bot, nor in the same group with your bot.
+- You can now put a **request-phone-number** button and a **request-location** button on your custom keyboard.
+- Inline keyboard is a group of buttons integrated directly into the message it belongs to. Unlike with custom keyboards, **pressing buttons on inline keyboards doesn't result in messages sent to the chat**. They support buttons that work behind the scene: [callback buttons](https://core.telegram.org/bots/2-0-intro#callback-buttons), [URL buttons](https://core.telegram.org/bots/2-0-intro#url-buttons), and [switch to inline buttons](https://core.telegram.org/bots/2-0-intro#switch-to-inline-buttons).
 
-The important thing to note is that your bot will now receive two **flavors** of messages: normal messages and inline queries. A normal message has the flavor `normal`; an inline query has the flavor `inline_query`.
+I don't yet have time to introduce their usage here, but I do have **[an example for demonstration »](#examples-inline-keyboard)**
 
-#### Use `flavor()` to differentiate the flavor
+**[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
+
+<a id="message-flavors"></a>
+## Messages have Many Flavors
+
+By default, a bot only receives messages through a private chat, a group, or a channel. These are what I call *chat* messages - they have the flavor `chat`.
+
+If you use a callback button on an inline keyboard, your bot will receive an additional flavor of messages - `callback_query`.
+
+Use `flavor()` to differentiate message flavors:
 
 ```python
 flavor = telepot.flavor(msg)
 
-if flavor == 'normal':
-    print 'Normal message'
+if flavor == 'chat':
+    print 'Chat message'
+elif flavor == 'callback_query':
+    print 'Callback query'
+```
+
+**[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
+
+<a id="inline-query"></a>
+## Dealing with Inline Query
+
+By sending a `/setinline` command to BotFather, you enable the bot to receive *[inline queries](https://core.telegram.org/bots/inline)* as well. Inline query is a way for users to ask your bot questions, even if they have not opened a chat with your bot, nor in the same group with your bot.
+
+Your bot will now receive yet another flavor of messages - `inline_query`.
+
+```python
+flavor = telepot.flavor(msg)
+
+if flavor == 'chat':
+    print 'Chat message'
+elif flavor == 'callback_query':
+    print 'Callback query'
 elif flavor == 'inline_query':
     print 'Inline query'
 ```
@@ -379,26 +400,27 @@ The only way to respond to an inline query is to `answerInlineQuery()`. There ar
 
 These objects include a variety of fields with various meanings, most of them optional. It is beyond the scope of this document to discuss the effects of those fields. Refer to the links above for details.
 
-As is the custom in telepot, you may construct these results using dictionaries. An alternative is to use the namedtuple classes provided by `telepot.namedtuple` module.
-
 ```python
-from telepot.namedtuple import InlineQueryResultArticle
+from telepot.namedtuple import InlineQueryResultArticle, InputTextMessageContent
 
-articles = [{'type': 'article',
-                'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'},
-            InlineQueryResultArticle(
-                id='xyz', title='ZZZZZ', message_text='Good night')]
+articles = [InlineQueryResultArticle(
+                 id='abcde', title='Telegram', 
+                 input_message_content=InputTextMessageContent(message_text='Telegram is a messaging app')),
+            dict(type='article',
+                 id='fghij', title='Google', 
+                 input_message_content=dict(message_text='Google is a search engine'))]
 
 bot.answerInlineQuery(query_id, articles)
 ```
-
 ```python
 from telepot.namedtuple import InlineQueryResultPhoto
 
-photos = [{'type': 'photo',
-              'id': '123', 'photo_url': '...', 'thumb_url': '...'},
-          InlineQueryResultPhoto(
-              id='999', photo_url='...', thumb_url='...')]
+photo1_url = 'https://core.telegram.org/file/811140934/1/tbDSLHSaijc/fdcc7b6d5fb3354adf'
+photo2_url = 'https://www.telegram.org/img/t_logo.png'
+photos = [InlineQueryResultPhoto(
+              id='12345', photo_url=photo1_url, thumb_url=photo1_url),
+          dict(type='photo',
+              id='67890', photo_url=photo2_url, thumb_url=photo2_url)]
 
 bot.answerInlineQuery(query_id, photos)
 ```
@@ -410,7 +432,9 @@ By sending `/setinlinefeedback` to BotFather, you enable the bot to know which o
 ```python
 flavor = telepot.flavor(msg)
 
-if flavor == 'normal':
+if flavor == 'chat':
+   ...
+elif flavor == 'callback_query':
    ...
 elif flavor == 'inline_query':
    ...
@@ -444,12 +468,17 @@ import telepot
 def handle(msg):
     flavor = telepot.flavor(msg)
 
-    # normal message
-    if flavor == 'normal':
+    # chat message
+    if flavor == 'chat':
         content_type, chat_type, chat_id = telepot.glance(msg)
-        print 'Normal Message:', content_type, chat_type, chat_id
+        print 'Chat Message:', content_type, chat_type, chat_id
 
         # Do your stuff according to `content_type` ...
+
+    # callback query - originated from a callback button
+    elif flavor == 'callback_query':
+        query_id, from_id, query_data = telepot.glance(msg, flavor=flavor)
+        print 'Callback query:', query_id, from_id, query_data
 
     # inline query - need `/setinline`
     elif flavor == 'inline_query':
@@ -476,7 +505,7 @@ def handle(msg):
 TOKEN = sys.argv[1]  # get token from command-line
 
 bot = telepot.Bot(TOKEN)
-bot.notifyOnMessage(handle)
+bot.message_loop(handle)
 print 'Listening ...'
 
 # Keep the program running.
@@ -484,12 +513,13 @@ while 1:
     time.sleep(10)
 ```
 
-Having always to check the flavor is troublesome. You may supply a *routing table* to `bot.notifyOnMessage()` to enable message routing:
+Having always to check the flavor is troublesome. You may supply a *routing table* to `bot.message_loop()` to enable message routing:
 
 ```python
-bot.notifyOnMessage({'normal': on_chat_message,
-                     'inline_query': on_inline_query,
-                     'chosen_inline_result': on_chosen_inline_result})
+bot.message_loop({'chat': on_chat_message,
+                  'callback_query': on_callback_query,
+                  'inline_query': on_inline_query,
+                  'chosen_inline_result': on_chosen_inline_result})
 ```
 
 That results in a more succinct skeleton:
@@ -502,6 +532,10 @@ import telepot
 def on_chat_message(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
     print 'Chat Message:', content_type, chat_type, chat_id
+
+def on_callback_query(msg):
+    query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
+    print 'Callback Query:', query_id, from_id, query_data
 
 def on_inline_query(msg):
     query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
@@ -521,9 +555,10 @@ def on_chosen_inline_result(msg):
 TOKEN = sys.argv[1]  # get token from command-line
 
 bot = telepot.Bot(TOKEN)
-bot.notifyOnMessage({'normal': on_chat_message,
-                     'inline_query': on_inline_query,
-                     'chosen_inline_result': on_chosen_inline_result})
+bot.message_loop({'chat': on_chat_message,
+                  'callback_query': on_callback_query,
+                  'inline_query': on_inline_query,
+                  'chosen_inline_result': on_chosen_inline_result})
 print 'Listening ...'
 
 # Keep the program running.
@@ -563,6 +598,10 @@ def on_chat_message(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
     print 'Chat Message:', content_type, chat_type, chat_id
 
+def on_callback_query(msg):
+    query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
+    print 'Callback Query:', query_id, from_id, query_data
+
 def on_inline_query(msg):
     def compute_answer():
         query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
@@ -585,9 +624,10 @@ TOKEN = sys.argv[1]  # get token from command-line
 bot = telepot.Bot(TOKEN)
 answerer = telepot.helper.Answerer(bot)
 
-bot.notifyOnMessage({'normal': on_chat_message,
-                     'inline_query': on_inline_query,
-                     'chosen_inline_result': on_chosen_inline_result})
+bot.message_loop({'chat': on_chat_message,
+                  'callback_query': on_callback_query,
+                  'inline_query': on_inline_query,
+                  'chosen_inline_result': on_chosen_inline_result})
 print 'Listening ...'
 
 # Keep the program running.
@@ -604,7 +644,7 @@ The proper way to deal with inline query is always through an `Answerer`'s `answ
 <a id="classbased"></a>
 ## Class-based Message Handling
 
-Defining a global message handler may lead to proliferation of global variables quickly. Encapsulation may be achieved by extending the `Bot` class, defining a `handle` method, then calling `notifyOnMessage()` with no callback function. This way, the object's `handle` method will be used as the callback.
+Defining a global message handler may lead to proliferation of global variables quickly. Encapsulation may be achieved by extending the `Bot` class, defining a `handle` method, then calling `message_loop()` with no callback function. This way, the object's `handle` method will be used as the callback.
 
 Here is a Python 3 skeleton using this strategy. You may not need `Answerer` and the blocks dealing with `inline_query` and `chosen_inline_result` if you have not `/setinline` or `/setinlinefeedback` on the bot.
 
@@ -621,12 +661,17 @@ class YourBot(telepot.Bot):
     def handle(self, msg):
         flavor = telepot.flavor(msg)
 
-        # normal message
-        if flavor == 'normal':
+        # chat message
+        if flavor == 'chat':
             content_type, chat_type, chat_id = telepot.glance(msg)
-            print('Normal Message:', content_type, chat_type, chat_id)
+            print('Chat Message:', content_type, chat_type, chat_id)
 
             # Do your stuff according to `content_type` ...
+
+        # callback query - originated from a callback button
+        elif flavor == 'callback_query':
+            query_id, from_id, query_data = telepot.glance(msg, flavor=flavor)
+            print 'Callback query:', query_id, from_id, query_data
 
         # inline query - need `/setinline`
         elif flavor == 'inline_query':
@@ -656,7 +701,7 @@ class YourBot(telepot.Bot):
 TOKEN = sys.argv[1]  # get token from command-line
 
 bot = YourBot(TOKEN)
-bot.notifyOnMessage()
+bot.message_loop()
 print('Listening ...')
 
 # Keep the program running.
@@ -664,7 +709,7 @@ while 1:
     time.sleep(10)
 ```
 
-Having always to check the flavor is troublesome. Alternatively, you may implement the method `on_chat_message`, `on_inline_query`, and `on_chosen_inline_result`. The bot will route messages to the correct handler according to flavor.
+Having always to check the flavor is troublesome. Alternatively, you may implement the method `on_chat_message`, `on_callback_query`, `on_inline_query`, and `on_chosen_inline_result`. The bot will route messages to the correct handler according to flavor.
 
 ```python
 import sys
@@ -678,7 +723,11 @@ class YourBot(telepot.Bot):
 
     def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
-        print('Normal Message:', content_type, chat_type, chat_id)
+        print('Chat Message:', content_type, chat_type, chat_id)
+
+    def on_callback_query(self, msg):
+        query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
+        print('Callback Query:', query_id, from_id, query_data)
 
     def on_inline_query(self, msg):
         query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
@@ -701,7 +750,7 @@ class YourBot(telepot.Bot):
 TOKEN = sys.argv[1]  # get token from command-line
 
 bot = YourBot(TOKEN)
-bot.notifyOnMessage()
+bot.message_loop()
 print('Listening ...')
 
 # Keep the program running.
@@ -739,7 +788,7 @@ TOKEN = sys.argv[1]  # get token from command-line
 bot = telepot.DelegatorBot(TOKEN, [
     (per_chat_id(), create_open(MessageCounter, timeout=10)),
 ])
-bot.notifyOnMessage(run_forever=True)
+bot.message_loop(run_forever=True)
 ```
 
 A `DelegatorBot` is a `Bot` with the newfound ability to spawn *delegates*. Its constructor takes a list of tuples telling it when and how to spawn delegates. In the example above, it is spawning one `MessageCounter` *per chat id*.
@@ -748,16 +797,13 @@ For every received message, the function `per_chat_id()` digests it down to a *s
 
 A `MessageCounter` is only an object encapsulating states; it says nothing about how to spawn a delegate. The function `create_open()` causes the spawning of a thread. Thread is the default delegation mechanism (that is why I use the verb "spawn"). There is a way to provide your own implementation of threads or other delegation mechanisms. The [Chatbox example](#examples-chatbox) demonstrates this possibility.
 
-The function `create_open()` requires the object `MessageCounter` to meet certain criteria. Being a subclass of `ChatHandler`, `MessageCounter` fulfills most of them. The only thing it has to do is implement the method `on_chat_message()`, which is called whenever a normal (chat) message arrives. How messages are distributed to the correct object is done by telepot. You don't have to worry about that.
+The function `create_open()` requires the object `MessageCounter` to meet certain criteria. Being a subclass of `ChatHandler`, `MessageCounter` fulfills most of them. The only thing it has to do is implement the method `on_chat_message()`, which is called whenever a chat message arrives. How messages are distributed to the correct object is done by telepot. You don't have to worry about that.
 
 There are two styles of extending `ChatHandler` in terms of which methods to implement/override:
 
 - You may override `on_message()`, which is **the first point of contact** for **every** received message, regardless of flavor. If your bot can receive more than one flavor of messages, remember to check the flavor before further processing. If you *don't* override `on_message()`, it is still the the first point of contact and the default behaviour is to route a message to the appropriate handler according to flavor. Which leads us to the next style ...
 
-- You may implement one or more of `on_chat_message()`, `on_inline_query()`, and `on_chosen_inline_result()`:
-    - `on_chat_message()` is called for a `normal` message
-    - `on_inline_query()` is called for an `inline_query`
-    - `on_chosen_inline_result()` is called for a `chosen_inline_result`
+- You may implement one or more of `on_chat_message()`, `on_callback_query()`, `on_inline_query()`, and `on_chosen_inline_result()`, depending on which ones you need.
 
 You have just seen the second style. And you are going to see the first style in a moment.
 
@@ -766,7 +812,7 @@ You have just seen the second style. And you are going to see the first style in
 <a id="follow-user"></a>
 ## Follow User's Every Action
 
-The Message Counter example only deals with normal messages. What if you want to maintain states across different flavors of messages? Here is a tracker that follows all messages originating from a user, regardless of flavor.
+The Message Counter example only deals with chat messages. What if you want to maintain states across different flavors of messages? Here is a tracker that follows all messages originating from a user, regardless of flavor.
 
 ```python
 import sys
@@ -778,7 +824,7 @@ class UserTracker(telepot.helper.UserHandler):
         super(UserTracker, self).__init__(seed_tuple, timeout)
 
         # keep track of how many messages of each flavor
-        self._counts = {'normal': 0,
+        self._counts = {'chat': 0,
                         'inline_query': 0,
                         'chosen_inline_result': 0}
 
@@ -808,7 +854,7 @@ TOKEN = sys.argv[1]
 bot = telepot.DelegatorBot(TOKEN, [
     (per_from_id(), create_open(UserTracker, timeout=20)),
 ])
-bot.notifyOnMessage(run_forever=True)
+bot.message_loop(run_forever=True)
 ```
 
 All messages, regardless of flavor, as long as it is originating from a user, would have a `from` field containing an `id`. The function `per_from_id()` digests a message down to its originating user id, thus ensuring there is one and only one `UserTracker` *per user id*.
@@ -856,10 +902,10 @@ TOKEN = sys.argv[1]
 bot = telepot.DelegatorBot(TOKEN, [
     (per_inline_from_id(), create_open(InlineHandler, timeout=10)),
 ])
-bot.notifyOnMessage(run_forever=True)
+bot.message_loop(run_forever=True)
 ```
 
-The function `per_inline_from_id()` digests a message down to its originating user id, but only for **inline query** and **chosen inline result**. It ignores normal (chat) messages.
+The function `per_inline_from_id()` digests a message down to its originating user id, but only for **inline query** and **chosen inline result**. It ignores chat messages.
 
 `InlineHandler`, again, is a subclass of `UserHandler`. But it specifies which message flavors to capture (in the constructor). In this case, it only cares about **inline query** and **chosen inline result**. Then, it implements `on_inline_query()` and `on_chosen_inline_result()` to handle incoming messages.
 
@@ -941,7 +987,11 @@ import telepot.async
 
 def on_chat_message(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
-    print('Normal Message:', content_type, chat_type, chat_id)
+    print('Chat Message:', content_type, chat_type, chat_id)
+
+def on_callback_query(msg):
+    query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
+    print 'Callback Query:', query_id, from_id, query_data
 
 def on_inline_query(msg):
     query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
@@ -966,9 +1016,10 @@ bot = telepot.async.Bot(TOKEN)
 answerer = telepot.async.helper.Answerer(bot)
 
 loop = asyncio.get_event_loop()
-loop.create_task(bot.messageLoop({'normal': on_chat_message,
-                                  'inline_query': on_inline_query,
-                                  'chosen_inline_result': on_chosen_inline_result}))
+loop.create_task(bot.message_loop({'chat': on_chat_message,
+                                   'callback_query': on_callback_query,
+                                   'inline_query': on_inline_query,
+                                   'chosen_inline_result': on_chosen_inline_result}))
 print('Listening ...')
 
 loop.run_forever()
@@ -989,7 +1040,11 @@ class YourBot(telepot.async.Bot):
 
     def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
-        print('Normal Message:', content_type, chat_type, chat_id)
+        print('Chat Message:', content_type, chat_type, chat_id)
+
+    def on_callback_query(self, msg):
+        query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
+        print('Callback Query:', query_id, from_id, query_data)
 
     def on_inline_query(self, msg):
         query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
@@ -1013,7 +1068,7 @@ TOKEN = sys.argv[1]  # get token from command-line
 bot = YourBot(TOKEN)
 loop = asyncio.get_event_loop()
 
-loop.create_task(bot.messageLoop())
+loop.create_task(bot.message_loop())
 print('Listening ...')
 
 loop.run_forever()
@@ -1048,7 +1103,7 @@ bot = telepot.async.DelegatorBot(TOKEN, [
 ])
 
 loop = asyncio.get_event_loop()
-loop.create_task(bot.messageLoop())
+loop.create_task(bot.message_loop())
 print('Listening ...')
 
 loop.run_forever()
@@ -1059,7 +1114,7 @@ loop.run_forever()
 <a id="webhook"></a>
 ## Webhook Interface
 
-So far, we have been using `getUpdates()` to obtain new messages from Telegram servers - both `notifyOnMessage()` and `messageLoop()` call `getUpdates()` constantly under the hood. Another way to obtain new messages is through **[webhooks](https://core.telegram.org/bots/api#setwebhook)**, in which case Telegram servers will send an HTTPS POST request to an URL you specify, containing a JSON-serialized [Update](https://core.telegram.org/bots/api#update) object, whenever there is an update for the bot.
+So far, we have been using `getUpdates()` to obtain new messages from Telegram servers - `message_loop()` calls `getUpdates()` constantly under the hood. Another way to obtain new messages is through **[webhooks](https://core.telegram.org/bots/api#setwebhook)**, in which case Telegram servers will send an HTTPS POST request to an URL you specify, containing a JSON-serialized [Update](https://core.telegram.org/bots/api#update) object, whenever there is an update for the bot.
 
 Setting up a webhook is more complicated than using `getUpdates()` because:
 
@@ -1071,7 +1126,7 @@ For a simple bot application, it is easy to use telepot directly from the web ap
 
 Webhook also presents a subtle problem: closely bunched updates may arrive out of order. That is, update_id `1000` may arrive ahead of update_id `999`, if the two are issued by Telegram servers very closely. Unless a bot absolutely doesn't care about update order, it will have to re-order them in some way.
 
-*Since 5.0*, telepot has a mechanism for web applications to interface with easily, and it takes care of re-ordering for you. The mechanism is simple: you call `notifyOnMessage()` or `messageLoop()` to initiate the bot's message handling as usual, but with an additional parameter `source`, which is a queue. 
+Telepot has a mechanism to interface with web applications, and it takes care of re-ordering for you. The mechanism is simple: you call `message_loop()` as usual, but supply an additional parameter `source`, which is a queue. 
 
 ```python
 # for Python 2 and 3
@@ -1087,7 +1142,7 @@ bot = telepot.Bot(TOKEN)
 update_queue = Queue()
 
 # get updates from queue, not from Telegram servers
-bot.notifyOnMessage(handle, source=update_queue)
+bot.message_loop(handle, source=update_queue)
 ```
 
 The web application, upon receiving a POST request, dumps the data onto the queue, for the bot to retrieve at the other end. The bot will re-order the updates if necessary. Assuming [Flask](http://flask.pocoo.org/) as the web application framework:
@@ -1156,6 +1211,25 @@ A starting point for your telepot programs.
 **[Async, Simple »](https://github.com/nickoala/telepot/blob/master/examples/skeletona.py)**  
 **[Async, Routing table »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_route.py)**  
 **[Async, Class-based »](https://github.com/nickoala/telepot/blob/master/examples/skeletona_class.py)**  
+
+<a id="examples-inline-keyboard"></a>
+#### Custom Keyboard and Inline Keyboard
+
+An example that demonstrates the use of custom keyboard and inline keyboard, and their various buttons.
+
+The bot works like this:
+
+- First, you send it one of these 4 characters - `c`, `i`, `h`, `f` - and it replies accordingly:
+    - `c` - a custom keyboard with various buttons
+    - `i` - an inline keyboard with various buttons
+    - `h` - hide custom keyboard
+    - `f` - force reply
+- Press various buttons to see their effects
+- Within inline mode, what you get back depends on the **last character** of the query:
+    - `a` - a list of articles
+    - `p` - a list of photos
+    - `b` - to see a button above the inline results to switch back to a private chat with the bot
+- Play around with the bot for an afternoon ...
 
 <a id="examples-indoor"></a>
 #### Indoor climate monitor
@@ -1237,7 +1311,7 @@ This example only handles text messages and stores messages in memory. If the bo
 <a id="examples-user-tracker"></a>
 #### User Tracker
 
-Tracks a user's every actions, including normal messages and inline-related messages.
+Tracks a user's every actions, including chat messages and inline-related messages.
 
 **[Traditional version »](https://github.com/nickoala/telepot/blob/master/examples/tracker.py)**  
 **[Async version »](https://github.com/nickoala/telepot/blob/master/examples/trackera.py)**

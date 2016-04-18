@@ -9,14 +9,16 @@ A skeleton for your telepot programs.
 """
 
 def handle(msg):
-    content_type, chat_type, chat_id = telepot.glance(msg)
-    print content_type, chat_type, chat_id
-    
+    flavor = telepot.flavor(msg)
+
+    summary = telepot.glance(msg, flavor=flavor)
+    print flavor, summary
+
 
 TOKEN = sys.argv[1]  # get token from command-line
 
 bot = telepot.Bot(TOKEN)
-bot.notifyOnMessage(handle)
+bot.message_loop(handle)
 print 'Listening ...'
 
 # Keep the program running.

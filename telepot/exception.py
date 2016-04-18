@@ -60,6 +60,8 @@ class BotWasBlockedError(TelegramError):
 class TooManyRequestsError(TelegramError):
     DESCRIPTION_PATTERNS = ['too *many *requests']
 
+class MigratedToSupergroupChatError(TelegramError):
+    DESCRIPTION_PATTERNS = ['migrated.*supergroup *chat']
 
 class WaitTooLong(TelepotException):
     pass

@@ -13,7 +13,7 @@ class UserTracker(telepot.helper.UserHandler):
         super(UserTracker, self).__init__(seed_tuple, timeout)
 
         # keep track of how many messages of each flavor
-        self._counts = {'normal': 0,
+        self._counts = {'chat': 0,
                         'inline_query': 0,
                         'chosen_inline_result': 0}
 
@@ -23,11 +23,11 @@ class UserTracker(telepot.helper.UserHandler):
     def on_message(self, msg):
         flavor = telepot.flavor(msg)
         self._counts[flavor] += 1
-        
+
         # Display message counts separated by flavors
-        print(self.id, ':', 
-              flavor, '+1', ':', 
-              ', '.join([str(self._counts[f]) for f in ['normal', 'inline_query', 'chosen_inline_result']]))
+        print(self.id, ':',
+              flavor, '+1', ':',
+              ', '.join([str(self._counts[f]) for f in ['chat', 'inline_query', 'chosen_inline_result']]))
 
         # Have to answer inline query to receive chosen result
         if flavor == 'inline_query':
@@ -47,4 +47,4 @@ TOKEN = sys.argv[1]
 bot = telepot.DelegatorBot(TOKEN, [
     (per_from_id(), create_open(UserTracker, timeout=20)),
 ])
-bot.notifyOnMessage(run_forever=True)
+bot.message_loop(run_forever=True)

@@ -31,7 +31,7 @@ class UnreadStore(object):
 
     def put(self, msg):
         chat_id = msg['chat']['id']
-        
+
         if chat_id not in self._db:
             self._db[chat_id] = []
 
@@ -41,7 +41,7 @@ class UnreadStore(object):
     def pull(self, chat_id):
         messages = self._db[chat_id]
         del self._db[chat_id]
-        
+
         # sort by date
         messages.sort(key=lambda m: m['date'])
         return messages
@@ -171,7 +171,7 @@ OWNER_ID = int(sys.argv[2])
 bot = ChatBox(TOKEN, OWNER_ID)
 loop = asyncio.get_event_loop()
 
-loop.create_task(bot.messageLoop())
+loop.create_task(bot.message_loop())
 print('Listening ...')
 
 loop.run_forever()

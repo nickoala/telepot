@@ -11,8 +11,10 @@ A skeleton for your async telepot programs.
 
 @asyncio.coroutine
 def handle(msg):
-    content_type, chat_type, chat_id = telepot.glance(msg)
-    print(content_type, chat_type, chat_id)
+    flavor = telepot.flavor(msg)
+
+    summary = telepot.glance(msg, flavor=flavor)
+    print(flavor, summary)
 
 
 TOKEN = sys.argv[1]  # get token from command-line
@@ -20,7 +22,7 @@ TOKEN = sys.argv[1]  # get token from command-line
 bot = telepot.async.Bot(TOKEN)
 loop = asyncio.get_event_loop()
 
-loop.create_task(bot.messageLoop(handle))
+loop.create_task(bot.message_loop(handle))
 print('Listening ...')
 
 loop.run_forever()

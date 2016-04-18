@@ -49,9 +49,9 @@ sequence = [
     u(26),
     u(27),
     9,  # skip id=25
-    
+
     u(25),  # discard
-    
+
     u(30),
     u(29),
     5,
@@ -59,16 +59,16 @@ sequence = [
     u(33),
     2,  # clear 29,30, skip 28
     u(31),  # clear 31,32,33
-    
+
     u(39),
     u(36),
     2,
     u(37),
     7,  # clear 36,37,39
-    
+
     u(28),  # discard
     u(38),  # discard
-    
+
     u(40),  # return
 ]
 
@@ -83,6 +83,6 @@ def queue_put():
 
 
 loop = asyncio.get_event_loop()
-loop.create_task(bot.messageLoop(handle, source=qu, maxhold=8))
+loop.create_task(bot.message_loop(handle, source=qu, maxhold=8))
 loop.create_task(queue_put())
 loop.run_forever()

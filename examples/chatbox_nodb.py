@@ -29,7 +29,7 @@ class UnreadStore(object):
 
     def put(self, msg):
         chat_id = msg['chat']['id']
-        
+
         if chat_id not in self._db:
             self._db[chat_id] = []
 
@@ -39,7 +39,7 @@ class UnreadStore(object):
     def pull(self, chat_id):
         messages = self._db[chat_id]
         del self._db[chat_id]
-        
+
         # sort by date
         messages.sort(key=lambda m: m['date'])
         return messages
@@ -62,7 +62,7 @@ class OwnerHandler(telepot.helper.ChatHandler):
 
     def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
-        
+
         if content_type != 'text':
             self.sender.sendMessage("I don't understand")
             return
@@ -187,4 +187,4 @@ TOKEN = sys.argv[1]
 OWNER_ID = int(sys.argv[2])
 
 bot = ChatBox(TOKEN, OWNER_ID)
-bot.notifyOnMessage(run_forever=True)
+bot.message_loop(run_forever=True)

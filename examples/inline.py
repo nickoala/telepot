@@ -35,4 +35,4 @@ TOKEN = sys.argv[1]
 bot = telepot.DelegatorBot(TOKEN, [
     (per_inline_from_id(), create_open(InlineHandler, timeout=10)),
 ])
-bot.notifyOnMessage(run_forever=True)
+bot.message_loop(run_forever=True)

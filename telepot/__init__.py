@@ -21,8 +21,10 @@ requests.packages.urllib3.disable_warnings()
 
 def flavor(msg):
     if 'message_id' in msg:
-        return 'normal'
-    elif 'query' in msg and 'id' in msg:
+        return 'chat'
+    elif 'id' in msg and 'data' in msg:
+        return 'callback_query'
+    elif 'id' in msg and 'query' in msg:
         return 'inline_query'
     elif 'result_id' in msg:
         return 'chosen_inline_result'
@@ -30,31 +32,31 @@ def flavor(msg):
         raise BadFlavor(msg)
 
 
-def _infer_content_type(msg):
-    types = [
-        'text', 'voice', 'sticker', 'photo', 'audio' ,'document', 'video', 'contact', 'location',
-        'new_chat_participant', 'left_chat_participant',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo', 'group_chat_created',
-        'supergroup_chat_created', 'channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id',
-    ]
-
-    content_type = list(filter(lambda f: f in msg, types))
-
-    if len(content_type) > 1:
-        raise RuntimeError('Inferred multiple content types from message', msg)
-    elif len(content_type) < 1:
-        raise RuntimeError('Cannot infer content type from message', msg)
-
-    return content_type[0]
+def _find_first_key(d, keys):
+    for k in keys:
+        if k in d:
+            return k
+    raise KeyError(keys)
 
 
-def glance(msg, flavor='normal', long=False):
-    def gl_message():
-        content_type = _infer_content_type(msg)
+def glance(msg, flavor='chat', long=False):
+    def gl_chat():
+        types = [
+            'text', 'audio', 'document', 'photo', 'sticker', 'video', 'voice', 'contact', 'location', 'venue',
+            'new_chat_member', 'left_chat_member',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo', 
+            'group_chat_created', 'supergroup_chat_created', 'channel_chat_created', 
+            'migrate_to_chat_id', 'migrate_from_chat_id', 'pinned_message',
+        ]
+
+        content_type = _find_first_key(msg, types)
 
         if long:
             return content_type, msg['chat']['type'], msg['chat']['id'], msg['date'], msg['message_id']
         else:
             return content_type, msg['chat']['type'], msg['chat']['id']
+
+    def gl_callback_query():
+        return msg['id'], msg['from']['id'], msg['data']
 
     def gl_inline_query():
         if long:
@@ -65,17 +67,15 @@ def glance(msg, flavor='normal', long=False):
     def gl_chosen_inline_result():
         return msg['result_id'], msg['from']['id'], msg['query']
 
-    if flavor == 'normal':
-        return gl_message()
-    elif flavor == 'inline_query':
-        return gl_inline_query()
-    elif flavor == 'chosen_inline_result':
-        return gl_chosen_inline_result()
-    else:
+    try:
+        fn = {'chat': gl_chat,
+              'callback_query': gl_callback_query,
+              'inline_query': gl_inline_query,
+              'chosen_inline_result': gl_chosen_inline_result}[flavor]
+    except KeyError:
         raise BadFlavor(flavor)
 
-
-glance2 = glance  # alias for backward compatibility
+    return fn()
 
 
 def flance(msg, long=False):
@@ -107,32 +107,6 @@ class _BotBase(object):
     def _methodurl(self, method):
         return 'https://api.telegram.org/bot%s/%s' % (self._token, method)
 
-    def _strip(self, params, more=[]):
-        return {key: value for key,value in params.items() if key not in ['self']+more}
-
-    def _rectify(self, params, allow_namedtuple=[]):
-        # For those parameters that accept namedtuples as values,
-        # use `_asdict()` to obtain dictionary representations.
-        def ensure_dict(value):
-            if isinstance(value, list):
-                return [ensure_dict(e) for e in value]
-            elif isinstance(value, tuple):
-                return {k:v for k,v in value._asdict().items() if v is not None}
-            else:
-                return {k:v for k,v in value.items() if v is not None}
-
-        def flatten(value, possible_namedtuple):
-            v = ensure_dict(value) if possible_namedtuple else value
-
-            if isinstance(v, (dict, list)):
-                # json-serialize for non-simple values
-                return json.dumps(v, separators=(',',':'))
-            else:
-                return v
-
-        # remove None, then json-serialize if needed
-        return {k: flatten(v, k in allow_namedtuple) for k,v in params.items() if v is not None}
-
 
 PY_3 = sys.version_info.major >= 3
 _string_type = str if PY_3 else basestring
@@ -144,12 +118,71 @@ def _isstring(s):
 def _isfile(f):
     return isinstance(f, _file_type)
 
+def _strip(params, more=[]):
+    return {key: value for key,value in params.items() if key not in ['self']+more}
+
+def _rectify(params):
+    def namedtuple_to_dict(value):
+        if isinstance(value, list):
+            return [namedtuple_to_dict(v) for v in value]
+        elif isinstance(value, dict):
+            return {k:namedtuple_to_dict(v) for k,v in value.items() if v is not None}
+        elif isinstance(value, tuple) and hasattr(value, '_asdict'):
+            return {k:namedtuple_to_dict(v) for k,v in value._asdict().items() if v is not None}
+        else:
+            return value
+
+    def flatten(value):
+        v = namedtuple_to_dict(value)
+
+        if isinstance(v, (dict, list)):
+            return json.dumps(v, separators=(',',':'))
+        else:
+            return v        
+
+    # remove None, then json-serialize if needed
+    return {k: flatten(v) for k,v in params.items() if v is not None}
+
+def _post(url, **kwargs):
+    response = requests.post(url, **kwargs)
+    
+    try:
+        data = response.json()
+    except ValueError:  # No JSON object could be decoded
+        raise BadHTTPResponse(response.status_code, response.text, response)
+
+    if data['ok']:
+        return data['result']
+    else:
+        description, error_code = data['description'], data['error_code']
+
+        # Look for specific error ...
+        for e in TelegramError.__subclasses__():
+            n = len(e.DESCRIPTION_PATTERNS)
+            if any(map(re.search, e.DESCRIPTION_PATTERNS, n*[description], n*[re.IGNORECASE])):
+                raise e(description, error_code, data)
+
+        # ... or raise generic error
+        raise TelegramError(description, error_code, data)
+
+def _dismantle_message_id_form(f):
+    if isinstance(f, tuple):
+        if len(f) == 2:
+            return {'chat_id': f[0], 'message_id': f[1]}
+        elif len(f) == 1:
+            return {'inline_message_id': f[0]}
+        else:
+            raise RuntimeError()
+    else:
+        return {'inline_message_id': f}
+
 
 class Bot(_BotBase):
     def __init__(self, token):
         super(Bot, self).__init__(token)
 
-        self._router = telepot.helper.Router(flavor, {'normal': lambda msg: self.on_chat_message(msg),
+        self._router = telepot.helper.Router(flavor, {'chat': lambda msg: self.on_chat_message(msg),
+                                                      'callback_query': lambda msg: self.on_callback_query(msg),
                                                       'inline_query': lambda msg: self.on_inline_query(msg),
                                                       'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
                                                       # use lambda to delay evaluation of self.on_ZZZ to runtime because 
@@ -158,45 +191,24 @@ class Bot(_BotBase):
     def handle(self, msg):
         self._router.route(msg)
 
-    def _parse(self, response):
-        try:
-            data = response.json()
-        except ValueError:  # No JSON object could be decoded
-            raise BadHTTPResponse(response.status_code, response.text, response)
-
-        if data['ok']:
-            return data['result']
-        else:
-            description, error_code = data['description'], data['error_code']
-
-            # Look for specific error ...
-            for e in TelegramError.__subclasses__():
-                n = len(e.DESCRIPTION_PATTERNS)
-                if any(map(re.search, e.DESCRIPTION_PATTERNS, n*[description], n*[re.IGNORECASE])):
-                    raise e(description, error_code, data)
-
-            # ... or raise generic error
-            raise TelegramError(description, error_code, data)
-
     def getMe(self):
-        r = requests.post(self._methodurl('getMe'), timeout=self._http_timeout)
-        return self._parse(r)
+        return _post(self._methodurl('getMe'), timeout=self._http_timeout)
 
-    def sendMessage(self, chat_id, text, parse_mode=None, disable_web_page_preview=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals())
-        r = requests.post(self._methodurl('sendMessage'),
-                          data=self._rectify(p, allow_namedtuple=['reply_markup']),
-                          timeout=self._http_timeout)
-        return self._parse(r)
+    def sendMessage(self, chat_id, text, 
+                    parse_mode=None, disable_web_page_preview=None, 
+                    disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals())
+        return _post(self._methodurl('sendMessage'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
 
     def forwardMessage(self, chat_id, from_chat_id, message_id, disable_notification=None):
-        p = self._strip(locals())
-        r = requests.post(self._methodurl('forwardMessage'),
-                          data=self._rectify(p),
-                          timeout=self._http_timeout)
-        return self._parse(r)
+        p = _strip(locals())
+        return _post(self._methodurl('forwardMessage'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
 
-    def _sendFile(self, inputfile, filetype, params):
+    def _sendfile(self, inputfile, filetype, params):
         method = {'photo':    'sendPhoto',
                   'audio':    'sendAudio',
                   'document': 'sendDocument',
@@ -206,97 +218,164 @@ class Bot(_BotBase):
 
         if _isstring(inputfile):
             params[filetype] = inputfile
-            r = requests.post(self._methodurl(method),
-                              data=self._rectify(params, allow_namedtuple=['reply_markup']),
-                              timeout=self._http_timeout)
+            return _post(self._methodurl(method),
+                         data=_rectify(params),
+                         timeout=self._http_timeout)
         else:
             files = {filetype: inputfile}
-            r = requests.post(self._methodurl(method),
-                              data=self._rectify(params, allow_namedtuple=['reply_markup']),
-                              files=files)
+            return _post(self._methodurl(method),
+                         data=_rectify(params),
+                         files=files)
 
-            # `self._http_timeout` is not used here because, for some reason, the larger the file,
-            # the longer it takes for the server to respond (after upload is finished). It is hard to say
-            # what value `self._http_timeout` should be. In the future, maybe I should let user specify.
+            # No timeout is given here because, for some reason, the larger the file,
+            # the longer it takes for the server to respond (after upload is finished). 
+            # It is unclear how long timeout should be.
 
-        return self._parse(r)
+    def sendPhoto(self, chat_id, photo, 
+                  caption=None,
+                  disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals(), more=['photo'])
+        return self._sendfile(photo, 'photo', p)
 
-    def sendPhoto(self, chat_id, photo, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals(), more=['photo'])
-        return self._sendFile(photo, 'photo', p)
+    def sendAudio(self, chat_id, audio, 
+                  duration=None, performer=None, title=None, 
+                  disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals(), more=['audio'])
+        return self._sendfile(audio, 'audio', p)
 
-    def sendAudio(self, chat_id, audio, duration=None, performer=None, title=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals(), more=['audio'])
-        return self._sendFile(audio, 'audio', p)
+    def sendDocument(self, chat_id, document, 
+                     caption=None, 
+                     disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals(), more=['document'])
+        return self._sendfile(document, 'document', p)
 
-    def sendDocument(self, chat_id, document, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals(), more=['document'])
-        return self._sendFile(document, 'document', p)
+    def sendSticker(self, chat_id, sticker, 
+                    disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals(), more=['sticker'])
+        return self._sendfile(sticker, 'sticker', p)
 
-    def sendSticker(self, chat_id, sticker, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals(), more=['sticker'])
-        return self._sendFile(sticker, 'sticker', p)
+    def sendVideo(self, chat_id, video, 
+                  duration=None, width=None, height=None, caption=None, 
+                  disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals(), more=['video'])
+        return self._sendfile(video, 'video', p)
 
-    def sendVideo(self, chat_id, video, duration=None, width=None, height=None, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals(), more=['video'])
-        return self._sendFile(video, 'video', p)
+    def sendVoice(self, chat_id, voice, 
+                  duration=None, 
+                  disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals(), more=['voice'])
+        return self._sendfile(voice, 'voice', p)
 
-    def sendVoice(self, chat_id, voice, duration=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals(), more=['voice'])
-        return self._sendFile(voice, 'voice', p)
+    def sendLocation(self, chat_id, latitude, longitude, 
+                     disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals())
+        return _post(self._methodurl('sendLocation'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
 
-    def sendLocation(self, chat_id, latitude, longitude, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals())
-        r = requests.post(self._methodurl('sendLocation'),
-                          data=self._rectify(p, allow_namedtuple=['reply_markup']),
-                          timeout=self._http_timeout)
-        return self._parse(r)
+    def sendVenue(self, chat_id, latitude, longitude, title, address,
+                  foursquare_id=None,
+                  disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals())
+        return _post(self._methodurl('sendVenue'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
+
+    def sendContact(self, chat_id, phone_number, first_name,
+                    last_name=None,
+                    disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals())
+        return _post(self._methodurl('sendContact'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
 
     def sendChatAction(self, chat_id, action):
-        p = self._strip(locals())
-        r = requests.post(self._methodurl('sendChatAction'),
-                          data=self._rectify(p),
-                          timeout=self._http_timeout)
-        return self._parse(r)
+        p = _strip(locals())
+        return _post(self._methodurl('sendChatAction'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
 
     def getUserProfilePhotos(self, user_id, offset=None, limit=None):
-        p = self._strip(locals())
-        r = requests.post(self._methodurl('getUserProfilePhotos'),
-                          data=self._rectify(p),
-                          timeout=self._http_timeout)
-        return self._parse(r)
+        p = _strip(locals())
+        return _post(self._methodurl('getUserProfilePhotos'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
 
     def getFile(self, file_id):
-        p = self._strip(locals())
-        r = requests.post(self._methodurl('getFile'),
-                          data=self._rectify(p),
-                          timeout=self._http_timeout)
-        return self._parse(r)
+        p = _strip(locals())
+        return _post(self._methodurl('getFile'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
+
+    def kickChatMember(self, chat_id, user_id):
+        p = _strip(locals())
+        return _post(self._methodurl('kickChatMember'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
+
+    def unbanChatMember(self, chat_id, user_id):
+        p = _strip(locals())
+        return _post(self._methodurl('unbanChatMember'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
+
+    def answerCallbackQuery(self, callback_query_id, text=None, show_alert=None):
+        p = _strip(locals())
+        return _post(self._methodurl('answerCallbackQuery'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
+
+    def editMessageText(self, msgid_form, text, 
+                        parse_mode=None, disable_web_page_preview=None, reply_markup=None):
+        p = _strip(locals(), more=['msgid_form'])
+        p.update(_dismantle_message_id_form(msgid_form))
+        return _post(self._methodurl('editMessageText'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
+
+    def editMessageCaption(self, msgid_form, caption=None, reply_markup=None):
+        p = _strip(locals(), more=['msgid_form'])
+        p.update(_dismantle_message_id_form(msgid_form))
+        return _post(self._methodurl('editMessageCaption'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
+
+    def editMessageReplyMarkup(self, msgid_form, reply_markup=None):
+        p = _strip(locals(), more=['msgid_form'])
+        p.update(_dismantle_message_id_form(msgid_form))
+        return _post(self._methodurl('editMessageReplyMarkup'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
+
+    def answerInlineQuery(self, inline_query_id, results, 
+                          cache_time=None, is_personal=None, next_offset=None,
+                          switch_pm_text=None, switch_pm_parameter=None):
+        p = _strip(locals())
+        return _post(self._methodurl('answerInlineQuery'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout)
 
     def getUpdates(self, offset=None, limit=None, timeout=None):
-        p = self._strip(locals())
-        r = requests.post(self._methodurl('getUpdates'),
-                          data=self._rectify(p),
-                          timeout=self._http_timeout+(0 if timeout is None else timeout))
-        return self._parse(r)
+        p = _strip(locals())
+        return _post(self._methodurl('getUpdates'),
+                     data=_rectify(p),
+                     timeout=self._http_timeout+(0 if timeout is None else timeout))
 
     def setWebhook(self, url=None, certificate=None):
-        p = self._strip(locals(), more=['certificate'])
+        p = _strip(locals(), more=['certificate'])
 
         if certificate:
             files = {'certificate': certificate}
-            r = requests.post(self._methodurl('setWebhook'),
-                              data=self._rectify(p),
-                              files=files,
-                              timeout=self._http_timeout)
+            return _post(self._methodurl('setWebhook'),
+                         data=_rectify(p),
+                         files=files,
+                         timeout=self._http_timeout)
         else:
-            r = requests.post(self._methodurl('setWebhook'),
-                              data=self._rectify(p),
-                              timeout=self._http_timeout)
+            return _post(self._methodurl('setWebhook'),
+                         data=_rectify(p),
+                         timeout=self._http_timeout)
 
-        return self._parse(r)
-
-    def downloadFile(self, file_id, dest):
+    def download_file(self, file_id, dest):
         f = self.getFile(file_id)
 
         # `file_path` is optional in File object
@@ -319,14 +398,7 @@ class Bot(_BotBase):
             if 'r' in locals():
                 r.close()
 
-    def answerInlineQuery(self, inline_query_id, results, cache_time=None, is_personal=None, next_offset=None):
-        p = self._strip(locals())
-        r = requests.post(self._methodurl('answerInlineQuery'),
-                          data=self._rectify(p, allow_namedtuple=['results']),
-                          timeout=self._http_timeout)
-        return self._parse(r)
-
-    def notifyOnMessage(self, callback=None, relax=0.1, timeout=20, source=None, ordered=True, maxhold=3, run_forever=False):
+    def message_loop(self, callback=None, relax=0.1, timeout=20, source=None, ordered=True, maxhold=3, run_forever=False):
         if callback is None:
             callback = self.handle
         elif isinstance(callback, dict):
@@ -334,15 +406,12 @@ class Bot(_BotBase):
 
         def handle(update):
             try:
-                if 'message' in update:
-                    callback(update['message'])
-                elif 'inline_query' in update:
-                    callback(update['inline_query'])
-                elif 'chosen_inline_result' in update:
-                    callback(update['chosen_inline_result'])
-                else:
-                    # Do not swallow. Make sure developer knows.
-                    raise BadFlavor(update)
+                key = _find_first_key(update, ['message',
+                                               'callback_query',
+                                               'inline_query',
+                                               'chosen_inline_result'])
+
+                callback(update[key])
             except:
                 # Localize the error so message thread can keep going.
                 traceback.print_exc()

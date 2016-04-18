@@ -63,4 +63,4 @@ TOKEN = sys.argv[1]
 bot = telepot.DelegatorBot(TOKEN, [
     (per_chat_id(), create_open(Player, timeout=10)),
 ])
-bot.notifyOnMessage(run_forever=True)
+bot.message_loop(run_forever=True)

@@ -17,13 +17,51 @@ def flavor_router(routing_table):
     router = telepot.async.helper.Router(telepot.flavor, routing_table)
     return router.route
 
-                                         
+
+# Mirror helper functions for use in this file
+_find_first_key = telepot._find_first_key
+_isstring = telepot._isstring
+_isfile = telepot._isfile
+
+_dismantle_message_id_form = telepot._dismantle_message_id_form
+_strip = telepot._strip
+_rectify = telepot._rectify
+
+@asyncio.coroutine
+def _post(url, timeout, **kwargs):
+    if timeout is None:
+        response = yield from aiohttp.post(url, **kwargs)
+    else:
+        response = yield from asyncio.wait_for(aiohttp.post(url, **kwargs), timeout)
+
+    try:
+        data = yield from response.json()
+    except ValueError:
+        text = yield from response.text()
+        raise BadHTTPResponse(response.status, text, response)
+
+    if data['ok']:
+        return data['result']
+    else:
+        description, error_code = data['description'], data['error_code']
+
+        # Look for specific error ...
+        for e in TelegramError.__subclasses__():
+            n = len(e.DESCRIPTION_PATTERNS)
+            if any(map(re.search, e.DESCRIPTION_PATTERNS, n*[description], n*[re.IGNORECASE])):
+                raise e(description, error_code, data)
+
+        # ... or raise generic error
+        raise TelegramError(description, error_code, data)
+
+
 class Bot(telepot._BotBase):
     def __init__(self, token, loop=None):
         super(Bot, self).__init__(token)
         self._loop = loop if loop is not None else asyncio.get_event_loop()
 
-        self._router = telepot.async.helper.Router(telepot.flavor, {'normal': telepot.async.helper._delay_yell(self, 'on_chat_message'),
+        self._router = telepot.async.helper.Router(telepot.flavor, {'chat': telepot.async.helper._delay_yell(self, 'on_chat_message'),
+                                                                    'callback_query': telepot.async.helper._delay_yell(self, 'on_callback_query'),
                                                                     'inline_query': telepot.async.helper._delay_yell(self, 'on_inline_query'),
                                                                     'chosen_inline_result': telepot.async.helper._delay_yell(self, 'on_chosen_inline_result')})
 
@@ -36,59 +74,25 @@ class Bot(telepot._BotBase):
         yield from self._router.route(msg)
 
     @asyncio.coroutine
-    def _parse(self, response):
-        try:
-            data = yield from response.json()
-        except ValueError:
-            text = yield from response.text()
-            raise BadHTTPResponse(response.status, text, response)
-
-        if data['ok']:
-            return data['result']
-        else:
-            description, error_code = data['description'], data['error_code']
-
-            # Look for specific error ...
-            for e in TelegramError.__subclasses__():
-                n = len(e.DESCRIPTION_PATTERNS)
-                if any(map(re.search, e.DESCRIPTION_PATTERNS, n*[description], n*[re.IGNORECASE])):
-                    raise e(description, error_code, data)
-
-            # ... or raise generic error
-            raise TelegramError(description, error_code, data)
-
-    @asyncio.coroutine
     def getMe(self):
-        r = yield from asyncio.wait_for(
-                aiohttp.post(self._methodurl('getMe')), 
-                self._http_timeout
-            )
-        return (yield from self._parse(r))
+        return (yield from _post(self._methodurl('getMe'), self._http_timeout))
 
     @asyncio.coroutine
-    def sendMessage(self, chat_id, text, parse_mode=None, disable_web_page_preview=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals())
-        r = yield from asyncio.wait_for(
-                aiohttp.post(
-                    self._methodurl('sendMessage'), 
-                    data=self._rectify(p, allow_namedtuple=['reply_markup'])), 
-                self._http_timeout
-            )
-        return (yield from self._parse(r))
+    def sendMessage(self, chat_id, text,
+                    parse_mode=None, disable_web_page_preview=None,
+                    disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals())
+        return (yield from _post(self._methodurl('sendMessage'), self._http_timeout,
+                                 data=_rectify(p)))
 
     @asyncio.coroutine
     def forwardMessage(self, chat_id, from_chat_id, message_id, disable_notification=None):
-        p = self._strip(locals())
-        r = yield from asyncio.wait_for(
-                aiohttp.post(
-                    self._methodurl('forwardMessage'), 
-                    data=self._rectify(p)), 
-                self._http_timeout
-            )
-        return (yield from self._parse(r))
+        p = _strip(locals())
+        return (yield from _post(self._methodurl('forwardMessage'), self._http_timeout,
+                                 data=_rectify(p)))
 
     @asyncio.coroutine
-    def _sendFile(self, inputfile, filetype, params):
+    def _sendfile(self, inputfile, filetype, params):
         method = {'photo':    'sendPhoto',
                   'audio':    'sendAudio',
                   'document': 'sendDocument',
@@ -96,13 +100,10 @@ class Bot(telepot._BotBase):
                   'video':    'sendVideo',
                   'voice':    'sendVoice',}[filetype]
 
-        if telepot._isstring(inputfile):            
+        if _isstring(inputfile):
             params[filetype] = inputfile
-            r = yield from asyncio.wait_for(
-                    aiohttp.post(
-                        self._methodurl(method), 
-                        data=self._rectify(params, allow_namedtuple=['reply_markup'])), 
-                    self._http_timeout)
+            return (yield from _post(self._methodurl(method), self._http_timeout,
+                                     data=_rectify(params)))
         else:
             if isinstance(inputfile, tuple):
                 if len(inputfile) == 2:
@@ -116,125 +117,165 @@ class Bot(telepot._BotBase):
             part = mpwriter.append(fileobj)
             part.set_content_disposition('form-data', name=filetype, filename=filename)
 
-            r = yield from aiohttp.post(
-                    self._methodurl(method), 
-                    params=self._rectify(params, allow_namedtuple=['reply_markup']), 
-                    data=mpwriter)
+            return (yield from _post(self._methodurl(method), None,
+                                     params=_rectify(params),
+                                     data=mpwriter))
 
-            # `_http_timeout` is not used here because, for some reason, the larger the file, 
-            # the longer it takes for the server to respond (after upload is finished). It is hard to say
-            # what value `_http_timeout` should be. In the future, maybe I should let user specify.
-
-        return (yield from self._parse(r))
+            # No timeout is given here because, for some reason, the larger the file,
+            # the longer it takes for the server to respond (after upload is finished).
+            # It is unclear how long timeout should be.
 
     @asyncio.coroutine
-    def sendPhoto(self, chat_id, photo, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals(), more=['photo'])
-        return (yield from self._sendFile(photo, 'photo', p))
+    def sendPhoto(self, chat_id, photo,
+                  caption=None,
+                  disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals(), more=['photo'])
+        return (yield from self._sendfile(photo, 'photo', p))
 
     @asyncio.coroutine
-    def sendAudio(self, chat_id, audio, duration=None, performer=None, title=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals(), more=['audio'])
-        return (yield from self._sendFile(audio, 'audio', p))
+    def sendAudio(self, chat_id, audio,
+                  duration=None, performer=None, title=None,
+                  disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals(), more=['audio'])
+        return (yield from self._sendfile(audio, 'audio', p))
 
     @asyncio.coroutine
-    def sendDocument(self, chat_id, document, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals(), more=['document'])
-        return (yield from self._sendFile(document, 'document', p))
+    def sendDocument(self, chat_id, document,
+                     caption=None,
+                     disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals(), more=['document'])
+        return (yield from self._sendfile(document, 'document', p))
 
     @asyncio.coroutine
-    def sendSticker(self, chat_id, sticker, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals(), more=['sticker'])
-        return (yield from self._sendFile(sticker, 'sticker', p))
+    def sendSticker(self, chat_id, sticker,
+                    disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals(), more=['sticker'])
+        return (yield from self._sendfile(sticker, 'sticker', p))
 
     @asyncio.coroutine
-    def sendVideo(self, chat_id, video, duration=None, width=None, height=None, caption=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals(), more=['video'])
-        return (yield from self._sendFile(video, 'video', p))
+    def sendVideo(self, chat_id, video,
+                  duration=None, width=None, height=None, caption=None,
+                  disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals(), more=['video'])
+        return (yield from self._sendfile(video, 'video', p))
 
     @asyncio.coroutine
-    def sendVoice(self, chat_id, voice, duration=None, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals(), more=['voice'])
-        return (yield from self._sendFile(voice, 'voice', p))
+    def sendVoice(self, chat_id, voice,
+                  duration=None,
+                  disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals(), more=['voice'])
+        return (yield from self._sendfile(voice, 'voice', p))
 
     @asyncio.coroutine
-    def sendLocation(self, chat_id, latitude, longitude, disable_notification=None, reply_to_message_id=None, reply_markup=None):
-        p = self._strip(locals())
-        r = yield from asyncio.wait_for(
-                aiohttp.post(
-                    self._methodurl('sendLocation'), 
-                    data=self._rectify(p, allow_namedtuple=['reply_markup'])), 
-                self._http_timeout
-            )
-        return (yield from self._parse(r))
+    def sendLocation(self, chat_id, latitude, longitude,
+                     disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals())
+        return (yield from _post(self._methodurl('sendLocation'), self._http_timeout,
+                                 data=_rectify(p)))
+
+    @asyncio.coroutine
+    def sendVenue(self, chat_id, latitude, longitude, title, address,
+                  foursquare_id=None,
+                  disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals())
+        return (yield from _post(self._methodurl('sendVenue'), self._http_timeout,
+                                 data=_rectify(p)))
+
+    @asyncio.coroutine
+    def sendContact(self, chat_id, phone_number, first_name,
+                    last_name=None,
+                    disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        p = _strip(locals())
+        return (yield from _post(self._methodurl('sendContact'), self._http_timeout,
+                                 data=_rectify(p)))
 
     @asyncio.coroutine
     def sendChatAction(self, chat_id, action):
-        p = self._strip(locals())
-        r = yield from asyncio.wait_for(
-                aiohttp.post(
-                    self._methodurl('sendChatAction'), 
-                    data=self._rectify(p)), 
-                self._http_timeout
-            )
-        return (yield from self._parse(r))
+        p = _strip(locals())
+        return (yield from _post(self._methodurl('sendChatAction'), self._http_timeout,
+                                 data=_rectify(p)))
 
     @asyncio.coroutine
     def getUserProfilePhotos(self, user_id, offset=None, limit=None):
-        p = self._strip(locals())
-        r = yield from asyncio.wait_for(
-                aiohttp.post(
-                    self._methodurl('getUserProfilePhotos'), 
-                    data=self._rectify(p)), 
-                self._http_timeout
-            )
-        return (yield from self._parse(r))
+        p = _strip(locals())
+        return (yield from _post(self._methodurl('getUserProfilePhotos'), self._http_timeout,
+                                 data=_rectify(p)))
 
     @asyncio.coroutine
     def getFile(self, file_id):
-        p = self._strip(locals())
-        r = yield from asyncio.wait_for(
-                aiohttp.post(
-                    self._methodurl('getFile'), 
-                    data=self._rectify(p)), 
-                self._http_timeout
-            )
-        return (yield from self._parse(r))
+        p = _strip(locals())
+        return (yield from _post(self._methodurl('getFile'), self._http_timeout,
+                                 data=_rectify(p)))
+
+    @asyncio.coroutine
+    def kickChatMember(self, chat_id, user_id):
+        p = _strip(locals())
+        return (yield from _post(self._methodurl('kickChatMember'), self._http_timeout,
+                                 data=_rectify(p)))
+
+    @asyncio.coroutine
+    def unbanChatMember(self, chat_id, user_id):
+        p = _strip(locals())
+        return (yield from _post(self._methodurl('unbanChatMember'), self._http_timeout,
+                                 data=_rectify(p)))
+
+    @asyncio.coroutine
+    def answerCallbackQuery(self, callback_query_id, text=None, show_alert=None):
+        p = _strip(locals())
+        return (yield from _post(self._methodurl('answerCallbackQuery'), self._http_timeout,
+                                 data=_rectify(p)))
+
+    @asyncio.coroutine
+    def editMessageText(self, msgid_form, text,
+                        parse_mode=None, disable_web_page_preview=None, reply_markup=None):
+        p = _strip(locals(), more=['msgid_form'])
+        p.update(_dismantle_message_id_form(msgid_form))
+        return (yield from _post(self._methodurl('editMessageText'), self._http_timeout,
+                                 data=_rectify(p)))
+
+    @asyncio.coroutine
+    def editMessageCaption(self, msgid_form, caption=None, reply_markup=None):
+        p = _strip(locals(), more=['msgid_form'])
+        p.update(_dismantle_message_id_form(msgid_form))
+        return (yield from _post(self._methodurl('editMessageCaption'), self._http_timeout,
+                                 data=_rectify(p)))
+
+    @asyncio.coroutine
+    def editMessageReplyMarkup(self, msgid_form, reply_markup=None):
+        p = _strip(locals(), more=['msgid_form'])
+        p.update(_dismantle_message_id_form(msgid_form))
+        return (yield from _post(self._methodurl('editMessageReplyMarkup'), self._http_timeout,
+                                 data=_rectify(p)))
+
+    @asyncio.coroutine
+    def answerInlineQuery(self, inline_query_id, results,
+                          cache_time=None, is_personal=None, next_offset=None,
+                          switch_pm_text=None, switch_pm_parameter=None):
+        p = _strip(locals())
+        return (yield from _post(self._methodurl('answerInlineQuery'), self._http_timeout,
+                                 data=_rectify(p)))
 
     @asyncio.coroutine
     def getUpdates(self, offset=None, limit=None, timeout=None):
-        p = self._strip(locals())
-        r = yield from asyncio.wait_for(
-                aiohttp.post(
-                    self._methodurl('getUpdates'), 
-                    data=self._rectify(p)), 
-                self._http_timeout+(0 if timeout is None else timeout)
-            )
-        return (yield from self._parse(r))
+        p = _strip(locals())
+        return (yield from _post(self._methodurl('getUpdates'), self._http_timeout+(0 if timeout is None else timeout),
+                                 data=_rectify(p)))
 
     @asyncio.coroutine
     def setWebhook(self, url=None, certificate=None):
-        p = self._strip(locals(), more=['certificate'])
+        p = _strip(locals(), more=['certificate'])
 
         if certificate:
             files = {'certificate': certificate}
-            r = yield from asyncio.wait_for(
-                    aiohttp.post(
-                        self._methodurl('setWebhook'), 
-                        params=self._rectify(p), 
-                        data=files), 
-                    self._http_timeout)
+            return (yield from _post(self._methodurl('setWebhook'), self._http_timeout,
+                                     params=_rectify(p),
+                                     data=files))
         else:
-            r = yield from asyncio.wait_for(
-                    aiohttp.post(
-                        self._methodurl('setWebhook'), 
-                        data=self._rectify(p)), 
-                    self._http_timeout)
-
-        return (yield from self._parse(r))
+            return (yield from _post(self._methodurl('setWebhook'), self._http_timeout,
+                                     data=_rectify(p)))
 
     @asyncio.coroutine
-    def downloadFile(self, file_id, dest):
+    def download_file(self, file_id, dest):
         f = yield from self.getFile(file_id)
 
         # `file_path` is optional in File object
@@ -243,7 +284,7 @@ class Bot(telepot._BotBase):
 
         try:
             r = yield from asyncio.wait_for(
-                    aiohttp.get(self._fileurl(f['file_path'])), 
+                    aiohttp.get(self._fileurl(f['file_path'])),
                     self._http_timeout)
 
             d = dest if isinstance(dest, io.IOBase) else open(dest, 'wb')
@@ -262,18 +303,7 @@ class Bot(telepot._BotBase):
                 r.close()
 
     @asyncio.coroutine
-    def answerInlineQuery(self, inline_query_id, results, cache_time=None, is_personal=None, next_offset=None):
-        p = self._strip(locals())
-        r = yield from asyncio.wait_for(
-                aiohttp.post(
-                    self._methodurl('answerInlineQuery'), 
-                    data=self._rectify(p, allow_namedtuple=['results'])),
-                timeout=self._http_timeout
-            )
-        return (yield from self._parse(r))
-
-    @asyncio.coroutine
-    def messageLoop(self, handler=None, source=None, ordered=True, maxhold=3):
+    def message_loop(self, handler=None, source=None, ordered=True, maxhold=3):
         if handler is None:
             handler = self.handle
         elif isinstance(handler, dict):
@@ -289,15 +319,12 @@ class Bot(telepot._BotBase):
 
         def handle(update):
             try:
-                if 'message' in update:
-                    callback(update['message'])
-                elif 'inline_query' in update:
-                    callback(update['inline_query'])
-                elif 'chosen_inline_result' in update:
-                    callback(update['chosen_inline_result'])
-                else:
-                    # Do not swallow. Make sure developer knows.
-                    raise BadFlavor(update)
+                key = _find_first_key(update, ['message',
+                                               'callback_query',
+                                               'inline_query',
+                                               'chosen_inline_result'])
+
+                callback(update[key])
             except:
                 # Localize the error so message thread can keep going.
                 traceback.print_exc()

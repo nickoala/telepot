@@ -13,14 +13,14 @@ $ python3.4 emodia.py <config_path>
 Emodi: An Emoji Unicode Decoder - You send me an emoji, I give you the unicode.
 
 Because this program is run on a hosted server, I don't want the token on the
-command-line, which may be seen by listing the processes. I put the token in a 
+command-line, which may be seen by listing the processes. I put the token in a
 config file, which looks like:
 
 [emodia.py]
 bot_token = .........
 
-Caution: Python's treatment of unicode characters longer than 2 bytes (which 
-most emojis are) varies across versions and platforms. I have tested this program 
+Caution: Python's treatment of unicode characters longer than 2 bytes (which
+most emojis are) varies across versions and platforms. I have tested this program
 on Python3.4.3/Raspbian & CentOS6. If you try it on other versions/platforms, the
 length-checking and substring-extraction below may not work as expected.
 """
@@ -31,7 +31,7 @@ logger = logging.getLogger()
 @asyncio.coroutine
 def handle(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
-    m = telepot.namedtuple.namedtuple(msg, 'Message')
+    m = telepot.namedtuple.Message(**msg)
 
     if chat_id < 0:
         # group message
@@ -55,7 +55,7 @@ def handle(msg):
         if len(msg['text']) > 10:
             reply = 'First 10 characters:\n'
 
-        # Length-checking and substring-extraction may work differently 
+        # Length-checking and substring-extraction may work differently
         # depending on Python versions and platforms. See above.
 
         reply += msg['text'][:10].encode('unicode-escape').decode('ascii')
@@ -75,7 +75,7 @@ TOKEN = config[filename]['bot_token']
 bot = telepot.async.Bot(TOKEN)
 loop = asyncio.get_event_loop()
 
-loop.create_task(bot.messageLoop(handle))
+loop.create_task(bot.message_loop(handle))
 logger.info('Listening ...')
 
 loop.run_forever()

@@ -31,13 +31,13 @@ def equivalent(data, nt):
     if type(data) is dict:
         keys = list(data.keys())
 
-        # number of dictionary keys == number of non-None values in namedtuple?        
+        # number of dictionary keys == number of non-None values in namedtuple?
         if len(keys) != len([f for f in nt._fields if getattr(nt, f) is not None]):
             return False
 
         # map `from` to `from_`
         fields = list([k+'_' if k in ['from'] else k for k in keys])
-        
+
         return all(map(equivalent, [data[k] for k in keys], [getattr(nt, f) for f in fields]))
     elif type(data) is list:
         return all(map(equivalent, data, nt))
@@ -48,11 +48,8 @@ def examine(result, type):
     try:
         print('Examining %s ......' % type)
 
-        nt = telepot.namedtuple.namedtuple(result, type)
+        nt = type(**result)
         assert equivalent(result, nt), 'Not equivalent:::::::::::::::\n%s\n::::::::::::::::\n%s' % (result, nt)
-
-        if type == 'Message':
-            print('Message glance2: %s' % str(telepot.glance2(result, long=True)))
 
         pprint.pprint(result)
         pprint.pprint(nt)
@@ -64,7 +61,7 @@ def examine(result, type):
             exit(1)
 
 def send_everything_on_contact(msg):
-    content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance2(msg, long=True)
+    content_type, chat_type, chat_id, msg_date, msg_id = telepot.glance(msg, long=True)
 
     if chat_id != USER_ID:
         print('Unauthorized user:', msg['from']['id'])
@@ -74,20 +71,20 @@ def send_everything_on_contact(msg):
     print('Start sending various messages ...')
 
     ##### forwardMessage
-    
+
     r = bot.forwardMessage(chat_id, chat_id, msg_id)
-    examine(r, 'Message')
+    examine(r, telepot.namedtuple.Message)
 
     ##### sendMessage
 
     r = bot.sendMessage(chat_id, 'Hello, I am going to send you a lot of things.', reply_to_message_id=msg_id)
-    examine(r, 'Message')
+    examine(r, telepot.namedtuple.Message)
 
     r = bot.sendMessage(chat_id, '中文')
-    examine(r, 'Message')
+    examine(r, telepot.namedtuple.Message)
 
     r = bot.sendMessage(chat_id, '*bold text*\n_italic text_\n[link](http://www.google.com)', parse_mode='Markdown')
-    examine(r, 'Message')
+    examine(r, telepot.namedtuple.Message)
 
     bot.sendMessage(chat_id, 'http://www.yahoo.com\nwith web page preview')
 
@@ -113,7 +110,7 @@ def send_everything_on_contact(msg):
 
     bot.sendChatAction(chat_id, 'upload_photo')
     r = bot.sendPhoto(chat_id, open('lighthouse.jpg', 'rb'))
-    examine(r, 'Message')
+    examine(r, telepot.namedtuple.Message)
 
     file_id = r['photo'][0]['file_id']
 
@@ -125,31 +122,31 @@ def send_everything_on_contact(msg):
     bot.sendPhoto(chat_id, ('abc.jpg', furl))
 
     ##### getFile
-    
-    f = bot.getFile(file_id)
-    examine(f, 'File')
 
-    ##### downloadFile, smaller than one chunk (65K)
-    
+    f = bot.getFile(file_id)
+    examine(f, telepot.namedtuple.File)
+
+    ##### download_file, smaller than one chunk (65K)
+
     try:
         print('Downloading file to non-existent directory ...')
-        bot.downloadFile(file_id, 'non-existent-dir/file')
+        bot.download_file(file_id, 'non-existent-dir/file')
     except:
         print('Error: as expected')
 
     print('Downloading file to down.1 ...')
-    bot.downloadFile(file_id, 'down.1')
+    bot.download_file(file_id, 'down.1')
 
     print('Open down.2 and download to it ...')
     with open('down.2', 'wb') as down:
-        bot.downloadFile(file_id, down)
+        bot.download_file(file_id, down)
 
     ##### sendAudio
     # Need one of `performer` or `title' for server to regard it as audio. Otherwise, server treats it as voice.
 
     bot.sendChatAction(chat_id, 'upload_audio')
     r = bot.sendAudio(chat_id, open('dgdg.mp3', 'rb'), title='Ringtone')
-    examine(r, 'Message')
+    examine(r, telepot.namedtuple.Message)
 
     file_id = r['audio']['file_id']
 
@@ -161,7 +158,7 @@ def send_everything_on_contact(msg):
 
     bot.sendChatAction(chat_id, 'upload_document')
     r = bot.sendDocument(chat_id, open('document.txt', 'rb'))
-    examine(r, 'Message')
+    examine(r, telepot.namedtuple.Message)
 
     file_id = r['document']['file_id']
 
@@ -172,7 +169,7 @@ def send_everything_on_contact(msg):
     ##### sendSticker
 
     r = bot.sendSticker(chat_id, open('gandhi.png', 'rb'))
-    examine(r, 'Message')
+    examine(r, telepot.namedtuple.Message)
 
     file_id = r['sticker']['file_id']
 
@@ -184,7 +181,7 @@ def send_everything_on_contact(msg):
 
     bot.sendChatAction(chat_id, 'upload_video')
     r = bot.sendVideo(chat_id, open('hktraffic.mp4', 'rb'))
-    examine(r, 'Message')
+    examine(r, telepot.namedtuple.Message)
 
     try:
         file_id = r['video']['file_id']
@@ -201,15 +198,15 @@ def send_everything_on_contact(msg):
         bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
         bot.sendDocument(chat_id, file_id, reply_markup=hide_keyboard)
 
-    ##### downloadFile, multiple chunks
+    ##### download_file, multiple chunks
 
     print('Downloading file to down.3 ...')
-    bot.downloadFile(file_id, 'down.3')
+    bot.download_file(file_id, 'down.3')
 
     ##### sendVoice
 
     r = bot.sendVoice(chat_id, open('example.ogg', 'rb'))
-    examine(r, 'Message')
+    examine(r, telepot.namedtuple.Message)
 
     file_id = r['voice']['file_id']
 
@@ -221,7 +218,7 @@ def send_everything_on_contact(msg):
 
     bot.sendChatAction(chat_id, 'find_location')
     r = bot.sendLocation(chat_id, 22.33, 114.18)  # Hong Kong
-    examine(r, 'Message')
+    examine(r, telepot.namedtuple.Message)
 
     bot.sendLocation(chat_id, 49.25, -123.1, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)  # Vancouver
 
@@ -235,25 +232,25 @@ def get_user_profile_photos():
     print('Getting user profile photos ...')
 
     r = bot.getUserProfilePhotos(USER_ID)
-    examine(r, 'UserProfilePhotos')
+    examine(r, telepot.namedtuple.UserProfilePhotos)
 
 expected_content_type = None
 content_type_iterator = iter([
     'text', 'voice', 'sticker', 'photo', 'audio' ,'document', 'video', 'contact', 'location',
-    'new_chat_participant',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo', 'left_chat_participant'
+    'new_chat_member',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo', 'left_chat_member'
 ])
 
 def see_every_content_types(msg):
     global expected_content_type, content_type_iterator
 
-    content_type, chat_type, chat_id = telepot.glance2(msg)
+    content_type, chat_type, chat_id = telepot.glance(msg)
     from_id = msg['from']['id']
 
     if chat_id != USER_ID and from_id != USER_ID:
         print('Unauthorized user:', chat_id, from_id)
         return
 
-    examine(msg, 'Message')
+    examine(msg, telepot.namedtuple.Message)
     try:
         if content_type == expected_content_type:
             expected_content_type = next(content_type_iterator)
@@ -265,7 +262,7 @@ def see_every_content_types(msg):
         bot.sendMessage(from_id, 'Thank you. I am done.')
 
 def ask_for_various_messages():
-    bot.notifyOnMessage(see_every_content_types)
+    bot.message_loop(see_every_content_types)
 
     global expected_content_type, content_type_iterator
     expected_content_type = next(content_type_iterator)
@@ -275,7 +272,7 @@ def ask_for_various_messages():
 def test_webhook_getupdates_exclusive():
     bot.setWebhook('https://www.fake.com/fake', open('old.cert', 'rb'))
     print('Fake webhook set.')
-    
+
     try:
         bot.getUpdates()
     except telepot.TelegramError as e:
@@ -295,4 +292,4 @@ test_webhook_getupdates_exclusive()
 get_user_profile_photos()
 
 print('Text me to start.')
-bot.notifyOnMessage(send_everything_on_contact, run_forever=True)
+bot.message_loop(send_everything_on_contact, run_forever=True)

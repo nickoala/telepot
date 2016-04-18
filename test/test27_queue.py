@@ -8,7 +8,7 @@ def handle(msg):
 bot = telepot.Bot('abc')
 qu = queue.Queue();
 
-bot.notifyOnMessage(handle, source=qu, maxhold=8)
+bot.message_loop(handle, source=qu, maxhold=8)
 
 def u(update_id):
     return { 'update_id': update_id, 'message': update_id }
@@ -51,9 +51,9 @@ sequence = [
     u(26),
     u(27),
     9,  # skip id=25
-    
+
     u(25),  # discard
-    
+
     u(30),
     u(29),
     5,
@@ -61,16 +61,16 @@ sequence = [
     u(33),
     2,  # clear 29,30, skip 28
     u(31),  # clear 31,32,33
-    
+
     u(39),
     u(36),
     2,
     u(37),
     7,  # clear 36,37,39
-    
+
     u(28),  # discard
     u(38),  # discard
-    
+
     u(40),  # return
 ]
 

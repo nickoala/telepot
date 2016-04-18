@@ -118,10 +118,19 @@ class Sender(object):
                        'sendVideo',
                        'sendVoice',
                        'sendLocation',
+                       'sendVenue',
+                       'sendContact',
                        'sendChatAction',]:
             setattr(self, method, partial(getattr(bot, method), chat_id))
             # Essentially doing:
             #   self.sendMessage = partial(bot.sendMessage, chat_id)
+
+
+class Administrator(object):
+    def __init__(self, bot, chat_id):
+        for method in ['kickChatMember',
+                       'unbanChatMember',]:
+            setattr(self, method, partial(getattr(bot, method), chat_id))
 
 
 class Answerer(object):
@@ -205,6 +214,7 @@ class ChatContext(ListenerContext):
         super(ChatContext, self).__init__(bot, context_id)
         self._chat_id = chat_id
         self._sender = Sender(bot, chat_id)
+        self._administrator = Administrator(bot, chat_id)
 
     @property
     def chat_id(self):
@@ -213,6 +223,10 @@ class ChatContext(ListenerContext):
     @property
     def sender(self):
         return self._sender
+
+    @property
+    def administrator(self):
+        return self._administrator
 
 
 class UserContext(ListenerContext):
@@ -296,7 +310,8 @@ class Router(object):
 class DefaultRouterMixin(object):
     def __init__(self):
         super(DefaultRouterMixin, self).__init__()
-        self._router = Router(telepot.flavor, {'normal': lambda msg: self.on_chat_message(msg),
+        self._router = Router(telepot.flavor, {'chat': lambda msg: self.on_chat_message(msg),
+                                               'callback_query': lambda msg: self.on_callback_query(msg),
                                                'inline_query': lambda msg: self.on_inline_query(msg),
                                                'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
                                                # use lambda to delay evaluation of self.on_ZZZ to runtime because 

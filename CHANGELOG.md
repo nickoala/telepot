@@ -1,5 +1,28 @@
 # telepot changelog
 
+## 7.0 (2016-04-18)
+
+- Bot API 2.0
+    - Added new flavor `callback_query`
+    - Added a bunch of namedtuples to reflect new objects in Bot API
+    - Added methods:
+        - `sendVenue()`, `sendContact()`
+        - `kickChatMember()`, `unbanChatMember()`
+        - `answerCallbackQuery()`
+        - `editMessageText()`, `editMessageCaption()`, `editMessageReplyMarkup()`
+    - To `ChatContext`, added a property `administrator`
+- Added `telepot.exception.MigratedToSupergroupChatError`
+- Backward-incompatible name changes
+    - Flavor `normal` → `chat`
+    - Method `notifyOnMessage` → `message_loop`
+    - Method `messageLoop` → `message_loop`
+    - Method `downloadFile` → `download_file`
+    - Function `telepot.namedtuple.namedtuple` was removed. Create namedtuples using their constructors directly.
+    - Function `telepot.glance2` was removed. Use `telepot.glance`.
+    - Chat messages' content type returned by `telepot.glance`:
+        - `new_chat_participant` → `new_chat_member`
+        - `left_chat_participant` → `left_chat_member`
+
 ## 6.8 (2016-04-11)
 
 - Added underlying response object to `BadHTTPResponse` and underlying JSON object to `TelegramError`

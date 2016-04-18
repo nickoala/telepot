@@ -53,7 +53,7 @@ def init(loop):
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(init(loop))
-loop.create_task(bot.messageLoop(source=update_queue))  # take updates from queue
+loop.create_task(bot.message_loop(source=update_queue))  # take updates from queue
 try:
     loop.run_forever()
 except KeyboardInterrupt:
