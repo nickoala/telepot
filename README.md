@@ -337,9 +337,9 @@ I don't yet have time to introduce their usage here, but I do have **[an example
 <a id="message-flavors"></a>
 ## Messages have Many Flavors
 
-By default, a bot only receives messages through a private chat, a group, or a channel. These are what I call *chat* messages - they have the flavor `chat`.
+By default, a bot only receives messages through a private chat, a group, or a channel. These are what I call *chat* messages - they have the **flavor** `chat`.
 
-If you use a callback button on an inline keyboard, your bot will receive an additional flavor of messages - `callback_query`.
+If you use a callback button on an inline keyboard, your bot will receive an additional **flavor** of messages - `callback_query`.
 
 Use `flavor()` to differentiate message flavors:
 
