@@ -1217,6 +1217,8 @@ A starting point for your telepot programs.
 
 An example that demonstrates the use of custom keyboard and inline keyboard, and their various buttons.
 
+Before running this example, remember to `/setinline` and `/setinlinefeedback` to enable inline mode for your bot.
+
 The bot works like this:
 
 - First, you send it one of these 4 characters - `c`, `i`, `h`, `f` - and it replies accordingly:
