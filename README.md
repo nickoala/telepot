@@ -182,7 +182,7 @@ TOKEN = sys.argv[1]
 
 bot = telepot.Bot(TOKEN)
 bot.message_loop(handle)
-print 'Listening ...'
+print ('Listening ...')
 
 # Keep the program running.
 while 1:
@@ -208,7 +208,7 @@ import telepot
 
 def handle(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
-    print content_type, chat_type, chat_id
+    print (content_type, chat_type, chat_id)
 
     # Do your stuff according to `content_type` ...
 
@@ -216,7 +216,7 @@ TOKEN = sys.argv[1]  # get token from command-line
 
 bot = telepot.Bot(TOKEN)
 bot.message_loop(handle)
-print 'Listening ...'
+print ('Listening ...')
 
 # Keep the program running.
 while 1:
@@ -347,9 +347,9 @@ Use `flavor()` to differentiate message flavors:
 flavor = telepot.flavor(msg)
 
 if flavor == 'chat':
-    print 'Chat message'
+    print ('Chat message')
 elif flavor == 'callback_query':
-    print 'Callback query'
+    print ('Callback query')
 ```
 
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
@@ -365,11 +365,11 @@ Your bot will now receive yet another flavor of messages - `inline_query`.
 flavor = telepot.flavor(msg)
 
 if flavor == 'chat':
-    print 'Chat message'
+    print ('Chat message')
 elif flavor == 'callback_query':
-    print 'Callback query'
+    print ('Callback query')
 elif flavor == 'inline_query':
-    print 'Inline query'
+    print ('Inline query')
 ```
 
 #### You may `glance()` an inline query too
@@ -471,19 +471,19 @@ def handle(msg):
     # chat message
     if flavor == 'chat':
         content_type, chat_type, chat_id = telepot.glance(msg)
-        print 'Chat Message:', content_type, chat_type, chat_id
+        print ('Chat Message:', content_type, chat_type, chat_id)
 
         # Do your stuff according to `content_type` ...
 
     # callback query - originated from a callback button
     elif flavor == 'callback_query':
         query_id, from_id, query_data = telepot.glance(msg, flavor=flavor)
-        print 'Callback query:', query_id, from_id, query_data
+        print ('Callback query:', query_id, from_id, query_data)
 
     # inline query - need `/setinline`
     elif flavor == 'inline_query':
         query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
-        print 'Inline Query:', query_id, from_id, query_string
+        print ('Inline Query:', query_id, from_id, query_string)
 
         # Compose your own answers
         articles = [{'type': 'article',
@@ -494,7 +494,7 @@ def handle(msg):
     # chosen inline result - need `/setinlinefeedback`
     elif flavor == 'chosen_inline_result':
         result_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
-        print 'Chosen Inline Result:', result_id, from_id, query_string
+        print ('Chosen Inline Result:', result_id, from_id, query_string)
 
         # Remember the chosen answer to do better next time
 
@@ -506,7 +506,7 @@ TOKEN = sys.argv[1]  # get token from command-line
 
 bot = telepot.Bot(TOKEN)
 bot.message_loop(handle)
-print 'Listening ...'
+print ('Listening ...')
 
 # Keep the program running.
 while 1:
@@ -531,15 +531,15 @@ import telepot
 
 def on_chat_message(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
-    print 'Chat Message:', content_type, chat_type, chat_id
+    print ('Chat Message:', content_type, chat_type, chat_id)
 
 def on_callback_query(msg):
     query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
-    print 'Callback Query:', query_id, from_id, query_data
+    print ('Callback Query:', query_id, from_id, query_data)
 
 def on_inline_query(msg):
     query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
-    print 'Inline Query:', query_id, from_id, query_string
+    print ('Inline Query:', query_id, from_id, query_string)
 
     # Compose your own answers
     articles = [{'type': 'article',
@@ -549,7 +549,7 @@ def on_inline_query(msg):
 
 def on_chosen_inline_result(msg):
     result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
-    print 'Chosen Inline Result:', result_id, from_id, query_string
+    print ('Chosen Inline Result:', result_id, from_id, query_string)
     
 
 TOKEN = sys.argv[1]  # get token from command-line
@@ -559,7 +559,7 @@ bot.message_loop({'chat': on_chat_message,
                   'callback_query': on_callback_query,
                   'inline_query': on_inline_query,
                   'chosen_inline_result': on_chosen_inline_result})
-print 'Listening ...'
+print ('Listening ...')
 
 # Keep the program running.
 while 1:
@@ -596,16 +596,16 @@ import telepot
 
 def on_chat_message(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
-    print 'Chat Message:', content_type, chat_type, chat_id
+    print ('Chat Message:', content_type, chat_type, chat_id)
 
 def on_callback_query(msg):
     query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
-    print 'Callback Query:', query_id, from_id, query_data
+    print ('Callback Query:', query_id, from_id, query_data)
 
 def on_inline_query(msg):
     def compute_answer():
         query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
-        print 'Computing for: %s' % query_string
+        print ('Computing for: %s' % query_string)
 
         articles = [{'type': 'article',
                          'id': 'abc', 'title': query_string, 'message_text': query_string}]
@@ -616,7 +616,7 @@ def on_inline_query(msg):
 
 def on_chosen_inline_result(msg):
     result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
-    print 'Chosen Inline Result:', result_id, from_id, query_string
+    print ('Chosen Inline Result:', result_id, from_id, query_string)
 
 
 TOKEN = sys.argv[1]  # get token from command-line
@@ -628,7 +628,7 @@ bot.message_loop({'chat': on_chat_message,
                   'callback_query': on_callback_query,
                   'inline_query': on_inline_query,
                   'chosen_inline_result': on_chosen_inline_result})
-print 'Listening ...'
+print ('Listening ...')
 
 # Keep the program running.
 while 1:
@@ -671,7 +671,7 @@ class YourBot(telepot.Bot):
         # callback query - originated from a callback button
         elif flavor == 'callback_query':
             query_id, from_id, query_data = telepot.glance(msg, flavor=flavor)
-            print 'Callback query:', query_id, from_id, query_data
+            print ('Callback query:', query_id, from_id, query_data)
 
         # inline query - need `/setinline`
         elif flavor == 'inline_query':
@@ -991,7 +991,7 @@ def on_chat_message(msg):
 
 def on_callback_query(msg):
     query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
-    print 'Callback Query:', query_id, from_id, query_data
+    print ('Callback Query:', query_id, from_id, query_data)
 
 def on_inline_query(msg):
     query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
