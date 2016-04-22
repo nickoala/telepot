@@ -586,7 +586,7 @@ if flavor == 'chat':
 
 elif flavor == 'callback_query':
     query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
-    print 'Callback query:', query_id, from_id, query_data
+    print ('Callback query:', query_id, from_id, query_data)
 
 elif flavor == 'inline_query':
     query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
@@ -658,10 +658,10 @@ from telepot.namedtuple import Message
 ntuple = Message(**msg)
 
 # `from` becomes `from_` due to keyword collision
-print ntuple.from_.id  # == msg['from']['id']
+print (ntuple.from_.id)  # == msg['from']['id']
 
 # other field names unchanged
-print ntuple.chat.id   # == msg['chat']['id']
+print (ntuple.chat.id)   # == msg['chat']['id']
 ```
 
 You may also choose to convert only part of the message:
@@ -1417,7 +1417,7 @@ class ParseMessageTextError(telepot.exception.TelegramError):
 try:
     bot.sendMessage(chat_id, '[wrong format)', parse_mode='Markdown')
 except ParseMessageTextError as e:
-    print e
+    print (e)
 
 class FileTypeMismatchError(telepot.exception.TelegramError):
     DESCRIPTION_PATTERNS = ['file.*type.*mismatch', 'type.*file.*mismatch']
@@ -1425,7 +1425,7 @@ class FileTypeMismatchError(telepot.exception.TelegramError):
 try:
     bot.sendPhoto(chat_id, 'NON-photo file_id')
 except FileTypeMismatchError as e:
-    print e
+    print (e)
 ```
 
 <a id="telepot-async"></a>
