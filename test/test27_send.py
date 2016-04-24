@@ -122,6 +122,8 @@ def send_everything_on_contact(msg):
     furl = urllib2.urlopen('http://i.imgur.com/B1fzGoh.jpg')
     bot.sendPhoto(chat_id, ('abc.jpg', furl))
 
+    bot.sendPhoto(chat_id, (u'中文照片.jpg', open('lighthouse.jpg', 'rb')), caption=u'中文照片')
+
     ##### getFile
 
     f = bot.getFile(file_id)
@@ -155,6 +157,8 @@ def send_everything_on_contact(msg):
 
     bot.sendAudio(chat_id, file_id, performer='Ding Dong', reply_markup=nt_hide_keyboard)
 
+    bot.sendAudio(chat_id, (u'中文歌.mp3', open('dgdg.mp3', 'rb')), title=u'中文歌')
+
     ##### sendDocument
 
     bot.sendChatAction(chat_id, 'upload_document')
@@ -166,6 +170,8 @@ def send_everything_on_contact(msg):
     bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
 
     bot.sendDocument(chat_id, file_id, reply_markup=hide_keyboard)
+
+    bot.sendDocument(chat_id, (u'中文文件.txt', open('document.txt', 'rb')))
 
     ##### sendSticker
 

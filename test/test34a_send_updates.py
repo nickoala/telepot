@@ -109,6 +109,8 @@ def send_everything(msg):
 
     yield from bot.sendPhoto(chat_id, ('abc.jpg', bbb))
 
+    yield from bot.sendPhoto(chat_id, ('中文照片.jpg', open('lighthouse.jpg', 'rb')), caption='中文照片')
+
     ##### getFile
 
     f = yield from bot.getFile(file_id)
@@ -142,6 +144,8 @@ def send_everything(msg):
 
     yield from bot.sendAudio(chat_id, file_id, performer='Ding Dong', reply_markup=nt_hide_keyboard)
 
+    yield from bot.sendAudio(chat_id, ('中文歌.mp3', open('dgdg.mp3', 'rb')), title='中文歌')
+
     ##### sendDocument
 
     yield from bot.sendChatAction(chat_id, 'upload_document')
@@ -153,6 +157,8 @@ def send_everything(msg):
     yield from bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
 
     yield from bot.sendDocument(chat_id, file_id, reply_markup=hide_keyboard)
+
+    yield from bot.sendDocument(chat_id, ('中文文件.txt', open('document.txt', 'rb')))
 
     ##### sendSticker
 

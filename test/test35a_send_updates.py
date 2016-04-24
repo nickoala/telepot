@@ -108,6 +108,8 @@ async def send_everything(msg):
 
     await bot.sendPhoto(chat_id, ('abc.jpg', bbb))
 
+    await bot.sendPhoto(chat_id, ('中文照片.jpg', open('lighthouse.jpg', 'rb')), caption='中文照片')
+
     ##### getFile
 
     f = await bot.getFile(file_id)
@@ -141,6 +143,8 @@ async def send_everything(msg):
 
     await bot.sendAudio(chat_id, file_id, performer='Ding Dong', reply_markup=nt_hide_keyboard)
 
+    await bot.sendAudio(chat_id, ('中文歌.mp3', open('dgdg.mp3', 'rb')), title='中文歌')
+
     ##### sendDocument
 
     await bot.sendChatAction(chat_id, 'upload_document')
@@ -152,6 +156,8 @@ async def send_everything(msg):
     await bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
 
     await bot.sendDocument(chat_id, file_id, reply_markup=hide_keyboard)
+
+    await bot.sendDocument(chat_id, ('中文文件.txt', open('document.txt', 'rb')))
 
     ##### sendSticker
 

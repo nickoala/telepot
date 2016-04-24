@@ -1,5 +1,9 @@
 # telepot changelog
 
+## 7.1 (2016-04-24)
+
+- Patched `requests` and `aiohttp` to send unicode filenames
+
 ## 7.0 (2016-04-18)
 
 - Bot API 2.0

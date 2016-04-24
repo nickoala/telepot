@@ -45,6 +45,10 @@ Currently, telepot's async version already works with Python 3.5.1.
 
 ### Recent changes
 
+**7.1 (2016-04-24)**
+
+- Patched `requests` and `aiohttp` to send unicode filenames
+
 **7.0 (2016-04-18)**
 
 - **Bot API 2.0**
@@ -93,9 +97,9 @@ $ easy_install --upgrade telepot  # UPGRADE
 Download manually:
 
 ```
-$ wget https://pypi.python.org/packages/source/t/telepot/telepot-6.8.zip
-$ unzip telepot-6.8.zip
-$ cd telepot-6.8
+$ wget https://pypi.python.org/packages/source/t/telepot/telepot-7.1.zip
+$ unzip telepot-7.1.zip
+$ cd telepot-7.1
 $ python setup.py install
 ```
 

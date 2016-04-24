@@ -10,7 +10,11 @@ from concurrent.futures._base import CancelledError
 import collections
 import telepot
 import telepot.async.helper
+from aiohttp.helpers import FormData
 from ..exception import BadFlavor, BadHTTPResponse, TelegramError
+
+# Patch aiohttp for sending unicode filename
+import telepot.async.hack
 
 
 def flavor_router(routing_table):
@@ -113,13 +117,13 @@ class Bot(telepot._BotBase):
             else:
                 filename, fileobj = guess_filename(inputfile) or filetype, inputfile
 
-            mpwriter = aiohttp.MultipartWriter('form-data')
-            part = mpwriter.append(fileobj)
-            part.set_content_disposition('form-data', name=filetype, filename=filename)
+            data = FormData()
+            for key,value in _rectify(params).items():
+                data.add_field(key, str(value))
+            data.add_field(filetype, fileobj, filename=filename)
 
             return (yield from _post(self._methodurl(method), None,
-                                     params=_rectify(params),
-                                     data=mpwriter))
+                                     data=data))
 
             # No timeout is given here because, for some reason, the larger the file,
             # the longer it takes for the server to respond (after upload is finished).

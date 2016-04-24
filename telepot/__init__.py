@@ -18,6 +18,9 @@ from .exception import BadFlavor, BadHTTPResponse, TelegramError
 # Suppress InsecurePlatformWarning
 requests.packages.urllib3.disable_warnings()
 
+# Patch Requests for sending unicode filename
+import telepot.hack
+
 
 def flavor(msg):
     if 'message_id' in msg:
@@ -43,8 +46,8 @@ def glance(msg, flavor='chat', long=False):
     def gl_chat():
         types = [
             'text', 'audio', 'document', 'photo', 'sticker', 'video', 'voice', 'contact', 'location', 'venue',
-            'new_chat_member', 'left_chat_member',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo', 
-            'group_chat_created', 'supergroup_chat_created', 'channel_chat_created', 
+            'new_chat_member', 'left_chat_member',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo',
+            'group_chat_created', 'supergroup_chat_created', 'channel_chat_created',
             'migrate_to_chat_id', 'migrate_from_chat_id', 'pinned_message',
         ]
 
@@ -138,14 +141,14 @@ def _rectify(params):
         if isinstance(v, (dict, list)):
             return json.dumps(v, separators=(',',':'))
         else:
-            return v        
+            return v
 
     # remove None, then json-serialize if needed
     return {k: flatten(v) for k,v in params.items() if v is not None}
 
 def _post(url, **kwargs):
     response = requests.post(url, **kwargs)
-    
+
     try:
         data = response.json()
     except ValueError:  # No JSON object could be decoded
@@ -185,7 +188,7 @@ class Bot(_BotBase):
                                                       'callback_query': lambda msg: self.on_callback_query(msg),
                                                       'inline_query': lambda msg: self.on_inline_query(msg),
                                                       'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
-                                                      # use lambda to delay evaluation of self.on_ZZZ to runtime because 
+                                                      # use lambda to delay evaluation of self.on_ZZZ to runtime because
                                                       # I don't want to require defining all methods right here.
 
     def handle(self, msg):
@@ -194,8 +197,8 @@ class Bot(_BotBase):
     def getMe(self):
         return _post(self._methodurl('getMe'), timeout=self._http_timeout)
 
-    def sendMessage(self, chat_id, text, 
-                    parse_mode=None, disable_web_page_preview=None, 
+    def sendMessage(self, chat_id, text,
+                    parse_mode=None, disable_web_page_preview=None,
                     disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = _strip(locals())
         return _post(self._methodurl('sendMessage'),
@@ -228,45 +231,45 @@ class Bot(_BotBase):
                          files=files)
 
             # No timeout is given here because, for some reason, the larger the file,
-            # the longer it takes for the server to respond (after upload is finished). 
+            # the longer it takes for the server to respond (after upload is finished).
             # It is unclear how long timeout should be.
 
-    def sendPhoto(self, chat_id, photo, 
+    def sendPhoto(self, chat_id, photo,
                   caption=None,
                   disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = _strip(locals(), more=['photo'])
         return self._sendfile(photo, 'photo', p)
 
-    def sendAudio(self, chat_id, audio, 
-                  duration=None, performer=None, title=None, 
+    def sendAudio(self, chat_id, audio,
+                  duration=None, performer=None, title=None,
                   disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = _strip(locals(), more=['audio'])
         return self._sendfile(audio, 'audio', p)
 
-    def sendDocument(self, chat_id, document, 
-                     caption=None, 
+    def sendDocument(self, chat_id, document,
+                     caption=None,
                      disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = _strip(locals(), more=['document'])
         return self._sendfile(document, 'document', p)
 
-    def sendSticker(self, chat_id, sticker, 
+    def sendSticker(self, chat_id, sticker,
                     disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = _strip(locals(), more=['sticker'])
         return self._sendfile(sticker, 'sticker', p)
 
-    def sendVideo(self, chat_id, video, 
-                  duration=None, width=None, height=None, caption=None, 
+    def sendVideo(self, chat_id, video,
+                  duration=None, width=None, height=None, caption=None,
                   disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = _strip(locals(), more=['video'])
         return self._sendfile(video, 'video', p)
 
-    def sendVoice(self, chat_id, voice, 
-                  duration=None, 
+    def sendVoice(self, chat_id, voice,
+                  duration=None,
                   disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = _strip(locals(), more=['voice'])
         return self._sendfile(voice, 'voice', p)
 
-    def sendLocation(self, chat_id, latitude, longitude, 
+    def sendLocation(self, chat_id, latitude, longitude,
                      disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = _strip(locals())
         return _post(self._methodurl('sendLocation'),
@@ -325,7 +328,7 @@ class Bot(_BotBase):
                      data=_rectify(p),
                      timeout=self._http_timeout)
 
-    def editMessageText(self, msgid_form, text, 
+    def editMessageText(self, msgid_form, text,
                         parse_mode=None, disable_web_page_preview=None, reply_markup=None):
         p = _strip(locals(), more=['msgid_form'])
         p.update(_dismantle_message_id_form(msgid_form))
@@ -347,7 +350,7 @@ class Bot(_BotBase):
                      data=_rectify(p),
                      timeout=self._http_timeout)
 
-    def answerInlineQuery(self, inline_query_id, results, 
+    def answerInlineQuery(self, inline_query_id, results,
                           cache_time=None, is_personal=None, next_offset=None,
                           switch_pm_text=None, switch_pm_parameter=None):
         p = _strip(locals())
