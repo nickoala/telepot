@@ -2,10 +2,9 @@ import time
 import traceback
 import threading
 import logging
-import telepot
-import telepot.filtering
-from .exception import WaitTooLong, StopListening
 from functools import partial
+from . import filtering, exception
+from . import flavor
 
 try:
     import Queue as queue
@@ -79,7 +78,7 @@ class Listener(object):
             raise RuntimeError('Listener has no capture criteria, will wait forever.')
 
         def meet_some_criteria(msg):
-            return any(map(lambda c: telepot.filtering.ok(msg, **c), self._criteria))
+            return any(map(lambda c: filtering.ok(msg, **c), self._criteria))
 
         timeout, = self.get_options('timeout')
 
@@ -96,12 +95,12 @@ class Listener(object):
                 timeleft = end - time.time()
 
                 if timeleft < 0:
-                    raise WaitTooLong()
+                    raise exception.WaitTooLong()
 
                 try:
                     msg = self._queue.get(block=True, timeout=timeleft)
                 except queue.Empty:
-                    raise WaitTooLong()
+                    raise exception.WaitTooLong()
 
                 if meet_some_criteria(msg):
                     return msg
@@ -131,6 +130,14 @@ class Administrator(object):
         for method in ['kickChatMember',
                        'unbanChatMember',]:
             setattr(self, method, partial(getattr(bot, method), chat_id))
+
+
+class Editor(object):
+    def __init__(self, bot, msg_identifier):
+        for method in ['editMessageText',
+                       'editMessageCaption',
+                       'editMessageReplyMarkup',]:
+            setattr(self, method, partial(getattr(bot, method), msg_identifier))
 
 
 class Answerer(object):
@@ -255,7 +262,7 @@ def openable(cls):
         logging.error('on_close() called due to %s: %s', type(exception).__name__, exception)
 
     def close(self, code=None, reason=None):
-        raise StopListening(code, reason)
+        raise exception.StopListening(code, reason)
 
     @property
     def listener(self):
@@ -278,44 +285,44 @@ def openable(cls):
 class Router(object):
     def __init__(self, key_function, routing_table):
         super(Router, self).__init__()
-        self._digest = key_function
-        self._table = routing_table
+        self.key_function = key_function
+        self.routing_table = routing_table
 
-    def set_key_function(self, fn):
-        self._digest = fn
+    # The only relevant argument is the first - the message. Following arguments are
+    # just placeholders for easy nesting - no matter what the upper-level router gives,
+    # nesting can be done like this:
+    #   top_router.routing_table['key'] = sub_router.route
+    def route(self, msg, *aa, **kw):
+        k = self.key_function(msg)
 
-    def set_routing_table(self, t):
-        self._table = t
-        
-    def route(self, msg):
-        k = self._digest(msg)
-        
         if isinstance(k, (tuple, list)):
-            key, args = k[0], k[1:]
+            key, args, kwargs = {1: tuple(k) + ((),{}),
+                                 2: tuple(k) + ({},),
+                                 3: tuple(k),}[len(k)]
         else:
-            key, args = k, ()
-        
+            key, args, kwargs = k, (), {}
+
         try:
-            fn = self._table[key]
+            fn = self.routing_table[key]
         except KeyError as e:
             # Check for default handler, key=None
-            if None in self._table:
-                fn = self._table[None]
+            if None in self.routing_table:
+                fn = self.routing_table[None]
             else:
                 raise RuntimeError('No handler for key: %s, and default handler not defined' % str(e.args))
-        
-        fn(msg, *args)
+
+        return fn(msg, *args, **kwargs)
 
 
 class DefaultRouterMixin(object):
     def __init__(self):
         super(DefaultRouterMixin, self).__init__()
-        self._router = Router(telepot.flavor, {'chat': lambda msg: self.on_chat_message(msg),
-                                               'callback_query': lambda msg: self.on_callback_query(msg),
-                                               'inline_query': lambda msg: self.on_inline_query(msg),
-                                               'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
-                                               # use lambda to delay evaluation of self.on_ZZZ to runtime because 
-                                               # I don't want to require defining all methods right here.
+        self._router = Router(flavor, {'chat': lambda msg: self.on_chat_message(msg),
+                                       'callback_query': lambda msg: self.on_callback_query(msg),
+                                       'inline_query': lambda msg: self.on_inline_query(msg),
+                                       'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
+                                       # use lambda to delay evaluation of self.on_ZZZ to runtime because
+                                       # I don't want to require defining all methods right here.
 
     @property
     def router(self):
@@ -336,11 +343,14 @@ class Monitor(ListenerContext, DefaultRouterMixin):
 
 @openable
 class ChatHandler(ChatContext, DefaultRouterMixin):
-    def __init__(self, seed_tuple, timeout):
+    def __init__(self, seed_tuple, timeout, callback_query=True):
         bot, initial_msg, seed = seed_tuple
         super(ChatHandler, self).__init__(bot, seed, initial_msg['chat']['id'])
         self.listener.set_options(timeout=timeout)
         self.listener.capture(chat__id=self.chat_id)
+        if callback_query:
+            # Also capture callback_query from the same user
+            self.listener.capture(_=lambda msg: flavor(msg)=='callback_query', from__id=self.chat_id)
 
 @openable
 class UserHandler(UserContext, DefaultRouterMixin):
@@ -352,4 +362,8 @@ class UserHandler(UserContext, DefaultRouterMixin):
         if flavors == 'all':
             self.listener.capture(from__id=self.user_id)
         else:
-            self.listener.capture(_=lambda msg: telepot.flavor(msg) in flavors, from__id=self.user_id)
+            self.listener.capture(_=lambda msg: flavor(msg) in flavors, from__id=self.user_id)
+
+class InlineUserHandler(UserHandler):
+    def __init__(self, seed_tuple, timeout):
+        super(InlineUserHandler, self).__init__(seed_tuple, timeout, flavors=['inline_query', 'chosen_inline_result'])

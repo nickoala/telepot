@@ -1,25 +1,20 @@
 import asyncio
 import traceback
 import time
-import telepot
-import telepot.helper
-import telepot.filtering
-from ..exception import WaitTooLong
+from .. import filtering, helper, exception
+from .. import flavor
 
-
-@asyncio.coroutine
-def _yell(fn, *args, **kwargs):
+async def _yell(fn, *args, **kwargs):
     if asyncio.iscoroutinefunction(fn):
-        return (yield from fn(*args, **kwargs))
+        return await fn(*args, **kwargs)
     else:
         return fn(*args, **kwargs)
 
 
 def _delay_yell(obj, method_name):
-    @asyncio.coroutine
-    def d(*a, **kw):
+    async def d(*a, **kw):
         method = getattr(obj, method_name)
-        yield from _yell(method, *a, **kw)
+        await _yell(method, *a, **kw)
     return d
 
 
@@ -42,20 +37,19 @@ class Microphone(object):
                 pass
 
 
-class Listener(telepot.helper.Listener):
-    @asyncio.coroutine
-    def wait(self):
+class Listener(helper.Listener):
+    async def wait(self):
         if not self._criteria:
             raise RuntimeError('Listener has no capture criteria, will wait forever.')
 
         def meet_some_criteria(msg):
-            return any(map(lambda c: telepot.filtering.ok(msg, **c), self._criteria))
+            return any(map(lambda c: filtering.ok(msg, **c), self._criteria))
 
         timeout, = self.get_options('timeout')
 
         if timeout is None:
             while 1:
-                msg = yield from self._queue.get()
+                msg = await self._queue.get()
 
                 if meet_some_criteria(msg):
                     return msg
@@ -66,12 +60,12 @@ class Listener(telepot.helper.Listener):
                 timeleft = end - time.time()
 
                 if timeleft < 0:
-                    raise WaitTooLong()
+                    raise exception.WaitTooLong()
 
                 try:
-                    msg = yield from asyncio.wait_for(self._queue.get(), timeleft)
+                    msg = await asyncio.wait_for(self._queue.get(), timeleft)
                 except asyncio.TimeoutError:
-                    raise WaitTooLong()
+                    raise exception.WaitTooLong()
 
                 if meet_some_criteria(msg):
                     return msg
@@ -88,19 +82,18 @@ class Answerer(object):
     def answer(self, inline_query, compute_fn, *compute_args, **compute_kwargs):
         from_id = inline_query['from']['id']
 
-        @asyncio.coroutine
-        def compute_and_answer():
+        async def compute_and_answer():
             try:
                 query_id = inline_query['id']
 
-                ans = yield from _yell(compute_fn, *compute_args, **compute_kwargs)
+                ans = await _yell(compute_fn, *compute_args, **compute_kwargs)
 
                 if isinstance(ans, list):
-                    yield from self._bot.answerInlineQuery(query_id, ans)
+                    await self._bot.answerInlineQuery(query_id, ans)
                 elif isinstance(ans, tuple):
-                    yield from self._bot.answerInlineQuery(query_id, *ans)
+                    await self._bot.answerInlineQuery(query_id, *ans)
                 elif isinstance(ans, dict):
-                    yield from self._bot.answerInlineQuery(query_id, **ans)
+                    await self._bot.answerInlineQuery(query_id, **ans)
                 else:
                     raise ValueError('Invalid answer format')
             except CancelledError:
@@ -121,50 +114,53 @@ class Answerer(object):
         self._working_tasks[from_id] = t
 
 
-# Mirror traditional version
-openable = telepot.helper.openable
+class Router(helper.Router):
+    # The only relevant argument is the first - the message. Following arguments are
+    # just placeholders for easy nesting - no matter what the upper-level router gives,
+    # nesting can be done like this:
+    #   top_router.routing_table['key'] = sub_router.route
+    async def route(self, msg, *aa, **kw):
+        k = self.key_function(msg)
 
-class Router(telepot.helper.Router):
-    @asyncio.coroutine
-    def route(self, msg):
-        k = self._digest(msg)
-        
         if isinstance(k, (tuple, list)):
-            key, args = k[0], k[1:]
+            key, args, kwargs = {1: tuple(k) + ((),{}),
+                                 2: tuple(k) + ({},),
+                                 3: tuple(k),}[len(k)]
         else:
-            key, args = k, ()
-        
+            key, args, kwargs = k, (), {}
+
         try:
-            fn = self._table[key]
+            fn = self.routing_table[key]
         except KeyError as e:
             # Check for default handler, key=None
-            if None in self._table:
-                fn = self._table[None]
+            if None in self.routing_table:
+                fn = self.routing_table[None]
             else:
                 raise RuntimeError('No handler for key: %s, and default handler not defined' % str(e.args))
-        
-        yield from _yell(fn, msg, *args)
+
+        return await _yell(fn, msg, *args, **kwargs)
 
 
 class DefaultRouterMixin(object):
     def __init__(self):
         super(DefaultRouterMixin, self).__init__()
-        self._router = Router(telepot.flavor, {'chat': _delay_yell(self, 'on_chat_message'),
-                                               'callback_query': _delay_yell(self, 'on_callback_query'),
-                                               'inline_query': _delay_yell(self, 'on_inline_query'),
-                                               'chosen_inline_result': _delay_yell(self, 'on_chosen_inline_result')})
+        self._router = Router(flavor, {'chat': _delay_yell(self, 'on_chat_message'),
+                                       'callback_query': _delay_yell(self, 'on_callback_query'),
+                                       'inline_query': _delay_yell(self, 'on_inline_query'),
+                                       'chosen_inline_result': _delay_yell(self, 'on_chosen_inline_result')})
 
     @property
     def router(self):
         return self._router
 
-    @asyncio.coroutine
-    def on_message(self, msg):
-        yield from self._router.route(msg)
+    async def on_message(self, msg):
+        await self._router.route(msg)
 
+
+from ..helper import openable
 
 @openable
-class Monitor(telepot.helper.ListenerContext, DefaultRouterMixin):
+class Monitor(helper.ListenerContext, DefaultRouterMixin):
     def __init__(self, seed_tuple, capture):
         bot, initial_msg, seed = seed_tuple
         super(Monitor, self).__init__(bot, seed)
@@ -173,15 +169,18 @@ class Monitor(telepot.helper.ListenerContext, DefaultRouterMixin):
             self.listener.capture(**c)
 
 @openable
-class ChatHandler(telepot.helper.ChatContext, DefaultRouterMixin):
-    def __init__(self, seed_tuple, timeout):
+class ChatHandler(helper.ChatContext, DefaultRouterMixin):
+    def __init__(self, seed_tuple, timeout, callback_query=True):
         bot, initial_msg, seed = seed_tuple
         super(ChatHandler, self).__init__(bot, seed, initial_msg['chat']['id'])
         self.listener.set_options(timeout=timeout)
         self.listener.capture(chat__id=self.chat_id)
+        if callback_query:
+            # Also capture callback_query from the same user
+            self.listener.capture(_=lambda msg: flavor(msg)=='callback_query', from__id=self.chat_id)
 
 @openable
-class UserHandler(telepot.helper.UserContext, DefaultRouterMixin):
+class UserHandler(helper.UserContext, DefaultRouterMixin):
     def __init__(self, seed_tuple, timeout, flavors='all'):
         bot, initial_msg, seed = seed_tuple
         super(UserHandler, self).__init__(bot, seed, initial_msg['from']['id'])
@@ -190,4 +189,8 @@ class UserHandler(telepot.helper.UserContext, DefaultRouterMixin):
         if flavors == 'all':
             self.listener.capture(from__id=self.user_id)
         else:
-            self.listener.capture(_=lambda msg: telepot.flavor(msg) in flavors, from__id=self.user_id)
+            self.listener.capture(_=lambda msg: flavor(msg) in flavors, from__id=self.user_id)
+
+class InlineUserHandler(UserHandler):
+    def __init__(self, seed_tuple, timeout):
+        super(InlineUserHandler, self).__init__(seed_tuple, timeout, flavors=['inline_query', 'chosen_inline_result'])
