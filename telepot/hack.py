@@ -1,5 +1,5 @@
 try:
-    import requests.packages.urllib3.fields
+    import urllib3.fields
 
     # Do not encode unicode filename, so Telegram servers understand it.
     def _noencode_filename(fn):
@@ -10,7 +10,7 @@ try:
                 return fn(name, value)
         return w
 
-    requests.packages.urllib3.fields.format_header_param = _noencode_filename(requests.packages.urllib3.fields.format_header_param)
+    urllib3.fields.format_header_param = _noencode_filename(urllib3.fields.format_header_param)
 
 except (ImportError, AttributeError):
     pass
