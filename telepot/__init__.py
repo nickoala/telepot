@@ -2,24 +2,19 @@ import sys
 import io
 import time
 import json
-import requests
 import threading
 import traceback
 import collections
-import re
 
 try:
     import Queue as queue
 except ImportError:
     import queue
 
-from .exception import BadFlavor, BadHTTPResponse, TelegramError
+from . import api, exception
 
-# Suppress InsecurePlatformWarning
-requests.packages.urllib3.disable_warnings()
-
-# Patch Requests for sending unicode filename
-import telepot.hack
+# Patch urllib3 for sending unicode filename
+from . import hack
 
 
 def flavor(msg):
@@ -32,7 +27,7 @@ def flavor(msg):
     elif 'result_id' in msg:
         return 'chosen_inline_result'
     else:
-        raise BadFlavor(msg)
+        raise exception.BadFlavor(msg)
 
 
 def _find_first_key(d, keys):
@@ -42,16 +37,16 @@ def _find_first_key(d, keys):
     raise KeyError(keys)
 
 
+all_content_types = [
+    'text', 'audio', 'document', 'photo', 'sticker', 'video', 'voice', 'contact', 'location', 'venue',
+    'new_chat_member', 'left_chat_member',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo',
+    'group_chat_created', 'supergroup_chat_created', 'channel_chat_created',
+    'migrate_to_chat_id', 'migrate_from_chat_id', 'pinned_message',
+]
+
 def glance(msg, flavor='chat', long=False):
     def gl_chat():
-        types = [
-            'text', 'audio', 'document', 'photo', 'sticker', 'video', 'voice', 'contact', 'location', 'venue',
-            'new_chat_member', 'left_chat_member',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo',
-            'group_chat_created', 'supergroup_chat_created', 'channel_chat_created',
-            'migrate_to_chat_id', 'migrate_from_chat_id', 'pinned_message',
-        ]
-
-        content_type = _find_first_key(msg, types)
+        content_type = _find_first_key(msg, all_content_types)
 
         if long:
             return content_type, msg['chat']['type'], msg['chat']['id'], msg['date'], msg['message_id']
@@ -76,7 +71,7 @@ def glance(msg, flavor='chat', long=False):
               'inline_query': gl_inline_query,
               'chosen_inline_result': gl_chosen_inline_result}[flavor]
     except KeyError:
-        raise BadFlavor(flavor)
+        raise exception.BadFlavor(flavor)
 
     return fn()
 
@@ -87,29 +82,17 @@ def flance(msg, long=False):
     return f,g
 
 
-import telepot.helper
+from . import helper
 
 def flavor_router(routing_table):
-    router = telepot.helper.Router(flavor, routing_table)
+    router = helper.Router(flavor, routing_table)
     return router.route
 
 
 class _BotBase(object):
     def __init__(self, token):
         self._token = token
-
-        # Ensure an exception is raised for requests that take too long
-        self._http_timeout = 30
-
-        # For streaming file download
         self._file_chunk_size = 65536
-
-    def _fileurl(self, path):
-        return 'https://api.telegram.org/file/bot%s/%s' % (self._token, path)
-
-    def _methodurl(self, method):
-        return 'https://api.telegram.org/bot%s/%s' % (self._token, method)
-
 
 PY_3 = sys.version_info.major >= 3
 _string_type = str if PY_3 else basestring
@@ -146,36 +129,22 @@ def _rectify(params):
     # remove None, then json-serialize if needed
     return {k: flatten(v) for k,v in params.items() if v is not None}
 
-def _post(url, **kwargs):
-    response = requests.post(url, **kwargs)
-
-    try:
-        data = response.json()
-    except ValueError:  # No JSON object could be decoded
-        raise BadHTTPResponse(response.status_code, response.text, response)
-
-    if data['ok']:
-        return data['result']
+def message_identifier(msg):
+    if 'chat' in msg and 'message_id' in msg:
+        return msg['chat']['id'], msg['message_id']
+    elif 'inline_message_id' in msg:
+        return msg['inline_message_id']
     else:
-        description, error_code = data['description'], data['error_code']
+        raise ValueError()
 
-        # Look for specific error ...
-        for e in TelegramError.__subclasses__():
-            n = len(e.DESCRIPTION_PATTERNS)
-            if any(map(re.search, e.DESCRIPTION_PATTERNS, n*[description], n*[re.IGNORECASE])):
-                raise e(description, error_code, data)
-
-        # ... or raise generic error
-        raise TelegramError(description, error_code, data)
-
-def _dismantle_message_id_form(f):
+def _dismantle_message_identifier(f):
     if isinstance(f, tuple):
         if len(f) == 2:
             return {'chat_id': f[0], 'message_id': f[1]}
         elif len(f) == 1:
             return {'inline_message_id': f[0]}
         else:
-            raise RuntimeError()
+            raise ValueError()
     else:
         return {'inline_message_id': f}
 
@@ -184,32 +153,31 @@ class Bot(_BotBase):
     def __init__(self, token):
         super(Bot, self).__init__(token)
 
-        self._router = telepot.helper.Router(flavor, {'chat': lambda msg: self.on_chat_message(msg),
-                                                      'callback_query': lambda msg: self.on_callback_query(msg),
-                                                      'inline_query': lambda msg: self.on_inline_query(msg),
-                                                      'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
-                                                      # use lambda to delay evaluation of self.on_ZZZ to runtime because
-                                                      # I don't want to require defining all methods right here.
+        self._router = helper.Router(flavor, {'chat': lambda msg: self.on_chat_message(msg),
+                                              'callback_query': lambda msg: self.on_callback_query(msg),
+                                              'inline_query': lambda msg: self.on_inline_query(msg),
+                                              'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
+                                              # use lambda to delay evaluation of self.on_ZZZ to runtime because
+                                              # I don't want to require defining all methods right here.
 
     def handle(self, msg):
         self._router.route(msg)
 
+    def _api_request(self, method, params=None, files=None, **kwargs):
+        return api.request((self._token, method, params, files), **kwargs)
+
     def getMe(self):
-        return _post(self._methodurl('getMe'), timeout=self._http_timeout)
+        return self._api_request('getMe')
 
     def sendMessage(self, chat_id, text,
                     parse_mode=None, disable_web_page_preview=None,
                     disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = _strip(locals())
-        return _post(self._methodurl('sendMessage'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+        return self._api_request('sendMessage', _rectify(p))
 
     def forwardMessage(self, chat_id, from_chat_id, message_id, disable_notification=None):
         p = _strip(locals())
-        return _post(self._methodurl('forwardMessage'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+        return self._api_request('forwardMessage', _rectify(p))
 
     def _sendfile(self, inputfile, filetype, params):
         method = {'photo':    'sendPhoto',
@@ -221,18 +189,10 @@ class Bot(_BotBase):
 
         if _isstring(inputfile):
             params[filetype] = inputfile
-            return _post(self._methodurl(method),
-                         data=_rectify(params),
-                         timeout=self._http_timeout)
+            return self._api_request(method, _rectify(params))
         else:
             files = {filetype: inputfile}
-            return _post(self._methodurl(method),
-                         data=_rectify(params),
-                         files=files)
-
-            # No timeout is given here because, for some reason, the larger the file,
-            # the longer it takes for the server to respond (after upload is finished).
-            # It is unclear how long timeout should be.
+            return self._api_request(method, _rectify(params), files)
 
     def sendPhoto(self, chat_id, photo,
                   caption=None,
@@ -272,123 +232,85 @@ class Bot(_BotBase):
     def sendLocation(self, chat_id, latitude, longitude,
                      disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = _strip(locals())
-        return _post(self._methodurl('sendLocation'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+        return self._api_request('sendLocation', _rectify(p))
 
     def sendVenue(self, chat_id, latitude, longitude, title, address,
                   foursquare_id=None,
                   disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = _strip(locals())
-        return _post(self._methodurl('sendVenue'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+        return self._api_request('sendVenue', _rectify(p))
 
     def sendContact(self, chat_id, phone_number, first_name,
                     last_name=None,
                     disable_notification=None, reply_to_message_id=None, reply_markup=None):
         p = _strip(locals())
-        return _post(self._methodurl('sendContact'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+        return self._api_request('sendContact', _rectify(p))
 
     def sendChatAction(self, chat_id, action):
         p = _strip(locals())
-        return _post(self._methodurl('sendChatAction'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+        return self._api_request('sendChatAction', _rectify(p))
 
     def getUserProfilePhotos(self, user_id, offset=None, limit=None):
         p = _strip(locals())
-        return _post(self._methodurl('getUserProfilePhotos'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+        return self._api_request('getUserProfilePhotos', _rectify(p))
 
     def getFile(self, file_id):
         p = _strip(locals())
-        return _post(self._methodurl('getFile'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+        return self._api_request('getFile', _rectify(p))
 
     def kickChatMember(self, chat_id, user_id):
         p = _strip(locals())
-        return _post(self._methodurl('kickChatMember'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+        return self._api_request('kickChatMember', _rectify(p))
 
     def unbanChatMember(self, chat_id, user_id):
         p = _strip(locals())
-        return _post(self._methodurl('unbanChatMember'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+        return self._api_request('unbanChatMember', _rectify(p))
 
     def answerCallbackQuery(self, callback_query_id, text=None, show_alert=None):
         p = _strip(locals())
-        return _post(self._methodurl('answerCallbackQuery'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+        return self._api_request('answerCallbackQuery', _rectify(p))
 
-    def editMessageText(self, msgid_form, text,
+    def editMessageText(self, msg_identifier, text,
                         parse_mode=None, disable_web_page_preview=None, reply_markup=None):
-        p = _strip(locals(), more=['msgid_form'])
-        p.update(_dismantle_message_id_form(msgid_form))
-        return _post(self._methodurl('editMessageText'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+        p = _strip(locals(), more=['msg_identifier'])
+        p.update(_dismantle_message_identifier(msg_identifier))
+        return self._api_request('editMessageText', _rectify(p))
 
-    def editMessageCaption(self, msgid_form, caption=None, reply_markup=None):
-        p = _strip(locals(), more=['msgid_form'])
-        p.update(_dismantle_message_id_form(msgid_form))
-        return _post(self._methodurl('editMessageCaption'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+    def editMessageCaption(self, msg_identifier, caption=None, reply_markup=None):
+        p = _strip(locals(), more=['msg_identifier'])
+        p.update(_dismantle_message_identifier(msg_identifier))
+        return self._api_request('editMessageCaption', _rectify(p))
 
-    def editMessageReplyMarkup(self, msgid_form, reply_markup=None):
-        p = _strip(locals(), more=['msgid_form'])
-        p.update(_dismantle_message_id_form(msgid_form))
-        return _post(self._methodurl('editMessageReplyMarkup'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+    def editMessageReplyMarkup(self, msg_identifier, reply_markup=None):
+        p = _strip(locals(), more=['msg_identifier'])
+        p.update(_dismantle_message_identifier(msg_identifier))
+        return self._api_request('editMessageReplyMarkup', _rectify(p))
 
     def answerInlineQuery(self, inline_query_id, results,
                           cache_time=None, is_personal=None, next_offset=None,
                           switch_pm_text=None, switch_pm_parameter=None):
         p = _strip(locals())
-        return _post(self._methodurl('answerInlineQuery'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout)
+        return self._api_request('answerInlineQuery', _rectify(p))
 
     def getUpdates(self, offset=None, limit=None, timeout=None):
         p = _strip(locals())
-        return _post(self._methodurl('getUpdates'),
-                     data=_rectify(p),
-                     timeout=self._http_timeout+(0 if timeout is None else timeout))
+        return self._api_request('getUpdates', _rectify(p))
 
     def setWebhook(self, url=None, certificate=None):
         p = _strip(locals(), more=['certificate'])
 
         if certificate:
             files = {'certificate': certificate}
-            return _post(self._methodurl('setWebhook'),
-                         data=_rectify(p),
-                         files=files,
-                         timeout=self._http_timeout)
+            return self._api_request('setWebhook', _rectify(p), files)
         else:
-            return _post(self._methodurl('setWebhook'),
-                         data=_rectify(p),
-                         timeout=self._http_timeout)
+            return self._api_request('setWebhook', _rectify(p))
 
     def download_file(self, file_id, dest):
         f = self.getFile(file_id)
-
-        # `file_path` is optional in File object
-        if 'file_path' not in f:
-            raise TelegramError('No `file_path` returned', None, None)
-
         try:
-            r = requests.get(self._fileurl(f['file_path']), stream=True, timeout=self._http_timeout)
-
             d = dest if _isfile(dest) else open(dest, 'wb')
+
+            r = api.download((self._token, f['file_path']))
 
             for chunk in r.iter_content(chunk_size=self._file_chunk_size):
                 if chunk:
@@ -571,7 +493,7 @@ import inspect
 class SpeakerBot(Bot):
     def __init__(self, token):
         super(SpeakerBot, self).__init__(token)
-        self._mic = telepot.helper.Microphone()
+        self._mic = helper.Microphone()
 
     @property
     def mic(self):
@@ -580,7 +502,7 @@ class SpeakerBot(Bot):
     def create_listener(self):
         q = queue.Queue()
         self._mic.add(q)
-        ln = telepot.helper.Listener(self._mic, q)
+        ln = helper.Listener(self._mic, q)
         return ln
 
 
