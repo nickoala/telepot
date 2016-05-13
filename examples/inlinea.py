@@ -4,14 +4,14 @@ import telepot
 from telepot.async.delegate import per_inline_from_id, create_open
 
 """
-$ python3.4 inlinea.py <token>
+$ python3.5 inlinea.py <token>
 
 A bot that only cares about inline stuff.
 """
 
-class InlineHandler(telepot.async.helper.UserHandler):
+class InlineHandler(telepot.async.helper.InlineUserHandler):
     def __init__(self, seed_tuple, timeout):
-        super(InlineHandler, self).__init__(seed_tuple, timeout, flavors=['inline_query', 'chosen_inline_result'])
+        super(InlineHandler, self).__init__(seed_tuple, timeout)
         self._answerer = telepot.async.helper.Answerer(self.bot)
 
     def on_inline_query(self, msg):

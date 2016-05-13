@@ -6,7 +6,7 @@ from telepot.delegate import per_chat_id, per_from_id, per_inline_from_id, per_a
 """
 $ python2.7 pairing.py <token>
 
-Demonstrates pairing patterns between per_ZZZ() and handler classes.
+Demonstrates pairing patterns between per_*() and handler classes.
 """
 
 # Captures only chat messages, to be paired with per_chat_id()
@@ -38,9 +38,9 @@ class UserHandlerSubclass(telepot.helper.UserHandler):
         print '%s %d: closed' % (type(self).__name__, self.id)
 
 # Captures inline-related messages from a user, to be paired with per_inline_from_id()
-class UserHandlerSubclassInlineOnly(telepot.helper.UserHandler):
+class InlineUserHandlerSubclass(telepot.helper.InlineUserHandler):
     def __init__(self, seed_tuple, timeout):
-        super(UserHandlerSubclassInlineOnly, self).__init__(seed_tuple, timeout, flavors=['inline_query', 'chosen_inline_result'])
+        super(InlineUserHandlerSubclass, self).__init__(seed_tuple, timeout)
         self._count = 0
 
     def on_message(self, msg):
@@ -53,9 +53,9 @@ class UserHandlerSubclassInlineOnly(telepot.helper.UserHandler):
         print '%s %d: closed' % (type(self).__name__, self.id)
 
 # Captures all messages, to be paired with per_application()
-class OnlyOneInstance(telepot.helper.Monitor):
+class OneInstanceOnly(telepot.helper.Monitor):
     def __init__(self, seed_tuple):
-        super(OnlyOneInstance, self).__init__(seed_tuple, capture=[{'_': lambda msg: True}])
+        super(OneInstanceOnly, self).__init__(seed_tuple, capture=[{'_': lambda msg: True}])
         self._count = 0
 
     def on_message(self, msg):
@@ -77,9 +77,9 @@ bot = telepot.DelegatorBot(TOKEN, [
 
     (per_from_id(), create_open(UserHandlerSubclass, timeout=20)),
 
-    (per_inline_from_id(), create_open(UserHandlerSubclassInlineOnly, timeout=10)),
+    (per_inline_from_id(), create_open(InlineUserHandlerSubclass, timeout=10)),
 
-    (per_application(), create_open(OnlyOneInstance)),
+    (per_application(), create_open(OneInstanceOnly)),
 
     (per_message(), call(simple_function)),
 ])

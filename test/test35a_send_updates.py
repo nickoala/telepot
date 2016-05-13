@@ -103,7 +103,7 @@ async def send_everything(msg):
 
     await bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=hide_keyboard)
 
-    r = await aiohttp.get('http://i.imgur.com/B1fzGoh.jpg')
+    r = await aiohttp.get('http://i.imgur.com/35HSRQ6.png')
     bbb = await r.read()
 
     await bot.sendPhoto(chat_id, ('abc.jpg', bbb))
@@ -233,7 +233,7 @@ async def test_webhook_getupdates_exclusive():
 
     try:
         await bot.getUpdates()
-    except telepot.TelegramError as e:
+    except telepot.exception.TelegramError as e:
         print("%d: %s" % (e.error_code, e.description))
         print('As expected, getUpdates() produces an error.')
 

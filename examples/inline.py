@@ -3,14 +3,14 @@ import telepot
 from telepot.delegate import per_inline_from_id, create_open
 
 """
-$ python3.4 inline.py <token>
+$ python3.5 inline.py <token>
 
 A bot that only cares about inline stuff.
 """
 
-class InlineHandler(telepot.helper.UserHandler):
+class InlineHandler(telepot.helper.InlineUserHandler):
     def __init__(self, seed_tuple, timeout):
-        super(InlineHandler, self).__init__(seed_tuple, timeout, flavors=['inline_query', 'chosen_inline_result'])
+        super(InlineHandler, self).__init__(seed_tuple, timeout)
         self._answerer = telepot.helper.Answerer(self.bot)
 
     def on_inline_query(self, msg):

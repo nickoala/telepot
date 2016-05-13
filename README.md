@@ -1,18 +1,5 @@
 # telepot - Python framework for Telegram Bot API
 
-#### 7.0 introduces some backward-incompatible naming changes. See [Migration Guide](https://github.com/nickoala/telepot/blob/master/migration-7-0.md) for details.
-
----
-
-#### To all Async Version Users
-I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** Keyword `async` and `await` will be used. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
-
-Currently, telepot's async version already works with Python 3.5.1.
-
-**This announcement only concerns telepot's async version. Traditional version is not affected.**
-
----
-
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
 **[Custom Keyboard and Inline Keyboard](#inline-keyboard)**  
@@ -22,7 +9,7 @@ Currently, telepot's async version already works with Python 3.5.1.
 **[Maintain Threads of Conversation](#threads-conversation)**  
 **[Follow User's Every Action](#follow-user)**  
 **[Inline-only Handler](#inline-only)**  
-**[Async Version](#async)** (Python 3.4.2 or newer)  
+**[Async Version](#async)** (Python 3.5+)  
 **[Webhook Interface](#webhook)**  
 **[Deep Linking](#deep-linking)**  
 **[Reference](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**  
@@ -44,6 +31,18 @@ Currently, telepot's async version already works with Python 3.5.1.
 - [Deep Linking](#examples-deep-linking)
 
 ### Recent changes
+
+**8.0 (2016-05-13)**
+
+- Added HTTP connection pooling (for both traditional and async version). Bot API requests are much speedier.
+- Most requests are now done with `urllib3`, moving away from `requests`.
+- Added module `telepot.routing` and `telepot.async.routing` to provide common key functions and routing tables for `Router` to use.
+- Removed method `set_key_function` and `set_routing_table` from `Router`. Access instance variable `key_function` and `routing_table` instead.
+- Added function `telepot.message_identifier` to extract message identifier for editing messages.
+- Added helper class `Editor` to ease editing messages.
+- `ChatHandler`, by default, also captures `callback_query` from the same user.
+- Added `InlineUserHandler` to capture only inline-related messages.
+- Async version uses `async`/`await`, stops supporting Python 3.4, works on Python 3.5+ from now on.
 
 **7.1 (2016-04-24)**
 
@@ -97,9 +96,9 @@ $ easy_install --upgrade telepot  # UPGRADE
 Download manually:
 
 ```
-$ wget https://pypi.python.org/packages/source/t/telepot/telepot-7.1.zip
-$ unzip telepot-7.1.zip
-$ cd telepot-7.1
+$ wget https://pypi.python.org/packages/source/t/telepot/telepot-8.0.zip
+$ unzip telepot-8.0.zip
+$ cd telepot-8.0
 $ python setup.py install
 ```
 
@@ -639,7 +638,7 @@ while 1:
     time.sleep(10)
 ```
 
-If you use telepot's [async version](#async) (Python 3.4.2 or newer), you should also use the async version of `Answerer`. In that case, it will create *tasks* instead of spawning threads, and you don't have to worry about thread safety. 
+If you use telepot's [async version](#async) (Python 3.5+), you should also use the async version of `Answerer`. In that case, it will create *tasks* instead of spawning threads, and you don't have to worry about thread safety. 
 
 The proper way to deal with inline query is always through an `Answerer`'s `answer()` method. If you don't like to use `Answerer` for some reason, then you should devise your own mechanism to deal with closely-bunched inline queries, always remembering to let a latter one supercede earlier ones. If you decide to go that path, `Answerer` may be a good starting reference point.
 
@@ -916,20 +915,11 @@ The function `per_inline_from_id()` digests a message down to its originating us
 **[Read the reference »](https://github.com/nickoala/telepot/blob/master/REFERENCE.md)**
 
 <a id="async"></a>
-## Async Version (Python 3.4.2 or newer)
-
-#### To all Async Version Users
-I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** Keyword `async` and `await` will be used. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
-
-Currently, telepot's async version already works with Python 3.5.1.
-
-**This announcement only concerns telepot's async version. Traditional version is not affected.**
-
----
+## Async Version (Python 3.5+)
 
 Everything discussed so far assumes traditional Python. That is, network operations are blocking; if you want to serve many users at the same time, some kind of threads are usually needed. Another option is to use an asynchronous or event-driven framework, such as [Twisted](http://twistedmatrix.com/).
 
-Python 3.4 introduces its own asynchronous architecture, the `asyncio` module. Telepot supports that, too. If your bot is to serve many people, I strongly recommend doing it asynchronously.
+Python 3.5 has its own asynchronous architecture, the `asyncio` module. Telepot supports that, too. If your bot is to serve many people, I strongly recommend doing it asynchronously.
 
 The latest Raspbian (Jessie) comes with Python 3.4.2. If you are using older Raspbian, or if you want to use the latest Python 3, you have to compile it yourself. For Python 3.5.1, follow these steps:
 

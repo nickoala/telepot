@@ -8,9 +8,25 @@ from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.namedtuple import InlineQueryResultArticle, InlineQueryResultPhoto, InputTextMessageContent
 
 """
-$ python2.7 skeleton.py <token>
+$ python2.7 skeleton_route.py <token>
 
-A skeleton for your telepot programs.
+An example that demonstrates the use of custom keyboard and inline keyboard, and their various buttons.
+
+Before running this example, remember to `/setinline` and `/setinlinefeedback` to enable inline mode for your bot.
+
+The bot works like this:
+
+- First, you send it one of these 4 characters - `c`, `i`, `h`, `f` - and it replies accordingly:
+    - `c` - a custom keyboard with various buttons
+    - `i` - an inline keyboard with various buttons
+    - `h` - hide custom keyboard
+    - `f` - force reply
+- Press various buttons to see their effects
+- Within inline mode, what you get back depends on the **last character** of the query:
+    - `a` - a list of articles
+    - `p` - a list of photos
+    - `b` - to see a button above the inline results to switch back to a private chat with the bot
+- Play around with the bot for an afternoon ...
 """
 
 message_with_inline_keyboard = None
@@ -61,8 +77,8 @@ def on_callback_query(msg):
         global message_with_inline_keyboard
 
         if message_with_inline_keyboard:
-            msgid = (from_id, message_with_inline_keyboard['message_id'])
-            bot.editMessageText(msgid, 'NEW MESSAGE HERE!!!!!')
+            msg_idf = telepot.message_identifier(message_with_inline_keyboard)
+            bot.editMessageText(msg_idf, 'NEW MESSAGE HERE!!!!!')
         else:
             bot.answerCallbackQuery(query_id, text='No previous message to edit')
 

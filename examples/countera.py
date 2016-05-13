@@ -4,7 +4,7 @@ import telepot
 from telepot.async.delegate import per_chat_id, create_open
 
 """
-$ python3.4 countera.py <token>
+$ python3.5 countera.py <token>
 
 Count number of messages. Start over if silent for 10 seconds.
 """
@@ -14,10 +14,9 @@ class MessageCounter(telepot.async.helper.ChatHandler):
         super(MessageCounter, self).__init__(seed_tuple, timeout)
         self._count = 0
 
-    @asyncio.coroutine
-    def on_chat_message(self, msg):
+    async def on_chat_message(self, msg):
         self._count += 1
-        yield from self.sender.sendMessage(self._count)
+        await self.sender.sendMessage(self._count)
 
 TOKEN = sys.argv[1]  # get token from command-line
 

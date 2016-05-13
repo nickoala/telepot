@@ -5,7 +5,7 @@ import telepot
 from telepot.async.delegate import per_chat_id, create_open
 
 """
-$ python3.4 guessa.py <token>
+$ python3.5 guessa.py <token>
 
 Guess a number:
 
@@ -27,38 +27,35 @@ class Player(telepot.async.helper.ChatHandler):
         else:
             return 'smaller'
 
-    @asyncio.coroutine
-    def open(self, initial_msg, seed):
-        yield from self.sender.sendMessage('Guess my number')
+    async def open(self, initial_msg, seed):
+        await self.sender.sendMessage('Guess my number')
         return True  # prevent on_message() from being called on the initial message
 
-    @asyncio.coroutine
-    def on_chat_message(self, msg):
+    async def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
 
         if content_type != 'text':
-            yield from self.sender.sendMessage('Give me a number, please.')
+            await self.sender.sendMessage('Give me a number, please.')
             return
 
         try:
            guess = int(msg['text'])
         except ValueError:
-            yield from self.sender.sendMessage('Give me a number, please.')
+            await self.sender.sendMessage('Give me a number, please.')
             return
 
         # check the guess against the answer ...
         if guess != self._answer:
             # give a descriptive hint
             hint = self._hint(self._answer, guess)
-            yield from self.sender.sendMessage(hint)
+            await self.sender.sendMessage(hint)
         else:
-            yield from self.sender.sendMessage('Correct!')
+            await self.sender.sendMessage('Correct!')
             self.close()
 
-    @asyncio.coroutine
-    def on_close(self, exception):
-        if isinstance(exception, telepot.helper.WaitTooLong):
-            yield from self.sender.sendMessage('Game expired. The answer is %d' % self._answer)
+    async def on_close(self, exception):
+        if isinstance(exception, telepot.exception.WaitTooLong):
+            await self.sender.sendMessage('Game expired. The answer is %d' % self._answer)
 
 
 TOKEN = sys.argv[1]

@@ -5,7 +5,7 @@ import telepot
 from telepot.delegate import per_chat_id, create_open
 
 """
-$ python2.7 guess.py <token>
+$ python3.5 guess.py <token>
 
 Guess a number:
 
@@ -54,7 +54,7 @@ class Player(telepot.helper.ChatHandler):
             self.close()
 
     def on_close(self, exception):
-        if isinstance(exception, telepot.helper.WaitTooLong):
+        if isinstance(exception, telepot.exception.WaitTooLong):
             self.sender.sendMessage('Game expired. The answer is %d' % self._answer)
 
 

@@ -1,17 +1,4 @@
-# telepot 7.0 reference
-
-#### 7.0 introduces some backward-incompatible naming changes. See [Migration Guide](https://github.com/nickoala/telepot/blob/master/migration-7-0.md) for details.
-
----
-
-#### To all Async Version Users
-I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** Keyword `async` and `await` will be used. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
-
-Currently, telepot's async version already works with Python 3.5.1.
-
-**This announcement only concerns telepot's async version. Traditional version is not affected.**
-
----
+# telepot 8.0 reference
 
 **[telepot](#telepot)**
 - [Bot](#telepot-Bot)
@@ -28,6 +15,7 @@ Currently, telepot's async version already works with Python 3.5.1.
 - [Listener](#telepot-helper-Listener)
 - [Sender](#telepot-helper-Sender)
 - [Administrator](#telepot-helper-Administrator)
+- [Editor](#telepot-helper-Editor)
 - [Answerer](#telepot-helper-Answerer)
 - [Router](#telepot-helper-Router)
 - [DefaultRouterMixin](#telepot-helper-DefaultRouterMixin)
@@ -37,6 +25,7 @@ Currently, telepot's async version already works with Python 3.5.1.
 - [Monitor](#telepot-helper-Monitor)
 - [ChatHandler](#telepot-helper-ChatHandler)
 - [UserHandler](#telepot-helper-UserHandler)
+- [InlineUserHandler](#telepot-helper-InlineUserHandler)
 - [@openable](#telepot-helper-openable)
 
 **[telepot.delegate](#telepot-delegate)**
@@ -55,18 +44,31 @@ Currently, telepot's async version already works with Python 3.5.1.
 - [create_run](#telepot-delegate-create-run)
 - [create_open](#telepot-delegate-create-open)
 
+**[telepot.routing](#telepot-routing)**
+- [by_content_type](#telepot-routing-by-content-type)
+- [by_command](#telepot-routing-by-command)
+- [by_chat_command](#telepot-routing-by-chat-command)
+- [by_text](#telepot-routing-by-text)
+- [by_data](#telepot-routing-by-data)
+- [by_regex](#telepot-routing-by-regex)
+- [process_key](#telepot-routing-process-key)
+- [lower_key](#telepot-routing-lower-key)
+- [upper_key](#telepot-routing-upper-key)
+- [make_routing_table](#telepot-routing-make-routing-table)
+- [make_content_type_routing_table](#telepot-routing-make-content-type-routing-table)
+
 **[telepot.exception](#telepot-exception)**
 - [TelepotException](#telepot-exception-TelepotException)
 - [BadHTTPResponse](#telepot-exception-BadHTTPResponse)
 - [TelegramError](#telepot-exception-TelegramError)
 
-**[telepot.async](#telepot-async)** (Python 3.4.2 or newer)
+**[telepot.async](#telepot-async)** (Python 3.5+)
 - [Bot](#telepot-async-Bot)
 - [SpeakerBot](#telepot-async-SpeakerBot)
 - [DelegatorBot](#telepot-async-DelegatorBot)
 - [Functions](#telepot-async-functions)
 
-**[telepot.async.helper](#telepot-async-helper)** (Python 3.4.2 or newer)
+**[telepot.async.helper](#telepot-async-helper)** (Python 3.5+)
 - [Microphone](#telepot-async-helper-Microphone)
 - [Listener](#telepot-async-helper-Listener)
 - [Answerer](#telepot-async-helper-Answerer)
@@ -75,9 +77,10 @@ Currently, telepot's async version already works with Python 3.5.1.
 - [Monitor](#telepot-async-helper-Monitor)
 - [ChatHandler](#telepot-async-helper-ChatHandler)
 - [UserHandler](#telepot-async-helper-UserHandler)
+- [InlineUserHandler](#telepot-async-helper-InlineUserHandler)
 - [@openable](#telepot-async-helper-openable)
 
-**[telepot.async.delegate](#telepot-async-delegate)**  (Python 3.4.2 or newer)
+**[telepot.async.delegate](#telepot-async-delegate)** (Python 3.5+)
 - [per_chat_id](#telepot-async-delegate-per-chat-id)
 - [per_chat_id_in](#telepot-async-delegate-per-chat-id-in)
 - [per_chat_id_except](#telepot-async-delegate-per-chat-id-except)
@@ -92,6 +95,8 @@ Currently, telepot's async version already works with Python 3.5.1.
 - [call](#telepot-async-delegate-call)
 - [create_run](#telepot-async-delegate-create-run)
 - [create_open](#telepot-async-delegate-create-open)
+
+**[telepot.async.routing](#telepot-async-routing)** (Python 3.5+)
 
 <a id="telepot"></a>
 ## `telepot` module
@@ -353,27 +358,27 @@ See: https://core.telegram.org/bots/api#unbanchatmember
 
 See: https://core.telegram.org/bots/api#answercallbackquery
 
-**editMessageText(msgid_form, text, parse_mode=None, disable_web_page_preview=None, reply_markup=None)**
+**editMessageText(msg_identifier, text, parse_mode=None, disable_web_page_preview=None, reply_markup=None)**
 
-**msgid_form** can be:
+**msg_identifier** can be:
 - a tuple of *(chat_id, message_id)*
 - a tuple of *(inline_message_id)*
 - a single value - *inline_message_id*
 
 See: https://core.telegram.org/bots/api#editmessagetext
 
-**editMessageCaption(msgid_form, caption=None, reply_markup=None)**
+**editMessageCaption(msg_identifier, caption=None, reply_markup=None)**
 
-**msgid_form** can be:
+**msg_identifier** can be:
 - a tuple of *(chat_id, message_id)*
 - a tuple of *(inline_message_id)*
 - a single value - *inline_message_id*
 
 See: https://core.telegram.org/bots/api#editmessagecaption
 
-**editMessageReplyMarkup(msgid_form, reply_markup=None)**
+**editMessageReplyMarkup(msg_identifier, reply_markup=None)**
 
-**msgid_form** can be:
+**msg_identifier** can be:
 - a tuple of *(chat_id, message_id)*
 - a tuple of *(inline_message_id)*
 - a single value - *inline_message_id*
@@ -609,6 +614,14 @@ A combination of `flavor()` and `glance()`, it returns a tuple of two elements: 
 Returns a *function* that takes one argument (a message), and depending on the flavor, routes that message to another function according to the *routing_table*.
 
 The *routing_table* is a dict of the form: `{'chat': f1, 'callback_query': f2, 'inline_query': f3, 'chosen_inline_result': f4}`, where `f1`, `f2`, `f3`, `f4` are functions that take one argument (the message). You don't have to include all flavors in the dict, only the ones you need.
+
+**message_identifier(msg)**
+
+If `msg` is a `chat` message, returns a tuple `(msg['chat']['id'], msg['message_id'])`.
+
+if `msg` is a `choson_inline_result`, returns `msg['inline_message_id']`.
+
+The returned value can be used in methods `editMessage*()` and `Editor`'s constructor to facilitate message editing.
 
 <a id="telepot-namedtuple"></a>
 ## `telepot.namedtuple` module
@@ -914,6 +927,15 @@ Parameters:
 
 **unbanChatMember(user_id)**
 
+<a id="telepot-helper-Editor"></a>
+### `telepot.helper.Editor`
+
+**editMessageText(text, parse_mode=None, disable_web_page_preview=None, reply_markup=None)**
+
+**editMessageCaption(caption=None, reply_markup=None)**
+
+**editMessageReplyMarkup(reply_markup=None)**
+
 <a id="telepot-helper-Answerer"></a>
 ### `telepot.helper.Answerer`
 
@@ -949,18 +971,22 @@ Here is the idea. Every message can be digested down to a *key*, which is then u
 Parameters:
 - **key_function** - a function that takes one argument (a message), and returns one of the following:
     - a key
-    - a tuple: the first element being the key, the rest being *extra arguments* to be passed along
-- **routing_table** - a dict of the form: `{key1: f1, key2: f2, ..., None: fd}`, where `f1`, `f2` ... are functions that take a message as the first argument, followed by *extra arguments* returned by `key_function`. The dict may optionally contain a `None` key that leads to a *default* function, `fd`. If `key_function` returns a key that does not match any in the dict, the default function is used.
+    - a tuple of one element `(key,)`
+    - a tuple of two elements `(key, (positional arguments, ...))`
+    - a tuple of three elements `(key, (positional argument, ...), {keyword: argument, ...})`
+- **routing_table** - a dict of the form: `{key1: f1, key2: f2, ..., None: fd}`, where `f1`, `f2` ... are functions that take a *message* as the first argument, followed by *positional arguments* (if any) and *keyword arguments* (if any) returned by `key_function`. Routing table may optionally contain a `None` key that leads to a "default" function, `fd`. If `key_function` returns a key that does not match any in the dict, the default function is used.
 
-In the majority of cases, we would like to route messages by flavor. As a result, `key_function` often is `telepot.flavor`, and `routing_table` often looks like `{'chat': f1, 'callback_query': f2, 'inline_query': f3, 'chosen_inline_result': f4}`. Bare in mind this routing mechanism is more general than that.
+In the majority of cases, we would like to route messages by flavor. As a result, `key_function` often is `telepot.flavor`, and `routing_table` often looks like `{'chat': f1, 'callback_query': f2, 'inline_query': f3, 'chosen_inline_result': f4}`. But this routing mechanism is more general than that.
 
-**set_key_function(fn)**
+The instance variable `key_function` and `routing_table` may be changed on the fly to achieve flexible routing.
 
-**set_routing_table(table)**
+**route(msg, \*args, \*\*kwargs)**
 
-**route(msg)**
+Execute routing mechanism as described above. The only relevent parameter is the first one - `msg`. Whatever follow are just placeholders that make it easy to do router nesting (or chaining). For example, regardless of what extra arguments produced by `top_router.key_function`, you can chain routers like this to achieve multi-level routing:
 
-Obtain a key by applying *key function* to `msg`. Use the key to find a function in the *routing table*. Applies that function to `msg` followed by any extra arguments. If the key does not exist in the routing table, we look for a `None` key in the routing table. If a `None` key exists, the associated function is used. Otherwise, a `RuntimeError` is raised.
+```python
+top_router.routing_table['key'] = sub_router.route
+```
 
 <a id="telepot-helper-DefaultRouterMixin"></a>
 ### `telepot.helper.DefaultRouterMixin`
@@ -1098,11 +1124,12 @@ How to use this class:
 2. Implement `on_message()`, optionally override `open()` and `on_close()`
 3. Use `telepot.delegate.create_open()` to plug it into a `DelegatorBot`
 
-**ChatHandler(seed_tuple, timeout)**
+**ChatHandler(seed_tuple, timeout, callback_query=True)**
 
 Parameters:
 - **seed_tuple** - a tuple of (bot, message, seed) generated by the delegation mechanism
 - **timeout** - timeout for this object's `listener`
+- **callback_query** - whether to capture callback query from the same user
 
 This object's `listener` is automatically set up to capture messages from the same chat id as the initial message, contained in the *seed_tuple* parameter.
 
@@ -1181,6 +1208,9 @@ Called just before this object is about to exit.
 **close(code=None, reason=None)**
 
 Raises a `StopListening` exception, causing this object to exit.
+
+<a id="telepot-helper-InlineUserHandler"></a>
+### `telepot.helper.InlineUserHandler`
 
 <a id="telepot-helper-openable"></a>
 ### `telepot.helper.openable` class decorator
@@ -1360,6 +1390,272 @@ def create_open(cls, *args, **kwargs):
     return f
 ```
 
+<a id="telepot-routing"></a>
+## `telepot.routing` module
+
+This module provides key-function generators and routing-table generators to be used with [`Router`](#telepot-helper-Router).
+
+<a id="telepot-routing-by-content-type"></a>
+**by_content_type()**
+
+Example:
+```python
+# Note the extra argument produced by `by_content_type()`
+def on_text(msg, text):
+    ...
+
+def on_photo(msg, photo):
+    ...
+
+def on_voice(msg, voice):
+    ...
+
+r = telepot.helper.Router(by_content_type(), {'text': on_text,
+                                              'photo': on_photo,
+                                              'voice': on_voice,
+                                               .....   ........  })
+```
+
+<a id="telepot-routing-by-command"></a>
+**by_command(extractor, prefix=('/',), separator=' ', pass_args=False)**
+
+<a id="telepot-routing-by-chat-command"></a>
+**by_chat_command(prefix=('/',), separator=' ', pass_args=False)**
+
+Suppose a bot accepts two commands `/start` and `/cancel`:
+
+```python
+from telepot.routing import by_chat_command
+
+def on_start(msg):
+    ...
+
+def on_cancel(msg):
+    ...
+
+r = telepot.helper.Router(by_chat_command(), {'start': on_start,
+                                              'cancel': on_cancel})
+```
+
+To catch invalid inputs, you can specify a `None` entry in the routing table. But there are actually two kinds of invalid inputs: 
+
+- Strings that start with `/` but are followed by an unexpected word, e.g. `/haha`. In this case, key function is able to parse the string and produces the key `haha`. You can catch this kind of invalid inputs with a `None` entry in routing table.
+- Strings that don't start with `/`. In this case, key function is not able to parse the string and produces the key `(None,)` - a 1-tuple with a single entry `None`. You can catch this kind of invalid inputs with a `(None,)` entry in routing table.
+
+```python
+def no_command_at_all(msg):
+    ...
+
+def on_bad_command(msg):
+    ...
+
+r = telepot.helper.Router(by_chat_command(), {'start': on_start,
+                                              'cancel': on_cancel,
+                                              (None,): no_command_at_all,
+                                              None: on_bad_command})
+```
+
+Of course, if you don't care about the difference, use a single `None` entry to catch both.
+
+If you allow commands to be prefixed by more special characters, say `#`:
+
+```python
+r = telepot.helper.Router(by_chat_command(prefix=('/','#')), {'start': on_start,
+                                                              'cancel': on_cancel})
+```
+
+If some commands expect arguments, e.g. `/add 1`, and you want those arguments passed to the handler:
+
+```python
+def on_start(msg, command_args):  # command_args is a *list*
+    ...
+
+def on_cancel(msg, command_args):
+    ...
+
+def on_add(msg, command_args):
+    ...
+
+r = telepot.helper.Router(by_chat_command(pass_args=True), {'start': on_start,
+                                                            'cancel': on_cancel,
+                                                            'add': on_add})
+```
+
+If you want to recognize commands regardless of their cases and standardize all keys to lowercase, then you have to further process the keys produced by the original key function:
+
+```python
+from telepot.routing import lower_key
+
+r = telepot.helper.Router(lower_key(by_chat_command()), {'start': on_start,
+                                                         'cancel': on_cancel})
+```
+
+<a id="telepot-routing-by-text"></a>
+**by_text()**
+
+The key function produced by this function just extracts the `text` field's value from a message. Useful when you expect one of a few answers, for example, from a custom keyboard:
+
+```python
+from telepot.routing import by_text
+
+def yes(msg):
+    ...
+
+def no(msg):
+    ...
+
+r = telepot.helper.Router(by_text(), {'Yes': yes,
+                                      'No': no})
+```
+
+If you want to recognize answers regardless of their cases and standardize all keys to lowercase, use `lower_key` to process the keys:
+
+```python
+from telepot.routing import lower_key
+
+r = telepot.helper.Router(lower_key(by_text()), {'yes': yes,
+                                                 'no': no})
+```
+
+<a id="telepot-routing-by-data"></a>
+**by_data()**
+
+The key function produced by this function just extracts the `data` field's value from a message. Useful when you expect callback queries with a few possible `data` values:
+
+```python
+from telepot.routing import by_data
+
+def on_callback_action1(msg):
+    ...
+
+def on_callback_action2(msg):
+    ...
+
+r = telepot.helper.Router(by_data(), {'action1': on_callback_action1,
+                                      'action2': on_callback_action2})
+```
+
+<a id="telepot-routing-by-regex"></a>
+**by_regex(extractor, regex, key=1)**
+
+Suppose you want to monitor whether some computer science courses are mentioned in the conversation, you may use the regular expression `CS[0-9]{3}` to check for their presence:
+
+```python
+from telepot.routing import by_regex
+
+def on_CS101(msg, match):
+    ...
+
+def on_CS202(msg, match):
+    ...
+
+regex_router = telepot.helper.Router(
+                   by_regex(lambda msg: msg['text'], '(CS[0-9]{3})'), {
+                   'CS101': on_CS101,
+                   'CS202': on_CS202,
+               })
+```
+
+The parentheses `()` in the regular expression is necessary because the key function needs to extract the key after a match. By default, the first pair of parentheses encloses the key. If you have more than one pair of parentheses in the regular expression and want the key to be somewhere else, use the parameter `key` to specify.
+
+The parameter `regex` can be a simple pattern (as above) or a regular expression object (as created by `re.compile`).
+
+When a match occurs, the match object is passed to the handler, following the `msg` argument.
+
+If no match occurs, the key returned is `(None,)`, a 1-tuple with a single element `None`. This is to allow distinction between two cases:
+
+- No match, where the key is a 1-tuple `(None,)`.
+- A match occurs, but no such key in routing table. Catch this case with a `None` entry in routing table.
+
+```python
+def no_cs_courses_mentioned(msg):  # Note the absence of `match` argument, because there is no match.
+    ...
+
+def no_such_course(msg, match):
+    ...
+
+regex_router = telepot.helper.Router(
+                   by_regex(lambda msg: msg['text'], '(CS[0-9]{3})'), {
+                   'CS101': on_CS101,
+                   'CS202': on_CS202,
+                   (None,): no_cs_courses_mentioned,
+                   None: no_such_course,
+               })
+```
+
+If you don't care about the difference, use a `None` entry to catch both. In this case, the handler has to be able to accept a variable-length arguments, one with `msg` only, the other with `msg` and `match`.
+
+<a id="telepot-routing-process-key"></a>
+**process_key(processor, fn)**
+
+<a id="telepot-routing-lower-key"></a>
+**lower_key(fn)**
+
+<a id="telepot-routing-upper-key"></a>
+**upper_key(fn)**
+
+<a id="telepot-routing-make-routing-table"></a>
+**make_routing_table(obj, keys, prefix='on_')**
+
+Composing a routing table is tedious in that you often have to repeat the key in the function/method name, for example:
+
+```python
+r = telepot.helper.Router(by_content_type(), {'text': handler.on_text,
+                                              'photo': handler.on_photo,
+                                              'voice': handler.on_voice,
+                                               .....   ........  })
+```
+
+It would be easier to do this:
+
+```python
+from telepot.routing import make_routing_table
+
+r = telepot.helper.Router(by_content_type(),
+                          make_routing_table(handler, ['text',
+                                                       'photo',
+                                                       'voice',
+                                                        ..... ])
+```
+
+By default, `make_routing_table` automatically looks for `on_*` methods of the `handler` object. Use the parameter `prefix` to change this default prefix.
+
+If some method names do not conform to the form `on_*`, or if you want to specify a `None` entry, use a 2-tuple to give the method explicitly:
+
+```python
+r = telepot.helper.Router(by_content_type(),
+                          make_routing_table(handler, ['text',
+                                                       'photo',
+                                                       'voice',
+                                                        ..... ,
+                                                       (None, handler.on_default)])
+```
+
+<a id="telepot-routing-make-content-type-routing-table"></a>
+**make_content_type_routing_table(obj, prefix='on_'))**
+
+There are 20+ content types. It is unreasonable to require you to write them all out. Do this instead:
+
+```python
+from telepot.routing import by_content_type, make_content_type_routing_table
+
+r = telepot.helper.Router(by_content_type(), make_content_type_routing_table(handler))
+```
+
+If you don't care about some content types and want to handle them collectively, just delete their keys from the routing table and add a `None` entry:
+
+```python
+r = telepot.helper.Router(by_content_type(), make_content_type_routing_table(handler))
+
+# Remove content types that you don't care about ...
+del r.routing_table['contact']
+del r.routing_table['location']
+del r.routing_table['venue']
+# Let them fall to the default handler ...
+
+r.routing_table[None] = handler.on_ignore
+```
+
 <a id="telepot-exception"></a>
 ## `telepot.exception` module
 
@@ -1429,18 +1725,9 @@ except FileTypeMismatchError as e:
 ```
 
 <a id="telepot-async"></a>
-## `telepot.async` module (Python 3.4.2 or newer)
+## `telepot.async` module (Python 3.5+)
 
-#### To all Async Version Users
-I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** Keyword `async` and `await` will be used. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
-
-Currently, telepot's async version already works with Python 3.5.1.
-
-**This announcement only concerns telepot's async version. Traditional version is not affected.**
-
----
-
-This package mirrors the traditional version of telepot to make use of the `asyncio` module of Python 3.4. Nearly all methods share identical signatures with their traditional siblings, except that blocking methods now become **coroutines** and are often called with `yield from`.
+This package mirrors the traditional version of telepot to make use of the `asyncio` module of Python 3.5. Nearly all methods share identical signatures with their traditional siblings, except that blocking methods now become **coroutines** and are often called with `yield from`.
 
 If you find this part of documentations wanting, always refer back to the traditional counterparts. It is easy to adapt examples from there to here - just remember to `yield from` coroutines.
 
@@ -1804,16 +2091,7 @@ Returns a *coroutine* that takes one argument (a message), and depending on the 
 The *routing_table* is a dict of the form: `{'chat': f1, 'callback_query': f2, 'inline_query': f3, 'chosen_inline_result': f4}`, where `f1`, `f2`, `f3`, `f4` are functions/coroutines that take one argument (the message). You don't have to include all flavors in the dict, only the ones you need.
 
 <a id="telepot-async-helper"></a>
-## `telepot.async.helper` module (Python 3.4.2 or newer)
-
-#### To all Async Version Users
-I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** Keyword `async` and `await` will be used. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
-
-Currently, telepot's async version already works with Python 3.5.1.
-
-**This announcement only concerns telepot's async version. Traditional version is not affected.**
-
----
+## `telepot.async.helper` module (Python 3.5+)
 
 <a id="telepot-async-helper-Microphone"></a>
 ### `telepot.async.helper.Microphone`
@@ -1880,9 +2158,9 @@ Parameters:
 
 *Superclass:* [`telepot.helper.Router`](#telepot-helper-Router)
 
-This class is basically identical to its superclass, except that it overrides the method `route(msg)` to deal with handler functions possibly being coroutines. As a result, the method `route(msg)` also becomes a coroutine.
+This class is basically identical to its superclass, except that it overrides the method `route` to deal with handler functions possibly being coroutines. As a result, the method `route` also becomes a coroutine.
 
-*coroutine* **route(msg)**
+*coroutine* **route(msg, \*args, \*\*kwargs)**
 
 <a id="telepot-async-helper-DefaultRouterMixin"></a>
 ### `telepot.async.helper.DefaultRouterMixin`
@@ -1912,22 +2190,16 @@ This object implements these methods:
 
 *Superclass:* [`telepot.helper.UserContext`](#telepot-helper-UserContext) [`telepot.async.helper.DefaultRouterMixin`](#telepot-async-helper-DefaultRouterMixin)
 
+<a id="telepot-async-helper-InlineUserHandler"></a>
+### `telepot.async.helper.InlineUserHandler`
+
 <a id="telepot-async-helper-openable"></a>
 ### `telepot.async.helper.openable` class decorator
 
 This is an alias to [telepot.helper.openable](#telepot-helper-openable).
 
 <a id="telepot-async-delegate"></a>
-## `telepot.async.delegate` module (Python 3.4.2 or newer)
-
-#### To all Async Version Users
-I am going to stop supporting Python 3.4 on around May 31<sup>th</sup>, 2016. **Async support will start at Python 3.5.1.** Keyword `async` and `await` will be used. Main reason for the change is that **it is much easier to ensure closing of connection using `async with`**, which is not available in Python 3.4. Let's all move with the times, and not get bogged down by the past.
-
-Currently, telepot's async version already works with Python 3.5.1.
-
-**This announcement only concerns telepot's async version. Traditional version is not affected.**
-
----
+## `telepot.async.delegate` module (Python 3.5+)
 
 This module provides functions used in conjunction with `telepot.async.DelegatorBot` to specify delegation patterns. See `telepot.async.DelegatorBot` for more details.
 
@@ -1982,3 +2254,8 @@ The object of `cls` must have these defined:
 - property `listener` which returns a `Listener` object
 
 An easy way to fulfilled these requirements is to extend from [`Monitor`](#telepot-async-helper-Monitor), [`ChatHandler`](#telepot-async-helper-ChatHandler), [`UserHandler`](#telepot-async-helper-UserHandler), or decorating a class with the [`@openable`](#telepot-async-helper-openable) class decorator.
+
+<a id="telepot-async-routing"></a>
+## `telepot.async.routing` module (Python 3.5+)
+
+Identical to module [`telepot.routing`](#telepot-routing).

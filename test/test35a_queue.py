@@ -72,14 +72,13 @@ sequence = [
     u(40),  # return
 ]
 
-@asyncio.coroutine
-def queue_put():
+async def queue_put():
     for update in sequence:
         if type(update) is dict:
-            yield from qu.put(update)
-            yield from asyncio.sleep(1)
+            await qu.put(update)
+            await asyncio.sleep(1)
         else:
-            yield from asyncio.sleep(update)
+            await asyncio.sleep(update)
 
 
 loop = asyncio.get_event_loop()

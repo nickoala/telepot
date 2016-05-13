@@ -30,12 +30,12 @@ PY_34 = sys.version_info >= (3,4)
 
 here = path.abspath(path.dirname(__file__))
 
-install_requires = ['requests>=2.4.0']
+install_requires = ['requests>=2.4.0', 'urllib3>=1.15.1']
 cmdclass = {}
 
 if PY_34:
     # one more dependency for Python 3.4
-    install_requires += ['aiohttp']
+    install_requires += ['aiohttp>=0.21.6']
 else:
     # do not copy/compile async module for Python 3.3 or below
     cmdclass['build_py'] = nocopy_async
@@ -66,7 +66,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='7.1',
+    version='8.0',
 
     description='Python framework for Telegram Bot API',
 

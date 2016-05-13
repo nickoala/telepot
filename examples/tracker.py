@@ -3,7 +3,7 @@ import telepot
 from telepot.delegate import per_from_id, create_open
 
 """
-$ python3.4 tracker.py <token>
+$ python3.5 tracker.py <token>
 
 Tracks user actions across all flavors.
 """

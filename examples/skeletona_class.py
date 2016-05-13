@@ -8,9 +8,25 @@ from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.namedtuple import InlineQueryResultArticle, InlineQueryResultPhoto, InputTextMessageContent
 
 """
-$ python3.4 skeletona_extend.py <token>
+$ python3.5 skeletona_class.py <token>
 
-A skeleton for your async telepot programs.
+An example that demonstrates the use of custom keyboard and inline keyboard, and their various buttons.
+
+Before running this example, remember to `/setinline` and `/setinlinefeedback` to enable inline mode for your bot.
+
+The bot works like this:
+
+- First, you send it one of these 4 characters - `c`, `i`, `h`, `f` - and it replies accordingly:
+    - `c` - a custom keyboard with various buttons
+    - `i` - an inline keyboard with various buttons
+    - `h` - hide custom keyboard
+    - `f` - force reply
+- Press various buttons to see their effects
+- Within inline mode, what you get back depends on the **last character** of the query:
+    - `a` - a list of articles
+    - `p` - a list of photos
+    - `b` - to see a button above the inline results to switch back to a private chat with the bot
+- Play around with the bot for an afternoon ...
 """
 
 class YourBot(telepot.async.Bot):
@@ -19,8 +35,7 @@ class YourBot(telepot.async.Bot):
         self._answerer = telepot.async.helper.Answerer(self)
         self._message_with_inline_keyboard = None
 
-    @asyncio.coroutine
-    def on_chat_message(self, msg):
+    async def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
         print('Chat:', content_type, chat_type, chat_id)
 
@@ -34,7 +49,7 @@ class YourBot(telepot.async.Bot):
                          ['Plain text', KeyboardButton(text='Text only')],
                          [dict(text='Phone', request_contact=True), KeyboardButton(text='Location', request_location=True)],
                      ])
-            yield from self.sendMessage(chat_id, 'Custom keyboard with various buttons', reply_markup=markup)
+            await self.sendMessage(chat_id, 'Custom keyboard with various buttons', reply_markup=markup)
         elif command == 'i':
             markup = InlineKeyboardMarkup(inline_keyboard=[
                          [dict(text='Telegram URL', url='https://core.telegram.org/')],
@@ -44,29 +59,28 @@ class YourBot(telepot.async.Bot):
                          [dict(text='Switch to using bot inline', switch_inline_query='initial query')],
                      ])
 
-            self._message_with_inline_keyboard = yield from self.sendMessage(chat_id, 'Inline keyboard with various buttons', reply_markup=markup)
+            self._message_with_inline_keyboard = await self.sendMessage(chat_id, 'Inline keyboard with various buttons', reply_markup=markup)
         elif command == 'h':
             markup = ReplyKeyboardHide()
-            yield from self.sendMessage(chat_id, 'Hide custom keyboard', reply_markup=markup)
+            await self.sendMessage(chat_id, 'Hide custom keyboard', reply_markup=markup)
         elif command == 'f':
             markup = ForceReply()
-            yield from self.sendMessage(chat_id, 'Force reply', reply_markup=markup)
+            await self.sendMessage(chat_id, 'Force reply', reply_markup=markup)
 
-    @asyncio.coroutine
-    def on_callback_query(self, msg):
+    async def on_callback_query(self, msg):
         query_id, from_id, data = telepot.glance(msg, flavor='callback_query')
         print('Callback query:', query_id, from_id, data)
 
         if data == 'notification':
-            yield from self.answerCallbackQuery(query_id, text='Notification at top of screen')
+            await self.answerCallbackQuery(query_id, text='Notification at top of screen')
         elif data == 'alert':
-            yield from self.answerCallbackQuery(query_id, text='Alert!', show_alert=True)
+            await self.answerCallbackQuery(query_id, text='Alert!', show_alert=True)
         elif data == 'edit':
             if self._message_with_inline_keyboard:
                 msgid = (from_id, self._message_with_inline_keyboard['message_id'])
-                yield from self.editMessageText(msgid, 'NEW MESSAGE HERE!!!!!')
+                await self.editMessageText(msgid, 'NEW MESSAGE HERE!!!!!')
             else:
-                yield from self.answerCallbackQuery(query_id, text='No previous message to edit')
+                await self.answerCallbackQuery(query_id, text='No previous message to edit')
 
     def on_inline_query(self, msg):
         def compute():

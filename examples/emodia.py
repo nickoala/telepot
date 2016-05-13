@@ -2,34 +2,25 @@ import sys
 import logging
 import asyncio
 import os
-import configparser
 import telepot
 import telepot.namedtuple
 import telepot.async
 
 """
-$ python3.4 emodia.py <config_path>
+$ python3.5 emodia.py <config_path>
 
 Emodi: An Emoji Unicode Decoder - You send me an emoji, I give you the unicode.
 
-Because this program is run on a hosted server, I don't want the token on the
-command-line, which may be seen by listing the processes. I put the token in a
-config file, which looks like:
-
-[emodia.py]
-bot_token = .........
-
 Caution: Python's treatment of unicode characters longer than 2 bytes (which
 most emojis are) varies across versions and platforms. I have tested this program
-on Python3.4.3/Raspbian & CentOS6. If you try it on other versions/platforms, the
+on Python3.5.1/Raspbian & CentOS6. If you try it on other versions/platforms, the
 length-checking and substring-extraction below may not work as expected.
 """
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s: %(message)s')
 logger = logging.getLogger()
 
-@asyncio.coroutine
-def handle(msg):
+async def handle(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
     m = telepot.namedtuple.Message(**msg)
 
@@ -42,7 +33,7 @@ def handle(msg):
 
     if content_type == 'text':
         if msg['text'] == '/start':
-            yield from bot.sendMessage(chat_id,  # Welcome message
+            await bot.sendMessage(chat_id,  # Welcome message
                                        "You send me an Emoji"
                                        "\nI give you the Unicode"
                                        "\n\nOn Python 2, remember to prepend a 'u' to unicode strings,"
@@ -61,16 +52,10 @@ def handle(msg):
         reply += msg['text'][:10].encode('unicode-escape').decode('ascii')
 
         logger.info('>>> %s', reply)
-        yield from bot.sendMessage(chat_id, reply)
+        await bot.sendMessage(chat_id, reply)
 
 
-# Read token from config file, whose path is specified on command-line.
-config = configparser.ConfigParser()
-config.read(sys.argv[1])
-
-filename = os.path.basename(sys.argv[0])
-
-TOKEN = config[filename]['bot_token']
+TOKEN = sys.argv[1]
 
 bot = telepot.async.Bot(TOKEN)
 loop = asyncio.get_event_loop()

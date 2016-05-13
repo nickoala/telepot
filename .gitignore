@@ -1,8 +1,8 @@
 *.pyc
+.idea/
 telepot.egg-info/
 dist/
-.idea/
+experiments/
 todo.txt
 .remote-sync.json
 .pypirc
-qpull.py

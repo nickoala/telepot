@@ -3,9 +3,8 @@ import asyncio
 import telepot
 from telepot.async.delegate import per_chat_id_in, per_application, call, create_open
 
-""" Python3.4.3 or newer
-
-$ python3.4 chatboxa_nodb.py <token> <owner_id>
+"""
+$ python3.5 chatboxa_nodb.py <token> <owner_id>
 
 Chatbox - a mailbox for chats
 
@@ -57,18 +56,16 @@ class OwnerHandler(telepot.async.helper.ChatHandler):
         super(OwnerHandler, self).__init__(seed_tuple, timeout)
         self._store = store
 
-    @asyncio.coroutine
-    def _read_messages(self, messages):
+    async def _read_messages(self, messages):
         for msg in messages:
             # assume all messages are text
-            yield from self.sender.sendMessage(msg['text'])
+            await self.sender.sendMessage(msg['text'])
 
-    @asyncio.coroutine
-    def on_chat_message(self, msg):
+    async def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
 
         if content_type != 'text':
-            yield from self.sender.sendMessage("I don't understand")
+            await self.sender.sendMessage("I don't understand")
             return
 
         command = msg['text'].strip().lower()
@@ -83,26 +80,26 @@ class OwnerHandler(telepot.async.helper.ChatHandler):
                 lines.append(n)
 
             if not len(lines):
-                yield from self.sender.sendMessage('No unread messages')
+                await self.sender.sendMessage('No unread messages')
             else:
-                yield from self.sender.sendMessage('\n'.join(lines))
+                await self.sender.sendMessage('\n'.join(lines))
 
         # read next sender's messages
         elif command == '/next':
             results = self._store.unread_per_chat()
 
             if not len(results):
-                yield from self.sender.sendMessage('No unread messages')
+                await self.sender.sendMessage('No unread messages')
                 return
 
             chat_id = results[0][0]
             unread_messages = self._store.pull(chat_id)
 
-            yield from self.sender.sendMessage('From ID: %d' % chat_id)
-            yield from self._read_messages(unread_messages)
+            await self.sender.sendMessage('From ID: %d' % chat_id)
+            await self._read_messages(unread_messages)
 
         else:
-            yield from self.sender.sendMessage("I don't understand")
+            await self.sender.sendMessage("I don't understand")
 
 
 class MessageSaver(telepot.async.helper.Monitor):
@@ -157,12 +154,11 @@ class ChatBox(telepot.async.DelegatorBot):
         self._seen.add(chat_id)
         return []  # non-hashable ==> delegates are independent, no seed association is made.
 
-    @asyncio.coroutine
-    def _send_welcome(self, seed_tuple):
+    async def _send_welcome(self, seed_tuple):
         chat_id = seed_tuple[1]['chat']['id']
 
         print('Sending welcome ...')
-        yield from self.sendMessage(chat_id, 'Hello!')
+        await self.sendMessage(chat_id, 'Hello!')
 
 
 TOKEN = sys.argv[1]

@@ -4,12 +4,11 @@ import telepot
 import telepot.async
 
 """
-$ python3.4 skeletona.py <token>
+$ python3.5 skeletona.py <token>
 
 A skeleton for your async telepot programs.
 """
 
-@asyncio.coroutine
 def handle(msg):
     flavor = telepot.flavor(msg)
 

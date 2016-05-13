@@ -8,9 +8,25 @@ from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.namedtuple import InlineQueryResultArticle, InlineQueryResultPhoto, InputTextMessageContent
 
 """
-$ python3.4 skeleton_extend.py <token>
+$ python3.5 skeleton_class.py <token>
 
-A skeleton for your telepot programs - extend from `Bot` and define handler methods as needed.
+An example that demonstrates the use of custom keyboard and inline keyboard, and their various buttons.
+
+Before running this example, remember to `/setinline` and `/setinlinefeedback` to enable inline mode for your bot.
+
+The bot works like this:
+
+- First, you send it one of these 4 characters - `c`, `i`, `h`, `f` - and it replies accordingly:
+    - `c` - a custom keyboard with various buttons
+    - `i` - an inline keyboard with various buttons
+    - `h` - hide custom keyboard
+    - `f` - force reply
+- Press various buttons to see their effects
+- Within inline mode, what you get back depends on the **last character** of the query:
+    - `a` - a list of articles
+    - `p` - a list of photos
+    - `b` - to see a button above the inline results to switch back to a private chat with the bot
+- Play around with the bot for an afternoon ...
 """
 
 class YourBot(telepot.Bot):

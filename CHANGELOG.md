@@ -1,5 +1,17 @@
 # telepot changelog
 
+## 8.0 (2016-05-13)
+
+- Added HTTP connection pooling (for both traditional and async version). Bot API requests are much speedier.
+- Most requests are now done with `urllib3`, moving away from `requests`.
+- Added module `telepot.routing` and `telepot.async.routing` to provide common key functions and routing tables for `Router` to use.
+- Removed method `set_key_function` and `set_routing_table` from `Router`. Access instance variable `key_function` and `routing_table` instead.
+- Added function `telepot.message_identifier` to extract message identifier for editing messages.
+- Added helper class `Editor` to ease editing messages.
+- `ChatHandler`, by default, also captures `callback_query` from the same user.
+- Added `InlineUserHandler` to capture only inline-related messages.
+- Async version uses `async`/`await`, stops supporting Python 3.4, works on Python 3.5+ from now on.
+
 ## 7.1 (2016-04-24)
 
 - Patched `requests` and `aiohttp` to send unicode filenames

@@ -4,7 +4,7 @@ import telepot
 from telepot.async.delegate import per_from_id, create_open
 
 """
-$ python3.4 trackera.py <token>
+$ python3.5 trackera.py <token>
 
 Tracks user actions across all flavors.
 """

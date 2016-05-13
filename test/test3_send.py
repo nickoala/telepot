@@ -118,7 +118,7 @@ def send_everything_on_contact(msg):
 
     bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=hide_keyboard)
 
-    furl = urllib.request.urlopen('http://i.imgur.com/B1fzGoh.jpg')
+    furl = urllib.request.urlopen('http://i.imgur.com/35HSRQ6.png')
     bot.sendPhoto(chat_id, ('abc.jpg', furl))
 
     bot.sendPhoto(chat_id, ('中文照片.jpg', open('lighthouse.jpg', 'rb')), caption='中文照片')
@@ -281,7 +281,7 @@ def test_webhook_getupdates_exclusive():
 
     try:
         bot.getUpdates()
-    except telepot.TelegramError as e:
+    except telepot.exception.TelegramError as e:
         print("%d: %s" % (e.error_code, e.description))
         print('As expected, getUpdates() produces an error.')
 
