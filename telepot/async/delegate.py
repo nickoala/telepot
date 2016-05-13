@@ -1,24 +1,13 @@
 import asyncio
-import telepot.delegate
-from ..exception import WaitTooLong, StopListening
-from .helper import _yell
+import traceback
+from .. import exception
+from . import helper
 
-# aliases for convenience
-per_chat_id = telepot.delegate.per_chat_id
-per_chat_id_in = telepot.delegate.per_chat_id_in
-per_chat_id_except = telepot.delegate.per_chat_id_except
-
-per_from_id = telepot.delegate.per_from_id
-per_from_id_in = telepot.delegate.per_from_id_in
-per_from_id_except = telepot.delegate.per_from_id_except
-
-per_inline_from_id = telepot.delegate.per_inline_from_id
-per_inline_from_id_in = telepot.delegate.per_inline_from_id_in
-per_inline_from_id_except = telepot.delegate.per_inline_from_id_except
-
-per_application = telepot.delegate.per_application
-per_message = telepot.delegate.per_message
-
+# Mirror traditional version to avoid having to import one more module
+from ..delegate import (per_chat_id, per_chat_id_in, per_chat_id_except,
+                        per_from_id, per_from_id_in, per_from_id_except,
+                        per_inline_from_id, per_inline_from_id_in, per_inline_from_id_except,
+                        per_application, per_message)
 
 def _ensure_coroutine_function(fn):
     return fn if asyncio.iscoroutinefunction(fn) else asyncio.coroutine(fn)
@@ -39,28 +28,27 @@ def create_open(cls, *args, **kwargs):
     def f(seed_tuple):
         j = cls(seed_tuple, *args, **kwargs)
 
-        @asyncio.coroutine
-        def wait_loop():
+        async def wait_loop():
             bot, msg, seed = seed_tuple
             try:
-                handled = yield from _yell(j.open, msg, seed)
+                handled = await helper._yell(j.open, msg, seed)
                 if not handled:
-                    yield from _yell(j.on_message, msg)
+                    await helper._yell(j.on_message, msg)
 
                 while 1:
-                    msg = yield from j.listener.wait()
-                    yield from _yell(j.on_message, msg)
+                    msg = await j.listener.wait()
+                    await helper._yell(j.on_message, msg)
 
             # These exceptions are "normal" exits.
-            except (WaitTooLong, StopListening) as e:
-                yield from _yell(j.on_close, e)
+            except (exception.WaitTooLong, exception.StopListening) as e:
+                await helper._yell(j.on_close, e)
 
             # Any other exceptions are accidents. **Print it out.**
             # This is to prevent swallowing exceptions in the case that on_close()
             # gets overridden but fails to account for unexpected exceptions.
             except Exception as e:
                 traceback.print_exc()
-                yield from _yell(j.on_close, e)
+                await helper._yell(j.on_close, e)
 
         return wait_loop()
     return f
