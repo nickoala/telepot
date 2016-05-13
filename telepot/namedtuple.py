@@ -131,7 +131,8 @@ Sticker = _create_class('Sticker', [
               'width',
               'height',
               ('thumb', PhotoSize),
-              'file_size'
+              'emoji',
+              'file_size',
           ])
 
 # incoming
@@ -254,6 +255,7 @@ Message = _create_class('Message', [
               'date',
               ('chat', Chat),
               ('forward_from', User),
+              ('forward_from_chat', Chat),
               'forward_date',                     # get around the fact that `Message` is not yet defined
               ('reply_to_message', lambda **kwargs: getattr(sys.modules[__name__], 'Message')(**kwargs)),
               'text',
