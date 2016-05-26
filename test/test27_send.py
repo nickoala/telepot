@@ -241,41 +241,6 @@ def get_user_profile_photos():
     r = bot.getUserProfilePhotos(USER_ID)
     examine(r, telepot.namedtuple.UserProfilePhotos)
 
-expected_content_type = None
-content_type_iterator = iter([
-    'text', 'voice', 'sticker', 'photo', 'audio' ,'document', 'video', 'contact', 'location',
-    'new_chat_member',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo', 'left_chat_member'
-])
-
-def see_every_content_types(msg):
-    global expected_content_type, content_type_iterator
-
-    content_type, chat_type, chat_id = telepot.glance(msg)
-    from_id = msg['from']['id']
-
-    if chat_id != USER_ID and from_id != USER_ID:
-        print 'Unauthorized user:', chat_id, from_id
-        return
-
-    examine(msg, telepot.namedtuple.Message)
-    try:
-        if content_type == expected_content_type:
-            expected_content_type = content_type_iterator.next()
-            bot.sendMessage(chat_id, 'Please give me a %s.' % expected_content_type)
-        else:
-            bot.sendMessage(chat_id, 'It is not a %s. Please give me a %s, please.' % (expected_content_type, expected_content_type))
-    except StopIteration:
-        # reply to sender because I am kicked from group already
-        bot.sendMessage(from_id, 'Thank you. I am done.')
-
-def ask_for_various_messages():
-    bot.message_loop(see_every_content_types)
-
-    global expected_content_type, content_type_iterator
-    expected_content_type = content_type_iterator.next()
-
-    bot.sendMessage(USER_ID, 'Please give me a %s.' % expected_content_type)
-
 def test_webhook_getupdates_exclusive():
     bot.setWebhook('https://www.fake.com/fake', open('old.cert', 'rb'))
     print 'Fake webhook set.'

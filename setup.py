@@ -26,18 +26,18 @@ class nocompile_async(install_lib):
         install_lib.byte_compile(self, files)
 
 
-PY_34 = sys.version_info >= (3,4)
+PY_35 = sys.version_info >= (3,5)
 
 here = path.abspath(path.dirname(__file__))
 
-install_requires = ['requests>=2.4.0', 'urllib3>=1.15.1']
+install_requires = ['urllib3>=1.15.1']
 cmdclass = {}
 
-if PY_34:
-    # one more dependency for Python 3.4
+if PY_35:
+    # one more dependency for Python 3.5 (async version)
     install_requires += ['aiohttp>=0.21.6']
 else:
-    # do not copy/compile async module for Python 3.3 or below
+    # do not copy/compile async version for older Python
     cmdclass['build_py'] = nocopy_async
     cmdclass['install_lib'] = nocompile_async
 
@@ -66,7 +66,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='8.0',
+    version='8.1',
 
     description='Python framework for Telegram Bot API',
 
