@@ -1,5 +1,9 @@
 # telepot - Python framework for Telegram Bot API
 
+I am in the process of updating documentations. **Those on this page are not 100% up-to-date.** Long-time users should be able to discern the additions by looking at **[changelog](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**. **For newcomers, all stuff on this page still applies**, although discussions on new features are lacking. Expect complete documentations in coming days.
+
+-----------
+
 **[Installation](#installation)**  
 **[The Basics](#basics)**  
 **[Custom Keyboard and Inline Keyboard](#inline-keyboard)**  
