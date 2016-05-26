@@ -2,7 +2,7 @@
 
 ## 8.1 (2016-05-26)
 
-- Added flavor `edited_chat` and hander function `on_edited_chat_message`
+- Added flavor `edited_chat` and handler function `on_edited_chat_message`
 - New Bot API methods: `getChat`, `leaveChat`, `getChatAdministrators`, `getChatMember`, and `getChatMembersCount`
 - Added namedtuple `ChatMember` and other new fields
 - No longer dependent on `requests`. Use `urllib3` throughout (traditional version).
