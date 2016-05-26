@@ -32,6 +32,14 @@
 
 ### Recent changes
 
+**8.1 (2016-05-26)**
+
+- Added flavor `edited_chat` and hander function `on_edited_chat_message`
+- New Bot API methods: `getChat`, `leaveChat`, `getChatAdministrators`, `getChatMember`, and `getChatMembersCount`
+- Added namedtuple `ChatMember` and other new fields
+- No longer dependent on `requests`. Use `urllib3` throughout (traditional version).
+- Start adding docstring and using Sphinx to generate documentations.
+
 **8.0 (2016-05-13)**
 
 - Added HTTP connection pooling (for both traditional and async version). Bot API requests are much speedier.
@@ -43,33 +51,6 @@
 - `ChatHandler`, by default, also captures `callback_query` from the same user.
 - Added `InlineUserHandler` to capture only inline-related messages.
 - Async version uses `async`/`await`, stops supporting Python 3.4, works on Python 3.5+ from now on.
-
-**7.1 (2016-04-24)**
-
-- Patched `requests` and `aiohttp` to send unicode filenames
-
-**7.0 (2016-04-18)**
-
-- **Bot API 2.0**
-    - Added new flavor `callback_query`
-    - Added a bunch of namedtuples to reflect new objects in Bot API
-    - Added methods:
-        - `sendVenue()`, `sendContact()`
-        - `kickChatMember()`, `unbanChatMember()`
-        - `answerCallbackQuery()`
-        - `editMessageText()`, `editMessageCaption()`, `editMessageReplyMarkup()`
-    - To `ChatContext`, added a property `administrator`
-- Added `telepot.exception.MigratedToSupergroupChatError`
-- **Backward-incompatible name changes** (See **[Migration Guide](https://github.com/nickoala/telepot/blob/master/migration-7-0.md)**)
-    - Flavor `normal` → `chat`
-    - Method `notifyOnMessage` → `message_loop`
-    - Method `messageLoop` → `message_loop`
-    - Method `downloadFile` → `download_file`
-    - Function `telepot.namedtuple.namedtuple` was removed. Create namedtuples using their constructors directly.
-    - Function `telepot.glance2` was removed. Use `telepot.glance`.
-    - Chat messages' content type returned by `telepot.glance`:
-        - `new_chat_participant` → `new_chat_member`
-        - `left_chat_participant` → `left_chat_member`
 
 **[Go to full changelog »](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**
 
@@ -96,9 +77,9 @@ $ easy_install --upgrade telepot  # UPGRADE
 Download manually:
 
 ```
-$ wget https://pypi.python.org/packages/source/t/telepot/telepot-8.0.zip
-$ unzip telepot-8.0.zip
-$ cd telepot-8.0
+$ wget https://pypi.python.org/packages/source/t/telepot/telepot-8.1.zip
+$ unzip telepot-8.1.zip
+$ cd telepot-8.1
 $ python setup.py install
 ```
 
