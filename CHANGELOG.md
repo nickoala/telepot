@@ -1,5 +1,13 @@
 # telepot changelog
 
+## 8.1 (2016-05-26)
+
+- Added flavor `edited_chat` and hander function `on_edited_chat_message`
+- New Bot API methods: `getChat`, `leaveChat`, `getChatAdministrators`, `getChatMember`, and `getChatMembersCount`
+- Added namedtuple `ChatMember` and other new fields
+- No longer dependent on `requests`. Use `urllib3` throughout (traditional version).
+- Start adding docstring and using Sphinx to generate documentations.
+
 ## 8.0 (2016-05-13)
 
 - Added HTTP connection pooling (for both traditional and async version). Bot API requests are much speedier.
