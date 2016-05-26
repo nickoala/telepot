@@ -196,6 +196,15 @@ UserProfilePhotos = _create_class('UserProfilePhotos', [
                         ('photos', PhotoSizeArrayArray)
                     ])
 
+# incoming
+ChatMember = _create_class('ChatMember', [
+                 ('user', User),
+                 'status',
+             ])
+
+def ChatMemberArray(data):
+    return [ChatMember(**p) for p in data]
+
 # outgoing
 ReplyKeyboardMarkup = _create_class('ReplyKeyboardMarkup', [
                           'keyboard',
@@ -242,6 +251,7 @@ MessageEntity = _create_class('MessageEntity', [
                     'offset',
                     'length',
                     'url',
+                    ('user', User),
                 ])
 
 # incoming
@@ -258,6 +268,7 @@ Message = _create_class('Message', [
               ('forward_from_chat', Chat),
               'forward_date',                     # get around the fact that `Message` is not yet defined
               ('reply_to_message', lambda **kwargs: getattr(sys.modules[__name__], 'Message')(**kwargs)),
+              'edit_date',
               'text',
               ('entities', MessageEntityArray),
               ('audio', Audio),
@@ -314,6 +325,7 @@ CallbackQuery = _create_class('CallbackQuery', [
 Update = _create_class('Update', [
              'update_id',
              ('message', Message),
+             ('edited_message', Message),
              ('inline_query', InlineQuery),
              ('chosen_inline_result', ChosenInlineResult),
              ('callback_query', CallbackQuery),

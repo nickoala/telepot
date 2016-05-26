@@ -11,15 +11,26 @@ try:
 except ImportError:
     import queue
 
-from . import api, exception
-
 # Patch urllib3 for sending unicode filename
 from . import hack
 
+from . import exception
 
 def flavor(msg):
+    """
+    There are five message flavors:
+
+    - ``chat``
+    - ``edited_chat``
+    - ``callback_query``
+    - ``inline_query``
+    - ``chosen_inline_result``
+    """
     if 'message_id' in msg:
-        return 'chat'
+        if 'edit_date' in msg:
+            return 'edited_chat'
+        else:
+            return 'chat'
     elif 'id' in msg and 'data' in msg:
         return 'callback_query'
     elif 'id' in msg and 'query' in msg:
@@ -38,13 +49,44 @@ def _find_first_key(d, keys):
 
 
 all_content_types = [
-    'text', 'audio', 'document', 'photo', 'sticker', 'video', 'voice', 'contact', 'location', 'venue',
-    'new_chat_member', 'left_chat_member',  'new_chat_title', 'new_chat_photo',  'delete_chat_photo',
-    'group_chat_created', 'supergroup_chat_created', 'channel_chat_created',
-    'migrate_to_chat_id', 'migrate_from_chat_id', 'pinned_message',
+    'text', 'audio', 'document', 'photo', 'sticker', 'video', 'voice',
+    'contact', 'location', 'venue', 'new_chat_member', 'left_chat_member',  'new_chat_title',
+    'new_chat_photo',  'delete_chat_photo', 'group_chat_created', 'supergroup_chat_created',
+    'channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id', 'pinned_message',
 ]
 
 def glance(msg, flavor='chat', long=False):
+    """
+    Extract "headline" info about a message.
+    Use parameter ``long`` to control whether a short or long tuple is returned.
+
+    When ``flavor`` is ``chat`` or ``edited_chat``
+    (``msg`` being a `Message <https://core.telegram.org/bots/api#message>`_ object):
+
+    - short: (content_type, ``msg['chat']['type']``, ``msg['chat']['id']``)
+    - long: (content_type, ``msg['chat']['type']``, ``msg['chat']['id']``, ``msg['date']``, ``msg['message_id']``)
+
+    *content_type* can be: ``text``, ``audio``, ``document``, ``photo``, ``sticker``, ``video``, ``voice``,
+    ``contact``, ``location``, ``venue``, ``new_chat_member``, ``left_chat_member``, ``new_chat_title``,
+    ``new_chat_photo``, ``delete_chat_photo``, ``group_chat_created``, ``supergroup_chat_created``,
+    ``channel_chat_created``, ``migrate_to_chat_id``, ``migrate_from_chat_id``, ``pinned_message``.
+
+    When ``flavor`` is ``callback_query``
+    (``msg`` being a `CallbackQuery <https://core.telegram.org/bots/api#callbackquery>`_ object):
+
+    - regardless: (``msg['id']``, ``msg['from']['id']``, ``msg['data']``)
+
+    When ``flavor`` is ``inline_query``
+    (``msg`` being a `InlineQuery <https://core.telegram.org/bots/api#inlinequery>`_ object):
+
+    - short: (``msg['id']``, ``msg['from']['id']``, ``msg['query']``)
+    - long: (``msg['id']``, ``msg['from']['id']``, ``msg['query']``, ``msg['offset']``)
+
+    When ``flavor`` is ``chosen_inline_result``
+    (``msg`` being a `ChosenInlineResult <https://core.telegram.org/bots/api#choseninlineresult>`_ object):
+
+    - regardless: (``msg['result_id']``, ``msg['from']['id']``, ``msg['query']``)
+    """
     def gl_chat():
         content_type = _find_first_key(msg, all_content_types)
 
@@ -67,6 +109,7 @@ def glance(msg, flavor='chat', long=False):
 
     try:
         fn = {'chat': gl_chat,
+              'edited_chat': gl_chat,
               'callback_query': gl_callback_query,
               'inline_query': gl_inline_query,
               'chosen_inline_result': gl_chosen_inline_result}[flavor]
@@ -77,6 +120,11 @@ def glance(msg, flavor='chat', long=False):
 
 
 def flance(msg, long=False):
+    """
+    A combination of :meth:`telepot.flavor` and :meth:`telepot.glance`,
+    return a 2-tuple (flavor, headline_info), where *headline_info* is whatever extracted by
+    ``glance`` depending on the message flavor and the ``long`` parameter.
+    """
     f = flavor(msg)
     g = glance(msg, flavor=f, long=long)
     return f,g
@@ -130,6 +178,12 @@ def _rectify(params):
     return {k: flatten(v) for k,v in params.items() if v is not None}
 
 def message_identifier(msg):
+    """
+    Extract an identifier for message editing. Useful with :meth:`telepot.Bot.editMessageText`
+    and similar methods.
+
+    ``msg`` is expected to be of flavor ``chat`` or ``choson_inline_result``.
+    """
     if 'chat' in msg and 'message_id' in msg:
         return msg['chat']['id'], msg['message_id']
     elif 'inline_message_id' in msg:
@@ -149,11 +203,14 @@ def _dismantle_message_identifier(f):
         return {'inline_message_id': f}
 
 
+from . import api
+
 class Bot(_BotBase):
     def __init__(self, token):
         super(Bot, self).__init__(token)
 
         self._router = helper.Router(flavor, {'chat': lambda msg: self.on_chat_message(msg),
+                                              'edited_chat': lambda msg: self.on_edited_chat_message(msg),
                                               'callback_query': lambda msg: self.on_callback_query(msg),
                                               'inline_query': lambda msg: self.on_inline_query(msg),
                                               'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
@@ -167,15 +224,18 @@ class Bot(_BotBase):
         return api.request((self._token, method, params, files), **kwargs)
 
     def getMe(self):
+        """ See: https://core.telegram.org/bots/api#getme """
         return self._api_request('getMe')
 
     def sendMessage(self, chat_id, text,
                     parse_mode=None, disable_web_page_preview=None,
                     disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """ See: https://core.telegram.org/bots/api#sendmessage """
         p = _strip(locals())
         return self._api_request('sendMessage', _rectify(p))
 
     def forwardMessage(self, chat_id, from_chat_id, message_id, disable_notification=None):
+        """ See: https://core.telegram.org/bots/api#forwardmessage """
         p = _strip(locals())
         return self._api_request('forwardMessage', _rectify(p))
 
@@ -197,91 +257,180 @@ class Bot(_BotBase):
     def sendPhoto(self, chat_id, photo,
                   caption=None,
                   disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """
+        See: https://core.telegram.org/bots/api#sendphoto
+
+        :param photo: a string indicating a ``file_id`` on server,
+                      a file-like object as obtained by ``open()`` or ``urlopen()``,
+                      or a (filename, file-like object) tuple.
+                      If the file-like object is obtained by ``urlopen()``, you most likely
+                      have to supply a filename because Telegram servers require to know
+                      the file extension.
+                      If the filename contains non-ASCII characters and you are using Python 2.7,
+                      make sure the filename is a unicode string.
+        """
         p = _strip(locals(), more=['photo'])
         return self._sendfile(photo, 'photo', p)
 
     def sendAudio(self, chat_id, audio,
                   duration=None, performer=None, title=None,
                   disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """
+        See: https://core.telegram.org/bots/api#sendaudio
+
+        :param audio: Same as ``photo`` in :meth:`telepot.Bot.sendPhoto`
+        """
         p = _strip(locals(), more=['audio'])
         return self._sendfile(audio, 'audio', p)
 
     def sendDocument(self, chat_id, document,
                      caption=None,
                      disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """
+        See: https://core.telegram.org/bots/api#senddocument
+
+        :param document: Same as ``photo`` in :meth:`telepot.Bot.sendPhoto`
+        """
         p = _strip(locals(), more=['document'])
         return self._sendfile(document, 'document', p)
 
     def sendSticker(self, chat_id, sticker,
                     disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """
+        See: https://core.telegram.org/bots/api#sendsticker
+
+        :param sticker: Same as ``photo`` in :meth:`telepot.Bot.sendPhoto`
+        """
         p = _strip(locals(), more=['sticker'])
         return self._sendfile(sticker, 'sticker', p)
 
     def sendVideo(self, chat_id, video,
                   duration=None, width=None, height=None, caption=None,
                   disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """
+        See: https://core.telegram.org/bots/api#sendvideo
+
+        :param video: Same as ``photo`` in :meth:`telepot.Bot.sendPhoto`
+        """
         p = _strip(locals(), more=['video'])
         return self._sendfile(video, 'video', p)
 
     def sendVoice(self, chat_id, voice,
                   duration=None,
                   disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """
+        See: https://core.telegram.org/bots/api#sendvoice
+
+        :param voice: Same as ``photo`` in :meth:`telepot.Bot.sendPhoto`
+        """
         p = _strip(locals(), more=['voice'])
         return self._sendfile(voice, 'voice', p)
 
     def sendLocation(self, chat_id, latitude, longitude,
                      disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """ See: https://core.telegram.org/bots/api#sendlocation """
         p = _strip(locals())
         return self._api_request('sendLocation', _rectify(p))
 
     def sendVenue(self, chat_id, latitude, longitude, title, address,
                   foursquare_id=None,
                   disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """ See: https://core.telegram.org/bots/api#sendvenue """
         p = _strip(locals())
         return self._api_request('sendVenue', _rectify(p))
 
     def sendContact(self, chat_id, phone_number, first_name,
                     last_name=None,
                     disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """ See: https://core.telegram.org/bots/api#sendcontact """
         p = _strip(locals())
         return self._api_request('sendContact', _rectify(p))
 
     def sendChatAction(self, chat_id, action):
+        """ See: https://core.telegram.org/bots/api#sendchataction """
         p = _strip(locals())
         return self._api_request('sendChatAction', _rectify(p))
 
     def getUserProfilePhotos(self, user_id, offset=None, limit=None):
+        """ See: https://core.telegram.org/bots/api#getuserprofilephotos """
         p = _strip(locals())
         return self._api_request('getUserProfilePhotos', _rectify(p))
 
     def getFile(self, file_id):
+        """ See: https://core.telegram.org/bots/api#getfile """
         p = _strip(locals())
         return self._api_request('getFile', _rectify(p))
 
     def kickChatMember(self, chat_id, user_id):
+        """ See: https://core.telegram.org/bots/api#kickchatmember """
         p = _strip(locals())
         return self._api_request('kickChatMember', _rectify(p))
 
+    def leaveChat(self, chat_id):
+        """ See: https://core.telegram.org/bots/api#leavechat """
+        p = _strip(locals())
+        return self._api_request('leaveChat', _rectify(p))
+
     def unbanChatMember(self, chat_id, user_id):
+        """ See: https://core.telegram.org/bots/api#unbanchatmember """
         p = _strip(locals())
         return self._api_request('unbanChatMember', _rectify(p))
 
+    def getChat(self, chat_id):
+        """ See: https://core.telegram.org/bots/api#getchat """
+        p = _strip(locals())
+        return self._api_request('getChat', _rectify(p))
+
+    def getChatAdministrators(self, chat_id):
+        """ See: https://core.telegram.org/bots/api#getchatadministrators """
+        p = _strip(locals())
+        return self._api_request('getChatAdministrators', _rectify(p))
+
+    def getChatMembersCount(self, chat_id):
+        """ See: https://core.telegram.org/bots/api#getchatmemberscount """
+        p = _strip(locals())
+        return self._api_request('getChatMembersCount', _rectify(p))
+
+    def getChatMember(self, chat_id, user_id):
+        """ See: https://core.telegram.org/bots/api#getchatmember """
+        p = _strip(locals())
+        return self._api_request('getChatMember', _rectify(p))
+
     def answerCallbackQuery(self, callback_query_id, text=None, show_alert=None):
+        """ See: https://core.telegram.org/bots/api#answercallbackquery """
         p = _strip(locals())
         return self._api_request('answerCallbackQuery', _rectify(p))
 
     def editMessageText(self, msg_identifier, text,
                         parse_mode=None, disable_web_page_preview=None, reply_markup=None):
+        """
+        See: https://core.telegram.org/bots/api#editmessagetext
+
+        :param msg_identifier: a 2-tuple (``chat_id``, ``message_id``),
+                               a 1-tuple (``inline_message_id``),
+                               or simply ``inline_message_id``.
+                               You may extract this value easily with :meth:`telepot.message_identifier`
+        """
         p = _strip(locals(), more=['msg_identifier'])
         p.update(_dismantle_message_identifier(msg_identifier))
         return self._api_request('editMessageText', _rectify(p))
 
     def editMessageCaption(self, msg_identifier, caption=None, reply_markup=None):
+        """
+        See: https://core.telegram.org/bots/api#editmessagecaption
+
+        :param msg_identifier: Same as ``msg_identifier`` in :meth:`telepot.Bot.editMessageText`
+        """
         p = _strip(locals(), more=['msg_identifier'])
         p.update(_dismantle_message_identifier(msg_identifier))
         return self._api_request('editMessageCaption', _rectify(p))
 
     def editMessageReplyMarkup(self, msg_identifier, reply_markup=None):
+        """
+        See: https://core.telegram.org/bots/api#editmessagereplymarkup
+
+        :param msg_identifier: Same as ``msg_identifier`` in :meth:`telepot.Bot.editMessageText`
+        """
         p = _strip(locals(), more=['msg_identifier'])
         p.update(_dismantle_message_identifier(msg_identifier))
         return self._api_request('editMessageReplyMarkup', _rectify(p))
@@ -289,14 +438,17 @@ class Bot(_BotBase):
     def answerInlineQuery(self, inline_query_id, results,
                           cache_time=None, is_personal=None, next_offset=None,
                           switch_pm_text=None, switch_pm_parameter=None):
+        """ See: https://core.telegram.org/bots/api#answerinlinequery """
         p = _strip(locals())
         return self._api_request('answerInlineQuery', _rectify(p))
 
     def getUpdates(self, offset=None, limit=None, timeout=None):
+        """ See: https://core.telegram.org/bots/api#getupdates """
         p = _strip(locals())
         return self._api_request('getUpdates', _rectify(p))
 
     def setWebhook(self, url=None, certificate=None):
+        """ See: https://core.telegram.org/bots/api#setwebhook """
         p = _strip(locals(), more=['certificate'])
 
         if certificate:
@@ -306,24 +458,87 @@ class Bot(_BotBase):
             return self._api_request('setWebhook', _rectify(p))
 
     def download_file(self, file_id, dest):
+        """
+        Download a file to local disk.
+
+        :param dest: a path or a ``file`` object
+        """
         f = self.getFile(file_id)
         try:
             d = dest if _isfile(dest) else open(dest, 'wb')
 
             r = api.download((self._token, f['file_path']))
 
-            for chunk in r.iter_content(chunk_size=self._file_chunk_size):
-                if chunk:
-                    d.write(chunk)
-                    d.flush()
+            # Ref:
+            #   http://stackoverflow.com/questions/17285464/whats-the-best-way-to-download-file-using-urllib3
+            while 1:
+                data = r.read(self._file_chunk_size)
+                if data is None:
+                    break
+                d.write(data)
         finally:
             if not _isfile(dest) and 'd' in locals():
                 d.close()
 
             if 'r' in locals():
-                r.close()
+                r.release_conn()
 
     def message_loop(self, callback=None, relax=0.1, timeout=20, source=None, ordered=True, maxhold=3, run_forever=False):
+        """
+        Spawn a thread to constantly ``getUpdates`` or pull updates from a queue.
+        Apply ``callback`` to every message received.
+
+        :param callback: a function that takes one argument (the message), or a routing table.
+                         If ``None``, the bot's ``handle`` method is used.
+
+        A *routing table* is a dictionary of ``{flavor: function}``, mapping messages to appropriate
+        handler functions according to their flavors. It allows you to define functions specifically
+        to handle one flavor of messages. It usually looks like this: ``{'chat': fn1,
+        'callback_query': fn2, 'inline_query': fn3, ...}``. Each handler function should take
+        one argument (the message).
+
+        :param source: Source of updates.
+                       If ``None``, ``getUpdates`` is used to obtain new messages from Telegram servers.
+                       If it is a synchronized queue (``Queue.Queue`` in Python 2.7 or
+                       ``queue.Queue`` in Python 3), new messages are pulled from the queue.
+                       A web application implementing a webhook can dump updates into the queue,
+                       while the bot pulls from it. This is how telepot can be integrated with webhooks.
+
+        Acceptable contents in queue:
+
+        - ``str``, ``unicode`` (Python 2.7), or ``bytes`` (Python 3, decoded using UTF-8)
+          representing a JSON-serialized `Update <https://core.telegram.org/bots/api#update>`_ object.
+        - a ``dict`` representing an Update object.
+
+        When ``source`` is ``None``, these parameters are meaningful:
+
+        :param relax: seconds between each ``getUpdates``
+        :type relax: float
+        :param timeout: ``timeout`` parameter supplied to :meth:`telepot.Bot.getUpdates`,
+                        controlling how long to poll.
+        :type timeout: int
+
+        When ``source`` is a queue, these parameters are meaningful:
+
+        :param ordered: If ``True``, ensure in-order delivery of messages to ``callback``
+                        (i.e. updates with a smaller ``update_id`` always come before those with
+                        a larger ``update_id``).
+                        If ``False``, no re-ordering is done. ``callback`` is applied to messages
+                        as soon as they are pulled from queue.
+        :type ordered: bool
+        :param maxhold: Applied only when ``ordered`` is ``True``. The maximum number of seconds
+                        an update is held waiting for a not-yet-arrived smaller ``update_id``.
+                        When this number of seconds is up, the update is delivered to ``callback``
+                        even if some smaller ``update_id``\s have not yet arrived. If those smaller
+                        ``update_id``\s arrive at some later time, they are discarded.
+        :type maxhold: float
+
+        Finally, there is this parameter, meaningful always:
+
+        :param run_forever: If ``True``, append an infinite loop at the end of this method,
+                            so it never returns. Useful as the very last line in a program.
+        :type run_forever: bool
+        """
         if callback is None:
             callback = self.handle
         elif isinstance(callback, dict):
@@ -332,6 +547,7 @@ class Bot(_BotBase):
         def handle(update):
             try:
                 key = _find_first_key(update, ['message',
+                                               'edited_message',
                                                'callback_query',
                                                'inline_query',
                                                'chosen_inline_result'])

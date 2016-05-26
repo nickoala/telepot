@@ -128,7 +128,12 @@ class Sender(object):
 class Administrator(object):
     def __init__(self, bot, chat_id):
         for method in ['kickChatMember',
-                       'unbanChatMember',]:
+                       'leaveChat',
+                       'unbanChatMember',
+                       'getChat',
+                       'getChatAdministrators',
+                       'getChatMembersCount',
+                       'getChatMember',]:
             setattr(self, method, partial(getattr(bot, method), chat_id))
 
 
@@ -318,6 +323,7 @@ class DefaultRouterMixin(object):
     def __init__(self):
         super(DefaultRouterMixin, self).__init__()
         self._router = Router(flavor, {'chat': lambda msg: self.on_chat_message(msg),
+                                       'edited_chat': lambda msg: self.on_edited_chat_message(msg),
                                        'callback_query': lambda msg: self.on_callback_query(msg),
                                        'inline_query': lambda msg: self.on_inline_query(msg),
                                        'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})

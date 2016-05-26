@@ -14,7 +14,7 @@ async def _yell(fn, *args, **kwargs):
 def _delay_yell(obj, method_name):
     async def d(*a, **kw):
         method = getattr(obj, method_name)
-        await _yell(method, *a, **kw)
+        return await _yell(method, *a, **kw)
     return d
 
 
@@ -145,6 +145,7 @@ class DefaultRouterMixin(object):
     def __init__(self):
         super(DefaultRouterMixin, self).__init__()
         self._router = Router(flavor, {'chat': _delay_yell(self, 'on_chat_message'),
+                                       'edited_chat': _delay_yell(self, 'on_edited_chat_message'),
                                        'callback_query': _delay_yell(self, 'on_callback_query'),
                                        'inline_query': _delay_yell(self, 'on_inline_query'),
                                        'chosen_inline_result': _delay_yell(self, 'on_chosen_inline_result')})

@@ -23,6 +23,7 @@ class Bot(_BotBase):
         self._loop = loop if loop is not None else asyncio.get_event_loop()
 
         self._router = helper.Router(flavor, {'chat': helper._delay_yell(self, 'on_chat_message'),
+                                              'edited_chat': helper._delay_yell(self, 'on_edited_chat_message'),
                                               'callback_query': helper._delay_yell(self, 'on_callback_query'),
                                               'inline_query': helper._delay_yell(self, 'on_inline_query'),
                                               'chosen_inline_result': helper._delay_yell(self, 'on_chosen_inline_result')})
@@ -133,9 +134,29 @@ class Bot(_BotBase):
         p = _strip(locals())
         return await self._api_request('kickChatMember', _rectify(p))
 
+    async def leaveChat(self, chat_id):
+        p = _strip(locals())
+        return await self._api_request('leaveChat', _rectify(p))
+
     async def unbanChatMember(self, chat_id, user_id):
         p = _strip(locals())
         return await self._api_request('unbanChatMember', _rectify(p))
+
+    async def getChat(self, chat_id):
+        p = _strip(locals())
+        return await self._api_request('getChat', _rectify(p))
+
+    async def getChatAdministrators(self, chat_id):
+        p = _strip(locals())
+        return await self._api_request('getChatAdministrators', _rectify(p))
+
+    async def getChatMembersCount(self, chat_id):
+        p = _strip(locals())
+        return await self._api_request('getChatMembersCount', _rectify(p))
+
+    async def getChatMember(self, chat_id, user_id):
+        p = _strip(locals())
+        return await self._api_request('getChatMember', _rectify(p))
 
     async def answerCallbackQuery(self, callback_query_id, text=None, show_alert=None):
         p = _strip(locals())
@@ -210,6 +231,7 @@ class Bot(_BotBase):
         def handle(update):
             try:
                 key = _find_first_key(update, ['message',
+                                               'edited_message',
                                                'callback_query',
                                                'inline_query',
                                                'chosen_inline_result'])

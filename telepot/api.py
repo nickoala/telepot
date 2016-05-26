@@ -1,12 +1,11 @@
 import urllib3
-import requests
 import json
 import re
-from . import exception
+import os
+from . import exception, _isstring
 
 # Suppress InsecurePlatformWarning
 urllib3.disable_warnings()
-requests.packages.urllib3.disable_warnings()
 
 
 _pools = {
@@ -28,11 +27,16 @@ def _which_pool(req, **user_kw):
     token, method, params, files = req
     return None if files else 'default'
 
+def _guess_filename(obj):
+    name = getattr(obj, 'name', None)
+    if name and _isstring(name) and name[0] != '<' and name[-1] != '>':
+        return os.path.basename(name)
+
 def _filetuple(key, f):
     if not isinstance(f, tuple):
-        return (requests.utils.guess_filename(f) or key, f.read())
+        return (_guess_filename(f) or key, f.read())
     elif len(f) == 1:
-        return (requests.utils.guess_filename(f[0]) or key, f[0].read())
+        return (_guess_filename(f[0]) or key, f[0].read())
     elif len(f) == 2:
         return (f[0], f[1].read())
     elif len(f) == 3:
@@ -131,5 +135,6 @@ def _fileurl(req):
     return 'https://api.telegram.org/file/bot%s/%s' % (token, path)
 
 def download(req):
-    response = requests.get(_fileurl(req), stream=True, timeout=_onetime_pool_spec[1]['timeout'])
-    return response
+    pool = _create_onetime_pool()
+    r = pool.request('GET', _fileurl(req))
+    return r

@@ -1,8 +1,7 @@
 import aiohttp
 import re
-from requests.utils import guess_filename
 from .. import exception
-from ..api import _methodurl, _which_pool, _fileurl
+from ..api import _methodurl, _which_pool, _fileurl, _guess_filename
 
 _pools = {
     'default': aiohttp.TCPConnector(limit=10)
@@ -51,7 +50,7 @@ def _compose_data(req, **user_kw):
                 else:
                     raise ValueError('Tuple must have exactly 2 elements: filename, fileobj')
             else:
-                filename, fileobj = guess_filename(f) or key, f
+                filename, fileobj = _guess_filename(f) or key, f
 
             data.add_field(key, fileobj, filename=filename)
 
