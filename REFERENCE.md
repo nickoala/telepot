@@ -2,6 +2,8 @@
 
 I am in the process of updating documentations. **Those on this page are not 100% up-to-date.** Long-time users should be able to discern the additions by looking at **[changelog](https://github.com/nickoala/telepot/blob/master/CHANGELOG.md)**. **For newcomers, all stuff on this page still applies**, although discussions on new features are lacking. Expect complete documentations **[on or before July 5](https://github.com/nickoala/telepot/issues/99)**.
 
+Please also note that, while callback query support is ok for very simple use cases, **it is really inadequate for DelegatorBot** at this moment. This issue will be remedied **on or before July 5**, along with the docs. Sorry for all inconvenience.
+
 ----------------------------
 
 **[telepot](#telepot)**
