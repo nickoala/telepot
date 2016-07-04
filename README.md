@@ -3,9 +3,8 @@
 Version 8.2 just came out (July 4, 2016). Handling of callback query is still unsatisfactory. Treat it as a trasitional release.
 
 **[Tutorial »](http://telepot.readthedocs.io/en/latest/)**  
-**[Reference, Traditional version »](http://telepot.readthedocs.io/en/latest/reference.html)**
-
-Reference page for Async version is having trouble building on readthedocs.org. I am working on it ...
+**[Reference, Traditional version »](http://telepot.readthedocs.io/en/latest/reference.html)**  
+**[Reference, Async version »](http://telepot.readthedocs.io/en/latest/referencea.html)** (Having trouble building it on readthedocs.org, I am working on it ...)
 
 ### Recent changes
 
@@ -24,3 +23,4 @@ Reference page for Async version is having trouble building on readthedocs.org. 
 - By default, `per_from_id()` and `UserHandler` reacts to non-`callback_query` only
 - Fixed `Bot.download_file()`
 - Added docstrings for Sphinx generation
+- Re-organized examples

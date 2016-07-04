@@ -15,6 +15,7 @@
 - By default, `per_from_id()` and `UserHandler` reacts to non-`callback_query` only
 - Fixed `Bot.download_file()`
 - Added docstrings for Sphinx generation
+- Re-organized examples
 
 ## 8.1 (2016-05-26)
 
