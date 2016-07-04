@@ -5,7 +5,7 @@ from os import path
 import sys
 
 def _not_async(filepath):
-    return filepath.find('async/') < 0
+    return filepath.find('aio/') < 0
 
 # Do not copy async module for Python 3.3 or below.
 class nocopy_async(build_py):
@@ -54,7 +54,7 @@ setup(
     cmdclass=cmdclass,
 
     name='telepot',
-    packages=['telepot', 'telepot.async'],
+    packages=['telepot', 'telepot.aio'],
     # Do not filter out packages because we need the whole thing during `sdist`.
 
     # List run-time dependencies here.  These will be installed by pip when
