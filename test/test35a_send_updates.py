@@ -9,7 +9,7 @@ import traceback
 import aiohttp
 import telepot
 import telepot.namedtuple
-import telepot.async
+import telepot.aio
 
 def equivalent(data, nt):
     if type(data) is dict:
@@ -289,7 +289,7 @@ async def handle(msg):
 TOKEN = sys.argv[1]
 USER_ID = int(sys.argv[2])
 
-bot = telepot.async.Bot(TOKEN)
+bot = telepot.aio.Bot(TOKEN)
 loop = asyncio.get_event_loop()
 
 loop.run_until_complete(test_webhook_getupdates_exclusive())

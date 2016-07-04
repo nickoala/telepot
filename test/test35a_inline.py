@@ -8,7 +8,7 @@ import sys
 import traceback
 import random
 import telepot
-import telepot.async
+import telepot.aio
 from telepot.namedtuple import InlineQuery, ChosenInlineResult, InlineQueryResultArticle, InlineQueryResultPhoto, InputTextMessageContent
 
 def equivalent(data, nt):
@@ -87,8 +87,8 @@ def on_chosen_inline_result(msg):
 TOKEN = sys.argv[1]
 USER_ID = int(sys.argv[2])
 
-bot = telepot.async.Bot(TOKEN)
-answerer = telepot.async.helper.Answerer(bot)
+bot = telepot.aio.Bot(TOKEN)
+answerer = telepot.aio.helper.Answerer(bot)
 loop = asyncio.get_event_loop()
 
 print('Give me an inline query.')

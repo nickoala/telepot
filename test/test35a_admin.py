@@ -2,10 +2,10 @@ import sys
 import asyncio
 import telepot
 import telepot.namedtuple
-import telepot.async as telea  # enable using this module name inside async functions
-from telepot.async.routing import by_content_type, make_content_type_routing_table
+import telepot.aio
+from telepot.aio.routing import by_content_type, make_content_type_routing_table
 
-class AdminBot(telea.Bot):
+class AdminBot(telepot.aio.Bot):
     async def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
         await self.sendMessage(chat_id, 'Edit the message, please.')
@@ -14,7 +14,7 @@ class AdminBot(telea.Bot):
         content_type, chat_type, chat_id = telepot.glance(msg, flavor='edited_chat')
         await self.sendMessage(chat_id, 'Add me to a group, please.')
 
-        r = telea.helper.Router(by_content_type(), make_content_type_routing_table(self))
+        r = telepot.aio.helper.Router(by_content_type(), make_content_type_routing_table(self))
         self._router.routing_table['chat'] = r.route
 
     async def on_new_chat_member(self, msg, new_chat_member):

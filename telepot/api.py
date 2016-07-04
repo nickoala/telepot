@@ -134,7 +134,7 @@ def _fileurl(req):
     token, path = req
     return 'https://api.telegram.org/file/bot%s/%s' % (token, path)
 
-def download(req):
+def download(req, **user_kw):
     pool = _create_onetime_pool()
-    r = pool.request('GET', _fileurl(req))
+    r = pool.request('GET', _fileurl(req), **user_kw)
     return r

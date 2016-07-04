@@ -18,7 +18,7 @@ from . import exception
 
 def flavor(msg):
     """
-    There are five message flavors:
+    Return flavor of message:
 
     - ``chat``
     - ``edited_chat``
@@ -39,6 +39,9 @@ def flavor(msg):
         return 'chosen_inline_result'
     else:
         raise exception.BadFlavor(msg)
+
+chat_flavors = ['chat', 'edited_chat']
+inline_flavors = ['inline_query', 'chosen_inline_result']
 
 
 def _find_first_key(d, keys):
@@ -123,59 +126,12 @@ def flance(msg, long=False):
     """
     A combination of :meth:`telepot.flavor` and :meth:`telepot.glance`,
     return a 2-tuple (flavor, headline_info), where *headline_info* is whatever extracted by
-    ``glance`` depending on the message flavor and the ``long`` parameter.
+    :meth:`telepot.glance` depending on the message flavor and the ``long`` parameter.
     """
     f = flavor(msg)
     g = glance(msg, flavor=f, long=long)
     return f,g
 
-
-from . import helper
-
-def flavor_router(routing_table):
-    router = helper.Router(flavor, routing_table)
-    return router.route
-
-
-class _BotBase(object):
-    def __init__(self, token):
-        self._token = token
-        self._file_chunk_size = 65536
-
-PY_3 = sys.version_info.major >= 3
-_string_type = str if PY_3 else basestring
-_file_type = io.IOBase if PY_3 else file
-
-def _isstring(s):
-    return isinstance(s, _string_type)
-
-def _isfile(f):
-    return isinstance(f, _file_type)
-
-def _strip(params, more=[]):
-    return {key: value for key,value in params.items() if key not in ['self']+more}
-
-def _rectify(params):
-    def namedtuple_to_dict(value):
-        if isinstance(value, list):
-            return [namedtuple_to_dict(v) for v in value]
-        elif isinstance(value, dict):
-            return {k:namedtuple_to_dict(v) for k,v in value.items() if v is not None}
-        elif isinstance(value, tuple) and hasattr(value, '_asdict'):
-            return {k:namedtuple_to_dict(v) for k,v in value._asdict().items() if v is not None}
-        else:
-            return value
-
-    def flatten(value):
-        v = namedtuple_to_dict(value)
-
-        if isinstance(v, (dict, list)):
-            return json.dumps(v, separators=(',',':'))
-        else:
-            return v
-
-    # remove None, then json-serialize if needed
-    return {k: flatten(v) for k,v in params.items() if v is not None}
 
 def message_identifier(msg):
     """
@@ -201,6 +157,55 @@ def _dismantle_message_identifier(f):
             raise ValueError()
     else:
         return {'inline_message_id': f}
+
+PY_3 = sys.version_info.major >= 3
+_string_type = str if PY_3 else basestring
+_file_type = io.IOBase if PY_3 else file
+
+def _isstring(s):
+    return isinstance(s, _string_type)
+
+def _isfile(f):
+    return isinstance(f, _file_type)
+
+
+from . import helper
+
+def flavor_router(routing_table):
+    router = helper.Router(flavor, routing_table)
+    return router.route
+
+
+class _BotBase(object):
+    def __init__(self, token):
+        self._token = token
+        self._file_chunk_size = 65536
+
+
+def _strip(params, more=[]):
+    return {key: value for key,value in params.items() if key not in ['self']+more}
+
+def _rectify(params):
+    def namedtuple_to_dict(value):
+        if isinstance(value, list):
+            return [namedtuple_to_dict(v) for v in value]
+        elif isinstance(value, dict):
+            return {k:namedtuple_to_dict(v) for k,v in value.items() if v is not None}
+        elif isinstance(value, tuple) and hasattr(value, '_asdict'):
+            return {k:namedtuple_to_dict(v) for k,v in value._asdict().items() if v is not None}
+        else:
+            return value
+
+    def flatten(value):
+        v = namedtuple_to_dict(value)
+
+        if isinstance(v, (dict, list)):
+            return json.dumps(v, separators=(',',':'))
+        else:
+            return v
+
+    # remove None, then json-serialize if needed
+    return {k: flatten(v) for k,v in params.items() if v is not None}
 
 
 from . import api
@@ -260,14 +265,15 @@ class Bot(_BotBase):
         """
         See: https://core.telegram.org/bots/api#sendphoto
 
-        :param photo: a string indicating a ``file_id`` on server,
-                      a file-like object as obtained by ``open()`` or ``urlopen()``,
-                      or a (filename, file-like object) tuple.
-                      If the file-like object is obtained by ``urlopen()``, you most likely
-                      have to supply a filename because Telegram servers require to know
-                      the file extension.
-                      If the filename contains non-ASCII characters and you are using Python 2.7,
-                      make sure the filename is a unicode string.
+        :param photo:
+            a string indicating a ``file_id`` on server,
+            a file-like object as obtained by ``open()`` or ``urlopen()``,
+            or a (filename, file-like object) tuple.
+            If the file-like object is obtained by ``urlopen()``, you most likely
+            have to supply a filename because Telegram servers require to know
+            the file extension.
+            If the filename contains non-ASCII characters and you are using Python 2.7,
+            make sure the filename is a unicode string.
         """
         p = _strip(locals(), more=['photo'])
         return self._sendfile(photo, 'photo', p)
@@ -406,10 +412,11 @@ class Bot(_BotBase):
         """
         See: https://core.telegram.org/bots/api#editmessagetext
 
-        :param msg_identifier: a 2-tuple (``chat_id``, ``message_id``),
-                               a 1-tuple (``inline_message_id``),
-                               or simply ``inline_message_id``.
-                               You may extract this value easily with :meth:`telepot.message_identifier`
+        :param msg_identifier:
+            a 2-tuple (``chat_id``, ``message_id``),
+            a 1-tuple (``inline_message_id``),
+            or simply ``inline_message_id``.
+            You may extract this value easily with :meth:`telepot.message_identifier`
         """
         p = _strip(locals(), more=['msg_identifier'])
         p.update(_dismantle_message_identifier(msg_identifier))
@@ -467,13 +474,11 @@ class Bot(_BotBase):
         try:
             d = dest if _isfile(dest) else open(dest, 'wb')
 
-            r = api.download((self._token, f['file_path']))
+            r = api.download((self._token, f['file_path']), preload_content=False)
 
-            # Ref:
-            #   http://stackoverflow.com/questions/17285464/whats-the-best-way-to-download-file-using-urllib3
             while 1:
                 data = r.read(self._file_chunk_size)
-                if data is None:
+                if not data:
                     break
                 d.write(data)
         finally:
@@ -488,8 +493,9 @@ class Bot(_BotBase):
         Spawn a thread to constantly ``getUpdates`` or pull updates from a queue.
         Apply ``callback`` to every message received.
 
-        :param callback: a function that takes one argument (the message), or a routing table.
-                         If ``None``, the bot's ``handle`` method is used.
+        :param callback:
+            a function that takes one argument (the message), or a routing table.
+            If ``None``, the bot's ``handle`` method is used.
 
         A *routing table* is a dictionary of ``{flavor: function}``, mapping messages to appropriate
         handler functions according to their flavors. It allows you to define functions specifically
@@ -497,12 +503,13 @@ class Bot(_BotBase):
         'callback_query': fn2, 'inline_query': fn3, ...}``. Each handler function should take
         one argument (the message).
 
-        :param source: Source of updates.
-                       If ``None``, ``getUpdates`` is used to obtain new messages from Telegram servers.
-                       If it is a synchronized queue (``Queue.Queue`` in Python 2.7 or
-                       ``queue.Queue`` in Python 3), new messages are pulled from the queue.
-                       A web application implementing a webhook can dump updates into the queue,
-                       while the bot pulls from it. This is how telepot can be integrated with webhooks.
+        :param source:
+            Source of updates.
+            If ``None``, ``getUpdates`` is used to obtain new messages from Telegram servers.
+            If it is a synchronized queue (``Queue.Queue`` in Python 2.7 or
+            ``queue.Queue`` in Python 3), new messages are pulled from the queue.
+            A web application implementing a webhook can dump updates into the queue,
+            while the bot pulls from it. This is how telepot can be integrated with webhooks.
 
         Acceptable contents in queue:
 
@@ -512,32 +519,40 @@ class Bot(_BotBase):
 
         When ``source`` is ``None``, these parameters are meaningful:
 
-        :param relax: seconds between each ``getUpdates``
         :type relax: float
-        :param timeout: ``timeout`` parameter supplied to :meth:`telepot.Bot.getUpdates`,
-                        controlling how long to poll.
+        :param relax: seconds between each ``getUpdates``
+
         :type timeout: int
+        :param timeout:
+            ``timeout`` parameter supplied to :meth:`telepot.Bot.getUpdates`,
+            controlling how long to poll.
 
         When ``source`` is a queue, these parameters are meaningful:
 
-        :param ordered: If ``True``, ensure in-order delivery of messages to ``callback``
-                        (i.e. updates with a smaller ``update_id`` always come before those with
-                        a larger ``update_id``).
-                        If ``False``, no re-ordering is done. ``callback`` is applied to messages
-                        as soon as they are pulled from queue.
         :type ordered: bool
-        :param maxhold: Applied only when ``ordered`` is ``True``. The maximum number of seconds
-                        an update is held waiting for a not-yet-arrived smaller ``update_id``.
-                        When this number of seconds is up, the update is delivered to ``callback``
-                        even if some smaller ``update_id``\s have not yet arrived. If those smaller
-                        ``update_id``\s arrive at some later time, they are discarded.
+        :param ordered:
+            If ``True``, ensure in-order delivery of messages to ``callback``
+            (i.e. updates with a smaller ``update_id`` always come before those with
+            a larger ``update_id``).
+            If ``False``, no re-ordering is done. ``callback`` is applied to messages
+            as soon as they are pulled from queue.
+
         :type maxhold: float
+        :param maxhold:
+            Applied only when ``ordered`` is ``True``. The maximum number of seconds
+            an update is held waiting for a not-yet-arrived smaller ``update_id``.
+            When this number of seconds is up, the update is delivered to ``callback``
+            even if some smaller ``update_id``\s have not yet arrived. If those smaller
+            ``update_id``\s arrive at some later time, they are discarded.
 
         Finally, there is this parameter, meaningful always:
 
-        :param run_forever: If ``True``, append an infinite loop at the end of this method,
-                            so it never returns. Useful as the very last line in a program.
-        :type run_forever: bool
+        :type run_forever: bool or str
+        :param run_forever:
+            If ``True`` or any non-empty string, append an infinite loop at the end of
+            this method, so it never returns. Useful as the very last line in a program.
+            A non-empty string will also be printed, useful as an indication that the
+            program is listening.
         """
         if callback is None:
             callback = self.handle
@@ -700,6 +715,8 @@ class Bot(_BotBase):
         t.start()
 
         if run_forever:
+            if _isstring(run_forever):
+                print(run_forever)
             while 1:
                 time.sleep(10)
 
@@ -724,6 +741,9 @@ class SpeakerBot(Bot):
 
 class DelegatorBot(SpeakerBot):
     def __init__(self, token, delegation_patterns):
+        """
+        :param delegation_patterns: a list of (seeder, delegator) tuples.
+        """
         super(DelegatorBot, self).__init__(token)
         self._delegate_records = [p+({},) for p in delegation_patterns]
 

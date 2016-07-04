@@ -1,11 +1,11 @@
 import time
 import asyncio
-import telepot.async
+import telepot.aio
 
 def handle(msg):
     print(msg)
 
-bot = telepot.async.Bot('abc')
+bot = telepot.aio.Bot('abc')
 qu = asyncio.Queue();
 
 def u(update_id):

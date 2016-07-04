@@ -1,69 +1,369 @@
-.. telepot documentation master file, created by
-   sphinx-quickstart on Wed May 25 03:35:38 2016.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Telepot Tutorial
+================
 
-telepot 8.1 reference
-=====================
-
-Basic Bot
----------
-
-The ``Bot`` class is mostly a wrapper around `Telegram Bot API <https://core.telegram.org/bots/api>`_.
-Many of its methods are straight mappings to Bot API methods. Where appropriate,
-I will only give links below. No point to duplicate all the details.
-
-.. autoclass:: telepot.Bot
-   :members:
-
-Functions
----------
-
-.. autofunction:: telepot.flavor
-.. autofunction:: telepot.glance
-.. autofunction:: telepot.flance
-.. autofunction:: telepot.message_identifier
-
-DelegatorBot
+Installation
 ------------
 
-.. autoclass:: telepot.DelegatorBot
+pip::
 
-``telepot.delegate``
-++++++++++++++++++++
+    $ sudo pip install telepot
+    $ sudo pip install telepot --upgrade  # UPGRADE
 
-.. autofunction:: telepot.delegate.per_chat_id
+easy_install::
 
-``telepot.helper``
-++++++++++++++++++
+    $ easy_install telepot
+    $ easy_install --upgrade telepot  # UPGRADE
 
-.. autoclass:: telepot.helper.ChatHandler
+Download manually::
 
-Other Helpers
--------------
+    $ wget https://pypi.python.org/packages/source/t/telepot/telepot-8.1.zip
+    $ unzip telepot-8.1.zip
+    $ cd telepot-8.1
+    $ python setup.py install
 
-Exceptions
-----------
-
-.. automodule:: telepot.exception
-   :members:
-   :undoc-members:
-
-.. autoclass:: telepot.exception.TelegramError
-   :members:
-
-Namedtuples
+Get a token
 -----------
 
-Routing
--------
+To use the `Telegram Bot API <https://core.telegram.org/bots/api>`_, you first
+have to `get a bot account <http://www.instructables.com/id/Set-up-Telegram-Bot-on-Raspberry-Pi/>`_
+by `chatting with BotFather <https://core.telegram.org/bots#6-botfather>`_.
 
-``Router``
-++++++++++
+BotFather will give you a **token**, something like ``123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ``.
+With the token in hand, you can start using telepot to access the bot account.
 
+Test the account
+----------------
 
-``telepot.routing``
-+++++++++++++++++++
+::
 
-Low-level HTTP
+    >>> import telepot
+    >>> bot = telepot.Bot('***** PUT YOUR TOKEN HERE *****')
+    >>> bot.getMe()
+    {'first_name': 'Your Bot', 'username': 'YourBot', 'id': 123456789}
+
+Receive messages
+----------------
+
+Bots cannot initiate conversations with users. You have to send it a message first.
+Get the message by calling :meth:`.Bot.getUpdates`::
+
+    >>> from pprint import pprint
+    >>> response = bot.getUpdates()
+    >>> pprint(response)
+    [{'message': {'chat': {'first_name': 'Nick',
+                           'id': 999999999,
+                           'type': 'private'},
+                  'date': 1465283242,
+                  'from': {'first_name': 'Nick', 'id': 999999999},
+                  'message_id': 10772,
+                  'text': 'Hello'},
+      'update_id': 100000000}]
+
+``999999999`` is obviously a fake id. ``Nick`` is my real name, though.
+
+The ``chat`` field represents the conversation. Its ``type`` can be ``private``,
+``group``, or ``channel`` (whose meanings should be obvious, I hope). Above,
+``Nick`` just sent a ``private`` message to the bot.
+
+According to Bot API, the method `getUpdates <https://core.telegram.org/bots/api#getupdates>`_
+returns an array of `Update <https://core.telegram.org/bots/api#update>`_ objects.
+As you can see, an Update object is nothing more than a Python dictionary.
+In telepot, **Bot API objects are represented as dictionary.**
+
+Note the ``update_id``. It is an ever-increasing number. Next time you should use
+``getUpdates(offset=100000001)`` to avoid getting the same old messages over and over.
+Giving an ``offset`` essentially acknowledges to the server that you have received
+all ``update_id``\s lower than ``offset``::
+
+    >>> bot.getUpdates(offset=100000001)
+    []
+
+An easier way to receive messages
+---------------------------------
+
+It is troublesome to keep checking messages while managing ``offset``. Let telepot
+take care of the mundane stuff and notify you whenever new messages arrive::
+
+    >>> def handle(msg):
+    ...     pprint(msg)
+    ...
+    >>> bot.message_loop(handle)
+
+After setting up this callback, send it a few messages. Sit back and monitor the
+messages arriving.
+
+Send a message
 --------------
+
+Sooner or later, your bot will want to send *you* messages. You should have
+discovered your own user id from above interactions. I will keeping using my
+fake id of ``999999999``. Remember to substitute your own (real) id::
+
+    >>> bot.sendMessage(999999999, 'Hey!')
+
+Quickly ``glance`` a message
+----------------------------
+
+When processing a message, a few pieces of information are so central that you
+almost always have to extract them. Use :func:`telepot.glance` to extract
+"headline info". Try this skeleton, a bot which echoes what you said::
+
+    import sys
+    import time
+    import telepot
+
+    def handle(msg):
+        content_type, chat_type, chat_id = telepot.glance(msg)
+        print(content_type, chat_type, chat_id)
+
+        if content_type == 'text':
+            bot.sendMessage(chat_id, msg['text'])
+
+    TOKEN = sys.argv[1]  # get token from command-line
+
+    bot = telepot.Bot(TOKEN)
+    bot.message_loop(handle)
+    print ('Listening ...')
+
+    # Keep the program running.
+    while 1:
+        time.sleep(10)
+
+It is a good habit to always check ``content_type`` before further processing.
+Do not assume every message is a ``text``.
+
+Custom Keyboard and Inline Keyboard
+-----------------------------------
+
+Besides sending messages back and forth, Bot API allows richer interactions
+with `custom keyboard <https://core.telegram.org/bots#keyboards>`_ and
+`inline keyboard <https://core.telegram.org/bots#inline-keyboards-and-on-the-fly-updating>`_.
+Both can be specified with the parameter ``reply_markup`` in :meth:`.Bot.sendMessage`.
+The module :mod:`telepot.namedtuple` provides namedtuple classes for easier
+construction of these keyboards.
+
+Pressing a button on a *custom* keyboard results in a
+`Message <https://core.telegram.org/bots/api#message>`_ object sent to the bot,
+which is no different from a regular chat message sent by typing.
+
+Pressing a button on an *inline* keyboard results in a
+`CallbackQuery <https://core.telegram.org/bots/api#callbackquery>`_ object sent
+to the bot, which we have to distinguish from a Message object.
+
+Here comes the concept of **flavor**.
+
+Message has a Flavor
+--------------------
+
+Regardless of the type of objects received, telepot generically calls them
+"message" (with a lowercase "m"). A message's *flavor* depends on the
+underlying object:
+
+- a Message object gives the flavor ``chat`` or ``edited_chat`` (because the
+  sender may edit a previous message)
+- a CallbackQuery object gives the flavor ``callback_query``
+- and there are more flavors, which you will come to shortly.
+
+Use :func:`telepot.flavor` to check a message's flavor.
+
+Here is a bot which does two things:
+
+- When you send it a message, it gives you an inline keyboard.
+- When you press a button on the inline keyboard, it says "Got it".
+
+Pay attention to these things in the code:
+
+- How I use namedtuple to construct
+  an `InlineKeyboardMarkup <https://core.telegram.org/bots/api#inlinekeyboardmarkup>`_
+  and an `InlineKeyboardButton <https://core.telegram.org/bots/api#inlinekeyboardbutton>`_
+  object
+- :func:`telepot.glance` works on any type of messages. Just give it the flavor.
+- Use :meth:`.Bot.answerCallbackQuery` to react to callback query
+- To *route* messages according to flavor, give a *routing table* to
+  :meth:`.Bot.message_loop`
+
+.. literalinclude:: _code/inline_keyboard.py
+   :emphasize-lines: 9,10,11,16,19,24,25
+
+Inline Query
+------------
+
+So far, the bot has been operating in a chat - private, group, or channel.
+
+In a private chat, Alice talks to Bot. Simple enough.
+
+In a group chat, Alice, Bot, and Charlie share the same group. As the humans
+gossip in the group, Bot hears selected messages (depending on whether in
+`privacy mode <https://core.telegram.org/bots#privacy-mode>`_ or not) and may
+chime in once in a while.
+
+`Inline query <https://core.telegram.org/bots/inline>`_ is a totally different
+mode of operations.
+
+Imagine this. Alice wants to recommend a restaurant to Zach, but she can't remember the location
+right off her head. *Inside the chat screen with Zach*, Alice types
+``@Bot where is my favorite restaurant``, issuing an inline query to Bot, like
+asking Bot a question. Bot gives back a list of answers; Alice can choose one of
+them - as she taps on an answer, that answer is sent to Zach as a chat message.
+In this case, Bot never takes part in the conversation. Instead, *Bot acts as
+an assistant*, ready to give you talking materials. For every answer Alice chooses,
+Bot gets notified with a *chosen inline result*.
+
+To enable a bot to receive `InlineQuery <https://core.telegram.org/bots/api#inlinequery>`_,
+you have to send a ``/setinline`` command to BotFather.
+**An InlineQuery message gives the flavor** ``inline_query``.
+
+To enable a bot to receive `ChosenInlineResult <https://core.telegram.org/bots/api#choseninlineresult>`_,
+you have to send a ``/setinlinefeedback`` command to BotFather.
+**A ChosenInlineResult message gives the flavor** ``chosen_inline_result``.
+
+In this code sample, pay attention to these things:
+
+- How I use namedtuple `InlineQueryResultArticle <https://core.telegram.org/bots/api#inlinequeryresultarticle>`_
+  and `InputTextMessageContent <https://core.telegram.org/bots/api#inputtextmessagecontent>`_
+  to construct an answer to inline query.
+
+- Use :meth:`.Bot.answerInlineQuery` to send back answers
+
+.. literalinclude:: _code/inline_query_simple.py
+   :emphasize-lines: 9-13,17
+
+However, this has a small problem. As you types and pauses,
+types and pauses, types and pauses ... closely bunched inline queries arrive.
+In fact, a new inline query often arrives *before* we finish processing a preceding one.
+With only a single thread of execution, we can only process the closely bunched
+inline queries sequentially. Ideally, whenever we see a new inline query coming from
+the same user, it should override and cancel any preceding inline queries being processed
+(that belong to the same user).
+
+My solution is this. An ``Answerer`` takes an inline query, inspects its ``from`` ``id``
+(the originating user id), and checks to see whether that user has an *unfinished* thread
+processing a preceding inline query. If there is, the unfinished thread will be cancelled
+before a new thread is spawned to process the latest inline query. In other words,
+an ``Answerer`` ensures **at most one** active inline-query-processing thread per user.
+
+``Answerer`` also frees you from having to call :meth:`.Bot.answerInlineQuery` every time.
+You supply it with a *compute function*. It takes that function's returned value and calls
+:meth:`.Bot.answerInlineQuery` to send the results. Being accessible by multiple threads,
+the compute function must be **thread-safe**.
+
+.. literalinclude:: _code/inline_query_answerer.py
+   :emphasize-lines: 20,29
+
+Maintain Threads of Conversation
+--------------------------------
+
+So far, we have been using a single line of execution to handle messages.
+That is adequate for simple programs. For more sophisticated programs where states need
+to be maintained across messages, a better approach is needed.
+
+Consider this scenario. A bot wants to have an intelligent conversation with a lot of users,
+and if we could only use a single line of execution to handle messages (like what we have done so far),
+we would have to maintain some state variables about each conversation *outside* the message-handling
+function(s). On receiving each message, we first have to check whether the user already has a conversation
+started, and if so, what we have been talking about. To avoid such mundaneness, we need a structured way
+to maintain "threads" of conversation.
+
+Let's look at my solution. Here, I implemented a bot that counts how many messages have been sent
+by an individual user. If no message is received after 10 seconds, it starts over (timeout).
+The counting is done *per chat* - that's the important point.
+
+.. literalinclude:: _code/counter.py
+   :emphasize-lines: 16-18
+
+A ``DelegatorBot`` is able to spawn *delegates*. Above, it is spawning one ``MessageCounter``
+*per chat id*.
+
+Detailed explanation of the delegation mechanism (e.g. how and when a ``MessageCounter`` is created, and why)
+is beyond the scope here. Please refer to :class:`telepot.DelegatorBot`.
+
+Per-User Inline Handler
+-----------------------
+
+You may also want to answer inline query differently depending on user. When Alice asks Bot
+"Where is my favorite restaurant?", Bot should give a different answer than when Charlie asks
+the same question.
+
+In the code sample below, pay attention to these things:
+
+- ``AnswererMixin`` adds an ``answerer`` instance to the object
+- ``per_inline_from_id()`` ensures one instance of ``QueryCounter`` per originating user
+
+.. literalinclude:: _code/inline_per_user.py
+   :emphasize-lines: 6,29,38
+
+Async Version (Python 3.5+)
+---------------------------
+
+Everything discussed so far assumes traditional Python. That is, network operations are blocking;
+if you want to serve many users at the same time, some kind of threads are usually needed.
+Another option is to use an asynchronous or event-driven framework, such as `Twisted <http://twistedmatrix.com/>`_.
+
+Python 3.5 has its own ``asyncio`` module. Telepot supports that, too. If your bot is to serve many people,
+I strongly recommend doing it asynchronously.
+
+If your O/S does not have Python 3.5 built in, you have to compile it yourself::
+
+    $ sudo apt-get update
+    $ sudo apt-get upgrade
+    $ sudo apt-get install libssl-dev openssl libreadline-dev
+    $ cd ~
+    $ wget https://www.python.org/ftp/python/3.5.1/Python-3.5.1.tgz
+    $ tar zxf Python-3.5.1.tgz
+    $ cd Python-3.5.1
+    $ ./configure
+    $ make
+    $ sudo make install
+
+Finally::
+
+    $ sudo pip3.5 install telepot
+
+In case you are not familiar with asynchronous programming, let's start by learning about generators and coroutines:
+
+- `'yield' and Generators Explained <https://www.jeffknupp.com/blog/2013/04/07/improve-your-python-yield-and-generators-explained/>`_
+- `Sequences and Coroutines <http://wla.berkeley.edu/~cs61a/fa11/lectures/streams.html>`_
+
+... why we want asynchronous programming:
+
+- `Problem: Threads Are Bad <https://glyph.twistedmatrix.com/2014/02/unyielding.html>`_
+
+... how generators and coroutines are applied to asynchronous programming:
+
+- `Understanding Asynchronous IO <http://sahandsaba.com/understanding-asyncio-node-js-python-3-4.html>`_
+- `A Curious Course on Coroutines and Concurrency <http://www.dabeaz.com/coroutines/>`_
+
+... and how an asyncio program is generally structured:
+
+- `The New asyncio Module in Python 3.4 <http://www.drdobbs.com/open-source/the-new-asyncio-module-in-python-34-even/240168401>`_
+- `Event loop examples <https://docs.python.org/3/library/asyncio-eventloop.html#event-loop-examples>`_
+- `HTTP server and client <http://aiohttp.readthedocs.org/en/stable/>`_
+
+Telepot's async version basically mirrors the traditional version. Main differences are:
+
+- blocking methods are now coroutines, and should be called with ``await``
+- delegation is achieved by tasks, instead of threads
+
+Because of that (and this is true of asynchronous Python in general), a lot of methods
+will not work in the interactive Python interpreter like regular functions would.
+They will have to be driven by an event loop.
+
+Async version is under module :mod:`telepot.aio`. I duplicate the message counter example
+below in async style. Pay attention to these things:
+
+- Substitute async version of selected classes and functions
+- Use ``async/await`` to do asynchronous operations
+
+.. literalinclude:: _code/countera.py
+   :emphasize-lines: 4,6,11-13
+
+Usage
+-----
+
+I am composing a page illustrating common usages. It is coming soon ...
+
+Reference
+---------
+
+| `Traditional Version <reference.html>`_
+| `Async Version <referencea.html>`_

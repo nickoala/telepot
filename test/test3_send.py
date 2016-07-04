@@ -79,16 +79,21 @@ def send_everything_on_contact(msg):
 
     r = bot.sendMessage(chat_id, 'Hello, I am going to send you a lot of things.', reply_to_message_id=msg_id)
     examine(r, telepot.namedtuple.Message)
+    time.sleep(0.5)
 
     r = bot.sendMessage(chat_id, '中文')
     examine(r, telepot.namedtuple.Message)
+    time.sleep(0.5)
 
     r = bot.sendMessage(chat_id, '*bold text*\n_italic text_\n[link](http://www.google.com)', parse_mode='Markdown')
     examine(r, telepot.namedtuple.Message)
+    time.sleep(0.5)
 
     bot.sendMessage(chat_id, 'http://www.yahoo.com\nwith web page preview')
+    time.sleep(0.5)
 
     bot.sendMessage(chat_id, 'http://www.yahoo.com\nno web page preview', disable_web_page_preview=True)
+    time.sleep(0.5)
 
     show_keyboard = {'keyboard': [['Yes', 'No'], ['Maybe', 'Maybe not']]}
     hide_keyboard = {'hide_keyboard': True}
@@ -99,29 +104,35 @@ def send_everything_on_contact(msg):
     nt_force_reply = telepot.namedtuple.ForceReply(**force_reply)
 
     bot.sendMessage(chat_id, 'Here is a custom keyboard', reply_markup=show_keyboard)
-
-    time.sleep(2)
+    time.sleep(0.5)
 
     bot.sendMessage(chat_id, 'Hiding it now.', reply_markup=nt_hide_keyboard)
+    time.sleep(0.5)
 
     bot.sendMessage(chat_id, 'Force reply', reply_markup=nt_force_reply)
+    time.sleep(0.5)
 
     ##### sendPhoto
 
     bot.sendChatAction(chat_id, 'upload_photo')
     r = bot.sendPhoto(chat_id, open('lighthouse.jpg', 'rb'))
     examine(r, telepot.namedtuple.Message)
+    time.sleep(0.5)
 
     file_id = r['photo'][0]['file_id']
 
     bot.sendPhoto(chat_id, file_id, caption='Show original message and keyboard', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
+    time.sleep(0.5)
 
     bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=hide_keyboard)
+    time.sleep(0.5)
 
     furl = urllib.request.urlopen('http://i.imgur.com/35HSRQ6.png')
     bot.sendPhoto(chat_id, ('abc.jpg', furl))
+    time.sleep(0.5)
 
     bot.sendPhoto(chat_id, ('中文照片.jpg', open('lighthouse.jpg', 'rb')), caption='中文照片')
+    time.sleep(0.5)
 
     ##### getFile
 
@@ -149,51 +160,65 @@ def send_everything_on_contact(msg):
     bot.sendChatAction(chat_id, 'upload_audio')
     r = bot.sendAudio(chat_id, open('dgdg.mp3', 'rb'), title='Ringtone')
     examine(r, telepot.namedtuple.Message)
+    time.sleep(0.5)
 
     file_id = r['audio']['file_id']
 
     bot.sendAudio(chat_id, file_id, duration=6, performer='Ding Dong', title='Ringtone', reply_to_message_id=msg_id, reply_markup=show_keyboard)
+    time.sleep(0.5)
 
     bot.sendAudio(chat_id, file_id, performer='Ding Dong', reply_markup=nt_hide_keyboard)
+    time.sleep(0.5)
 
     bot.sendAudio(chat_id, ('中文歌.mp3', open('dgdg.mp3', 'rb')), title='中文歌')
+    time.sleep(0.5)
 
     ##### sendDocument
 
     bot.sendChatAction(chat_id, 'upload_document')
     r = bot.sendDocument(chat_id, open('document.txt', 'rb'))
     examine(r, telepot.namedtuple.Message)
+    time.sleep(0.5)
 
     file_id = r['document']['file_id']
 
     bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
+    time.sleep(0.5)
 
     bot.sendDocument(chat_id, file_id, reply_markup=hide_keyboard)
+    time.sleep(0.5)
 
     bot.sendDocument(chat_id, ('中文文件.txt', open('document.txt', 'rb')))
+    time.sleep(0.5)
 
     ##### sendSticker
 
     r = bot.sendSticker(chat_id, open('gandhi.png', 'rb'))
     examine(r, telepot.namedtuple.Message)
+    time.sleep(0.5)
 
     file_id = r['sticker']['file_id']
 
     bot.sendSticker(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=show_keyboard)
+    time.sleep(0.5)
 
     bot.sendSticker(chat_id, file_id, reply_markup=nt_hide_keyboard)
+    time.sleep(0.5)
 
     ##### sendVideo
 
     bot.sendChatAction(chat_id, 'upload_video')
     r = bot.sendVideo(chat_id, open('hktraffic.mp4', 'rb'))
     examine(r, telepot.namedtuple.Message)
+    time.sleep(0.5)
 
     try:
         file_id = r['video']['file_id']
 
         bot.sendVideo(chat_id, file_id, duration=5, caption='Hong Kong traffic', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
+        time.sleep(0.5)
         bot.sendVideo(chat_id, file_id, reply_markup=hide_keyboard)
+        time.sleep(0.5)
 
     except KeyError:
         # For some reason, Telegram servers may return a document.
@@ -202,7 +227,9 @@ def send_everything_on_contact(msg):
         file_id = r['document']['file_id']
 
         bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
+        time.sleep(0.5)
         bot.sendDocument(chat_id, file_id, reply_markup=hide_keyboard)
+        time.sleep(0.5)
 
     ##### download_file, multiple chunks
 
@@ -213,22 +240,28 @@ def send_everything_on_contact(msg):
 
     r = bot.sendVoice(chat_id, open('example.ogg', 'rb'))
     examine(r, telepot.namedtuple.Message)
+    time.sleep(0.5)
 
     file_id = r['voice']['file_id']
 
     bot.sendVoice(chat_id, file_id, duration=6, reply_to_message_id=msg_id, reply_markup=show_keyboard)
+    time.sleep(0.5)
 
     bot.sendVoice(chat_id, file_id, reply_markup=nt_hide_keyboard)
+    time.sleep(0.5)
 
     ##### sendLocation
 
     bot.sendChatAction(chat_id, 'find_location')
     r = bot.sendLocation(chat_id, 22.33, 114.18)  # Hong Kong
     examine(r, telepot.namedtuple.Message)
+    time.sleep(0.5)
 
     bot.sendLocation(chat_id, 49.25, -123.1, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)  # Vancouver
+    time.sleep(0.5)
 
     bot.sendLocation(chat_id, -37.82, 144.97, reply_markup=hide_keyboard)  # Melbourne
+    time.sleep(0.5)
 
     ##### Done sending messages
 
