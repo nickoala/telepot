@@ -1,5 +1,21 @@
 # telepot changelog
 
+## 8.2 (2016-07-04)
+
+- Handling of callback query still unsatisfactory, a transitional release
+- Changed async version to `telepot.aio` to avoid collision with `async` keyword
+- Added `CallbackQueryCoordinator` and `CallbackQueryAble` to facilitate transparent handling of `CallbackQuery`
+- Added `AnswererMixin` to give an `Answerer` instance
+- Added `Timer` to express different timeout behaviors
+- Added `enable_callback_query` parameter to `*Handler` constructors
+- Added default `on_timeout` method to `@openable` decorator
+- Added `IdleTerminate` and `AbsentCallbackQuery` as subclasses of `WaitTooLong` to distinguish between different timeout situations
+- Revamped `Listener` to handle different timeout requirements
+- Added `types` parameter to `per_chat_id()`
+- By default, `per_from_id()` and `UserHandler` reacts to non-`callback_query` only
+- Fixed `Bot.download_file()`
+- Added docstrings for Sphinx generation
+
 ## 8.1 (2016-05-26)
 
 - Added flavor `edited_chat` and handler function `on_edited_chat_message`

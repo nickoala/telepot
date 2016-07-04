@@ -16,9 +16,9 @@ easy_install::
 
 Download manually::
 
-    $ wget https://pypi.python.org/packages/source/t/telepot/telepot-8.1.zip
-    $ unzip telepot-8.1.zip
-    $ cd telepot-8.1
+    $ wget https://pypi.python.org/packages/source/t/telepot/telepot-8.2.zip
+    $ unzip telepot-8.2.zip
+    $ cd telepot-8.2
     $ python setup.py install
 
 Get a token
