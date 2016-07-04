@@ -1,6 +1,11 @@
 telepot 8.2 reference (async version, Python 3.5+)
 ==================================================
 
+I am having trouble building this page on readthedocs.org. I will
+fix this as soon as I can ...
+
+------------------
+
 A large part of async version simply mirrors the traditional version.
 Main differences are:
 
