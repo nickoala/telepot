@@ -13,7 +13,7 @@ $ python3.5 lovera.py <token>  # async
 
 Proposing is a private matter. This bot only works in a private chat.
 
-**[Traditional »](lover.py)**
+**[Traditional »](lover.py)**  
 **[Async »](lovera.py)**
 
 ### Referendum Organizer
@@ -29,7 +29,7 @@ organize a referendum.
 When all group members have cast a vote or when time expires, it will announce
 the result.
 
-**[Traditional »](referendum.py)**
+**[Traditional »](referendum.py)**  
 **[Async »](referenduma.py)**
 
 ### Date Calculator
@@ -58,5 +58,5 @@ dates.
 5. When you feel comfortable, use the custom keyboard (sent by the bot in a
    private chat) to make a decision on the date.
 
-**[Traditional »](datecalc.py)**
+**[Traditional »](datecalc.py)**  
 **[Async »](datecalca.py)**
