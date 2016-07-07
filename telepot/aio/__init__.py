@@ -296,7 +296,7 @@ class Bot(_BotBase):
             if not isinstance(dest, io.IOBase) and 'd' in locals():
                 d.close()
 
-    async def message_loop(self, handler=None, source=None, ordered=True, maxhold=3):
+    async def message_loop(self, handler=None, source=None, ordered=True, maxhold=3, timeout=20):
         """
         Return a task to constantly ``getUpdates`` or pull updates from a queue.
         Apply ``handler`` to every message received.
@@ -341,6 +341,11 @@ class Bot(_BotBase):
             When this number of seconds is up, the update is delivered to ``handler``
             even if some smaller ``update_id``\s have not yet arrived. If those smaller
             ``update_id``\s arrive at some later time, they are discarded.
+
+        :type timeout: int
+        :param timeout:
+            ``timeout`` parameter supplied to :meth:`telepot.aio.Bot.getUpdates`,
+            controlling how long to poll in seconds.
         """
         if handler is None:
             handler = self.handle
@@ -374,7 +379,7 @@ class Bot(_BotBase):
             offset = None  # running offset
             while 1:
                 try:
-                    result = await self.getUpdates(offset=offset, timeout=20)
+                    result = await self.getUpdates(offset=offset, timeout=timeout)
 
                     if len(result) > 0:
                         # No sort. Trust server to give messages in correct order.
