@@ -7,3 +7,4 @@ doc/_build/
 todo.txt
 .remote-sync.json
 .pypirc
+bugs/

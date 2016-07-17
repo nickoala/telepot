@@ -9,6 +9,10 @@ Version 8.2 just came out (July 4, 2016). Handling of callback query is still un
 
 ### Recent changes
 
+**8.3 (2016-07-17)**
+
+- Fixed `urllib3==1.9.1` in `setup.py`
+
 **8.2 (2016-07-04)**
 
 - Handling of callback query still unsatisfactory, a transitional release

@@ -308,9 +308,9 @@ If your O/S does not have Python 3.5 built in, you have to compile it yourself::
     $ sudo apt-get upgrade
     $ sudo apt-get install libssl-dev openssl libreadline-dev
     $ cd ~
-    $ wget https://www.python.org/ftp/python/3.5.1/Python-3.5.1.tgz
-    $ tar zxf Python-3.5.1.tgz
-    $ cd Python-3.5.1
+    $ wget https://www.python.org/ftp/python/3.5.2/Python-3.5.2.tgz
+    $ tar zxf Python-3.5.2.tgz
+    $ cd Python-3.5.2
     $ ./configure
     $ make
     $ sudo make install
