@@ -1,13 +1,31 @@
 # telepot - Python framework for Telegram Bot API
 
-Version 8.2 just came out (July 4, 2016). Handling of callback query is still unsatisfactory. Treat it as a transitional release.
+Version 9.0 just came out (August 25, 2016). I am finally satisfied with callback query handling. 
+Many styles of dealing with callback query are now possible.
+
+Documentations are incomplete. They will be filled in gradually over time. Interested users can
+look into the [examples](https://github.com/nickoala/telepot/tree/master/examples). One example is worth a thousand words.
 
 **[Tutorial »](http://telepot.readthedocs.io/en/latest/)**  
 **[Reference, Traditional version »](http://telepot.readthedocs.io/en/latest/reference.html)**  
-**[Reference, Async version »](http://telepot.readthedocs.io/en/latest/referencea.html)** (Having trouble building it on readthedocs.org, I am working on it ...)  
 **[Examples »](https://github.com/nickoala/telepot/tree/master/examples)**
 
 ### Recent changes
+
+**9.0 (2016-08-25)**
+
+- I am finally satisfied with callback query handling. Many styles of dealing with
+callback query are now possible.
+- Added a few `per_callback_query_*()` seeder factories
+- Added a few pair producers, e.g. `pave_event_space()`, `pave_callback_query_origin_map()`
+- Added `Bot.Scheduler` to schedule internal events
+- Invented a standard event format for delegates to create their own events easily
+- Improved Mixin framework. Added `StandardEventMixin`, `IdleTerminateMixin`, and
+`InterceptCallbackQueryMixin`.
+- Added `CallbackQueryOriginHandler`
+- Revamped `Listener` and message capture specifications
+- Default `retries=3` for `urllib3`
+- Relaxed `urllib3>=1.9.1` in `setup.py`
 
 **8.3 (2016-07-17)**
 
