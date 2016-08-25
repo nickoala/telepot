@@ -13,7 +13,7 @@ callback query are now possible.
 - Added `CallbackQueryOriginHandler`
 - Revamped `Listener` and message capture specifications
 - Default `retries=3` for `urllib3`
-- Relax `urllib3>=1.9.1` in `setup.py`
+- Relaxed `urllib3>=1.9.1` in `setup.py`
 
 ## 8.3 (2016-07-17)
 
