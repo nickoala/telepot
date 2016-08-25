@@ -1,42 +1,34 @@
-from functools import reduce
+def pick(obj, keys):
+    def pick1(k):
+        if type(obj) is dict:
+            return obj[k]
+        else:
+            return getattr(obj, k)
 
-def pick(obj, key):
-    if type(obj) is dict:
-        return obj[key]
+    if isinstance(keys, list):
+        return [pick1(k) for k in keys]
     else:
-        return getattr(obj, key)
+        return pick1(keys)
 
-def match(part, template):
-    if type(template) is dict:
-        try:
-            return all([match(pick(part,k),v) for k,v in template.items()])
+def match(data, template):
+    if isinstance(template, dict) and isinstance(data, dict):
+        def pick_and_match(kv):
+            template_key, template_value = kv
+            if hasattr(template_key, 'search'):  # regex
+                data_keys = list(filter(template_key.search, data.keys()))
+                if not data_keys:
+                    return False
+            elif template_key in data:
+                data_keys = [template_key]
+            else:
+                return False
+            return any(map(lambda data_value: match(data_value, template_value), pick(data, data_keys)))
 
-        except (KeyError, AttributeError):
-            return False
-
+        return all(map(pick_and_match, template.items()))
     elif callable(template):
-        return template(part)
-
+        return template(data)
     else:
-        return part == template
+        return data == template
 
-def kmatch(msg, key, template):
-    if key == '_':
-        part = msg
-    else:
-        try:
-            levels = key.split('__')
-            part = reduce(pick, levels, msg)
-            # Drill down one level at a time, similar to:
-            #   reduce(lambda a,b: a[b], ['chat', 'id'], msg)
-
-        except (KeyError, AttributeError):
-            return False
-
-    return match(part, template)
-    # Do not bracket `match()` in above `try` clause because 
-    # `template()` may produce its own errors.
-
-def ok(msg, **kwargs):
-    return all(map(kmatch, [msg]*len(kwargs), *zip(*kwargs.items())))
-                                            # e.g. {'a':1, 'b':2} -> [('a','b'), (1,2)]
+def match_all(msg, templates):
+    return all(map(lambda t: match(msg, t), templates))

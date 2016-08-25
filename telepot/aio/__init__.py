@@ -18,9 +18,28 @@ def flavor_router(routing_table):
 
 
 class Bot(_BotBase):
+    class Scheduler(object):
+        def __init__(self, loop):
+            self._loop = loop
+            self._callback = None
+
+        def event_at(self, when, data):
+            return self._loop.call_at(when, self._callback, data)
+
+        def event_later(self, delay, data):
+            return self._loop.call_later(delay, self._callback, data)
+
+        def event_now(self, data):
+            return self._loop.call_soon(self._callback, data)
+
+        def cancel(self, event):
+            return event.cancel()
+
     def __init__(self, token, loop=None):
         super(Bot, self).__init__(token)
         self._loop = loop if loop is not None else asyncio.get_event_loop()
+
+        self._scheduler = self.Scheduler(self._loop)
 
         self._router = helper.Router(flavor, {'chat': helper._delay_yell(self, 'on_chat_message'),
                                               'edited_chat': helper._delay_yell(self, 'on_edited_chat_message'),
@@ -31,6 +50,14 @@ class Bot(_BotBase):
     @property
     def loop(self):
         return self._loop
+
+    @property
+    def scheduler(self):
+        return self._scheduler
+
+    @property
+    def router(self):
+        return self._router
 
     async def handle(self, msg):
         await self._router.route(msg)
@@ -296,7 +323,7 @@ class Bot(_BotBase):
             if not isinstance(dest, io.IOBase) and 'd' in locals():
                 d.close()
 
-    async def message_loop(self, handler=None, source=None, ordered=True, maxhold=3, timeout=20):
+    async def message_loop(self, handler=None, timeout=20, source=None, ordered=True, maxhold=3):
         """
         Return a task to constantly ``getUpdates`` or pull updates from a queue.
         Apply ``handler`` to every message received.
@@ -493,6 +520,8 @@ class Bot(_BotBase):
 
                     # debug message
                     # print ('Buffer:', str(buffer), ', To Wait:', qwait, ', Max ID:', max_id)
+
+        self._scheduler._callback = callback
 
         if source is None:
             await get_from_telegram_server()

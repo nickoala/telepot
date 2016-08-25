@@ -1,11 +1,14 @@
 import asyncio
 import traceback
-import time
 from .. import filtering, helper, exception
-from .. import flavor, chat_flavors, inline_flavors
+from .. import (
+    flavor, chat_flavors, inline_flavors, is_event,
+    message_identifier, origin_identifier)
 
 # Mirror traditional version
-from ..helper import Timer, Sender, Administrator, Editor, openable
+from ..helper import (
+    Sender, Administrator, Editor, openable,
+    StandardEventScheduler, StandardEventMixin)
 
 
 async def _yell(fn, *args, **kwargs):
@@ -46,40 +49,14 @@ class Listener(helper.Listener):
         """
         Block until a matched message appears.
         """
-        if not self._captures:
-            raise RuntimeError('Listener has no capture criteria.')
+        if not self._patterns:
+            raise RuntimeError('Listener has nothing to capture')
 
         while 1:
-            short = self._find_shortest_timer()
+            msg = await self._queue.get()
 
-            try:
-                if short:
-                    timeleft = short.timeleft()
-                    msg = await asyncio.wait_for(self._queue.get(), 0 if timeleft < 0 else timeleft)
-                else:
-                    msg = await self._queue.get()
-            except asyncio.TimeoutError:
-                if short:
-                    # Extract criteria associated with this timeout
-                    expired_criteria = [cap[self.CRITERIA] for cap in filter(lambda cap: cap[self.TIMER]==short, self._captures)]
-
-                    # Eliminate entries associated with this timeout that have `cancel_on_timeout`
-                    self._captures = list(filter(lambda cap: not (cap[self.TIMER]==short and cap[self.CANCEL_ON_TIMEOUT]), self._captures))
-
-                    # Raise specified error
-                    raise short.timeout_class(short.seconds, expired_criteria)
-
-            matched_restarts = [cap[self.RESTART]
-                                   for cap in filter(lambda cap: filtering.ok(msg, **cap[self.CRITERIA]), self._captures)]
-
-            if not matched_restarts:
-                continue
-
-            # Flatten lists, then use `set` to remove duplicates
-            for timer in set([item for sublist in matched_restarts for item in sublist]):
-                timer.start()
-
-            return msg
+            if any(map(lambda p: filtering.match_all(msg, p), self._patterns)):
+                return msg
 
 
 from concurrent.futures._base import CancelledError
@@ -152,14 +129,8 @@ class Answerer(object):
         self._working_tasks[from_id] = t
 
 
-class AnswererMixin(object):
-    def __init__(self):
-        super(AnswererMixin, self).__init__()
-        self._answerer = Answerer(self.bot)
-
-    @property
-    def answerer(self):
-        return self._answerer
+class AnswererMixin(helper.AnswererMixin):
+    Answerer = Answerer  # use async Answerer class
 
 
 class CallbackQueryCoordinator(helper.CallbackQueryCoordinator):
@@ -167,9 +138,8 @@ class CallbackQueryCoordinator(helper.CallbackQueryCoordinator):
         async def augmented(*aa, **kw):
             sent = await send_func(*aa, **kw)
 
-            if self._contains_callback_data(kw):
-                self._listener.capture(self._capture_criteria(message=sent),
-                                       **self._capture_options[sent['chat']['type']])
+            if self._enable_chat and self._contains_callback_data(kw):
+                self.capture_origin(message_identifier(sent))
 
             return sent
         return augmented
@@ -178,48 +148,55 @@ class CallbackQueryCoordinator(helper.CallbackQueryCoordinator):
         async def augmented(msg_identifier, *aa, **kw):
             edited = await edit_func(msg_identifier, *aa, **kw)
 
-            if self._contains_callback_data(kw):
-                if edited is True:
-                    self._listener.capture(self._capture_criteria(msg_identifier=msg_identifier),
-                                           **self._capture_options['inline'])
-                elif 'chat' in edited:
-                    self._listener.capture(self._capture_criteria(message=edited),
-                                           **self._capture_options[edited['chat']['type']])
+            if (edited is True and self._enable_inline) or (isinstance(edited, dict) and self._enable_chat):
+                if self._contains_callback_data(kw):
+                    self.capture_origin(msg_identifier)
                 else:
-                    raise ValueError()
-            else:
-                if edited is True:
-                    self._listener.cancel_capture(self._capture_criteria(msg_identifier=msg_identifier))
-                elif 'chat' in edited:
-                    self._listener.cancel_capture(self._capture_criteria(message=edited))
-                else:
-                    raise ValueError()
+                    self.uncapture_origin(msg_identifier)
 
             return edited
         return augmented
 
-    def augment_answerInlineQuery(self, answer_func):
-        async def augmented(inline_query_id, results, *aa, **kw):
-            response = await answer_func(inline_query_id, results, *aa, **kw)
-            self._pending_ids = [filtering.pick(r, 'id') for r in results if self._contains_callback_data(r)]
-            return response
-        return augmented
-
     def augment_on_message(self, handler):
         async def augmented(msg):
-            if (flavor(msg) == 'chosen_inline_result'
-                    and 'inline_message_id' in msg
-                    and msg['result_id'] in self._pending_ids):
+            if (self._enable_inline
+                    and flavor(msg) == 'chosen_inline_result'
+                    and 'inline_message_id' in msg):
                 inline_message_id = msg['inline_message_id']
-                self._listener.capture(self._capture_criteria(msg_identifier=inline_message_id),
-                                       **self._capture_options['inline'])
+                self.capture_origin(inline_message_id)
 
             return await _yell(handler, msg)
         return augmented
 
 
-class CallbackQueryAble(helper.CallbackQueryAble):
-    COORDINATOR_CLASS = CallbackQueryCoordinator
+class InterceptCallbackQueryMixin(helper.InterceptCallbackQueryMixin):
+    CallbackQueryCoordinator = CallbackQueryCoordinator
+
+
+class IdleEventCoordinator(helper.IdleEventCoordinator):
+    def augment_on_message(self, handler):
+        async def augmented(msg):
+            # Reset timer if this is an external message
+            is_event(msg) or self.refresh()
+            return await _yell(handler, msg)
+        return augmented
+
+    def augment_on_close(self, handler):
+        async def augmented(ex):
+            try:
+                if self._timeout_event:
+                    self._scheduler.cancel(self._timeout_event)
+                    self._timeout_event = None
+            # This closing may have been caused by my own timeout, in which case
+            # the timeout event can no longer be found in the scheduler.
+            except exception.EventNotFound:
+                self._timeout_event = None
+            return await _yell(handler, ex)
+        return augmented
+
+
+class IdleTerminateMixin(helper.IdleTerminateMixin):
+    IdleEventCoordinator = IdleEventCoordinator
 
 
 class Router(helper.Router):
@@ -258,13 +235,15 @@ class Router(helper.Router):
 
 
 class DefaultRouterMixin(object):
-    def __init__(self):
-        super(DefaultRouterMixin, self).__init__()
+    def __init__(self, *args, **kwargs):
         self._router = Router(flavor, {'chat': _delay_yell(self, 'on_chat_message'),
                                        'edited_chat': _delay_yell(self, 'on_edited_chat_message'),
                                        'callback_query': _delay_yell(self, 'on_callback_query'),
                                        'inline_query': _delay_yell(self, 'on_inline_query'),
-                                       'chosen_inline_result': _delay_yell(self, 'on_chosen_inline_result')})
+                                       'chosen_inline_result': _delay_yell(self, 'on_chosen_inline_result'),
+                                       '_idle': _delay_yell(self, 'on__idle')})
+
+        super(DefaultRouterMixin, self).__init__(*args, **kwargs)
 
     @property
     def router(self):
@@ -281,98 +260,86 @@ class DefaultRouterMixin(object):
 
 @openable
 class Monitor(helper.ListenerContext, DefaultRouterMixin):
-    def __init__(self, seed_tuple, capture):
+    def __init__(self, seed_tuple, capture, **kwargs):
         """
         A delegate that never times-out, probably doing some kind of background monitoring
         in the application. Most naturally paired with :func:`telepot.aio.delegate.per_application`.
 
-        :param capture: a list of capture criteria for its ``listener``
+        :param capture: a list of patterns for ``listener`` to capture
         """
         bot, initial_msg, seed = seed_tuple
-        super(Monitor, self).__init__(bot, seed)
+        super(Monitor, self).__init__(bot, seed, **kwargs)
 
-        for c in capture:
-            self.listener.capture(c, timer=None)
+        for pattern in capture:
+            self.listener.capture(pattern)
 
 
 @openable
-class ChatHandler(CallbackQueryAble, helper.ChatContext, DefaultRouterMixin):
-    def __init__(self, seed_tuple, timeout, enable_callback_query=True):
+class ChatHandler(helper.ChatContext,
+                  DefaultRouterMixin,
+                  StandardEventMixin,
+                  IdleTerminateMixin):
+    def __init__(self, seed_tuple,
+                 include_callback_query=False, **kwargs):
         """
         A delegate to handle a chat.
-        Most naturally paired with :func:`telepot.aio.delegate.per_chat_id`.
-
-        :type timeout: number of seconds
-        :param timeout:
-            If no message is captured after this period of time,
-            an :class:`..exception.WaitTooLong` will be raised,
-            causing the delegate to die.
-
-        :type enable_callback_query: bool
-        :param enable_callback_query:
-            Whether to augment the bot's public methods with :class:`CallbackQueryCoordinator`
-            so callback query can be handled transparently.
         """
         bot, initial_msg, seed = seed_tuple
-        super(ChatHandler, self).__init__(bot, seed, initial_msg['chat']['id'],
-                                          timeout=timeout,
-                                          enable_callback_query=enable_callback_query)
+        super(ChatHandler, self).__init__(bot, seed, **kwargs)
 
-        self.listener.capture(dict(chat__id=self.chat_id), timer=self.primary_timer)
+        self.listener.capture([{'chat': {'id': self.chat_id}}])
+
+        if include_callback_query:
+            self.listener.capture([{'message': {'chat': {'id': self.chat_id}}}])
 
 
 @openable
-class UserHandler(CallbackQueryAble, helper.UserContext, DefaultRouterMixin):
-    def __init__(self, seed_tuple, timeout, flavors=chat_flavors+inline_flavors, enable_callback_query=True):
+class UserHandler(helper.UserContext,
+                  DefaultRouterMixin,
+                  StandardEventMixin,
+                  IdleTerminateMixin):
+    def __init__(self, seed_tuple,
+                 include_callback_query=False,
+                 flavors=chat_flavors+inline_flavors, **kwargs):
         """
         A delegate to handle a user's actions.
-        Most naturally paired with :func:`telepot.aio.delegate.per_from_id`.
-
-        :type timeout: number of seconds
-        :param timeout:
-            If no message is captured after this period of time,
-            an :class:`..exception.WaitTooLong` will be raised,
-            causing the delegate to die.
 
         :param flavors:
             A list of flavors to capture. ``all`` covers all flavors.
-
-        :type enable_callback_query: bool
-        :param enable_callback_query:
-            Whether to augment the bot's public methods with :class:`CallbackQueryCoordinator`
-            so callback query can be handled transparently.
         """
         bot, initial_msg, seed = seed_tuple
-        super(UserHandler, self).__init__(bot, seed, initial_msg['from']['id'],
-                                          timeout=timeout,
-                                          enable_callback_query=enable_callback_query)
+        super(UserHandler, self).__init__(bot, seed, **kwargs)
 
         if flavors == 'all':
-            self.listener.capture(dict(from__id=self.user_id),
-                                  timer=self.primary_timer)
+            self.listener.capture([{'from': {'id': self.user_id}}])
         else:
-            self.listener.capture(dict(_=lambda msg: flavor(msg) in flavors, from__id=self.user_id),
-                                  timer=self.primary_timer)
+            self.listener.capture([lambda msg: flavor(msg) in flavors, {'from': {'id': self.user_id}}])
+
+        if include_callback_query:
+            self.listener.capture([{'message': {'chat': {'id': self.user_id}}}])
 
 
 class InlineUserHandler(UserHandler):
-    def __init__(self, seed_tuple, timeout, enable_callback_query=True):
+    def __init__(self, seed_tuple, **kwargs):
         """
         A delegate to handle a user's inline-related actions.
-        It captures messages of flavor ``inline_query`` and ``chosen_inline_result`` only.
-        Most naturally paired with :func:`telepot.aio.delegate.per_inline_from_id`.
-
-        :type timeout: number of seconds
-        :param timeout:
-            If no message is captured after this period of time,
-            an :class:`..exception.WaitTooLong` will be raised,
-            causing the delegate to die.
-
-        :type enable_callback_query: bool
-        :param enable_callback_query:
-            Whether to augment the bot's public methods with :class:`CallbackQueryCoordinator`
-            so callback query can be handled transparently.
         """
-        super(InlineUserHandler, self).__init__(seed_tuple, timeout,
-                                                flavors=inline_flavors,
-                                                enable_callback_query=enable_callback_query)
+        super(InlineUserHandler, self).__init__(seed_tuple, flavors=inline_flavors, **kwargs)
+
+
+@openable
+class CallbackQueryOriginHandler(helper.CallbackQueryOriginContext,
+                                 DefaultRouterMixin,
+                                 StandardEventMixin,
+                                 IdleTerminateMixin):
+    def __init__(self, seed_tuple, **kwargs):
+        """
+        A delegate to handle callback query from one origin.
+        """
+        bot, initial_msg, seed = seed_tuple
+        super(CallbackQueryOriginHandler, self).__init__(bot, seed, **kwargs)
+
+        self.listener.capture([
+            lambda msg:
+                flavor(msg) == 'callback_query' and origin_identifier(msg) == self.origin
+        ])

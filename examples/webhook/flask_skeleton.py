@@ -17,16 +17,16 @@ Webhook path is '/abc', therefore:
 
 def on_chat_message(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
-    print 'Chat Message:', content_type, chat_type, chat_id
+    print('Chat Message:', content_type, chat_type, chat_id)
 
 def on_callback_query(msg):
     query_id, from_id, data = telepot.glance(msg, flavor='callback_query')
-    print 'Callback query:', query_id, from_id, data
+    print('Callback query:', query_id, from_id, data)
 
 # need `/setinline`
 def on_inline_query(msg):
     query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
-    print 'Inline Query:', query_id, from_id, query_string
+    print('Inline Query:', query_id, from_id, query_string)
 
     # Compose your own answers
     articles = [{'type': 'article',
@@ -37,7 +37,7 @@ def on_inline_query(msg):
 # need `/setinlinefeedback`
 def on_chosen_inline_result(msg):
     result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
-    print 'Chosen Inline Result:', result_id, from_id, query_string
+    print('Chosen Inline Result:', result_id, from_id, query_string)
 
 
 TOKEN = sys.argv[1]

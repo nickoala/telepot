@@ -2,7 +2,7 @@ import sys
 import random
 import traceback
 import telepot
-from telepot.delegate import per_chat_id, create_open
+from telepot.delegate import per_chat_id, create_open, pave_event_space
 
 """
 $ python3.5 guess.py <token>
@@ -17,8 +17,8 @@ Guess a number:
 """
 
 class Player(telepot.helper.ChatHandler):
-    def __init__(self, seed_tuple, timeout):
-        super(Player, self).__init__(seed_tuple, timeout)
+    def __init__(self, *args, **kwargs):
+        super(Player, self).__init__(*args, **kwargs)
         self._answer = random.randint(0,99)
 
     def _hint(self, answer, guess):
@@ -53,14 +53,15 @@ class Player(telepot.helper.ChatHandler):
             self.sender.sendMessage('Correct!')
             self.close()
 
-    def on_close(self, exception):
-        if isinstance(exception, telepot.exception.WaitTooLong):
-            self.sender.sendMessage('Game expired. The answer is %d' % self._answer)
+    def on__idle(self, event):
+        self.sender.sendMessage('Game expired. The answer is %d' % self._answer)
+        self.close()
 
 
 TOKEN = sys.argv[1]
 
 bot = telepot.DelegatorBot(TOKEN, [
-    (per_chat_id(), create_open(Player, timeout=10)),
+    pave_event_space()(
+        per_chat_id(), create_open, Player, timeout=10),
 ])
 bot.message_loop(run_forever='Listening ...')

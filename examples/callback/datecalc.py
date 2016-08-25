@@ -1,46 +1,57 @@
 import sys
 from datetime import datetime, timedelta
 from functools import reduce
-from pprint import pprint
 import telepot
 import telepot.helper
-from telepot.delegate import per_from_id, create_open
 from telepot.namedtuple import (
     InlineQueryResultArticle, InputTextMessageContent,
     InlineKeyboardMarkup, InlineKeyboardButton,
-    ReplyKeyboardMarkup, KeyboardButton
-)
+    ReplyKeyboardMarkup, KeyboardButton)
+from telepot.delegate import (
+    per_inline_from_id, create_open, pave_event_space,
+    pave_callback_query_origin_map)
 
 """
 $ python3.5 datecalc.py <token>
 
 When pondering the date of an appointment or a gathering, we usually think
 in terms of "this Saturday" or "next Monday", instead of the actual date.
-Yet, for clarity, we eventually want to spell out the actual date to avoid
-any chance of misunderstanding. This bot helps you convert weekdays into actual
-dates.
+This *inline* bot helps you convert weekdays into actual dates.
 
-1. Go to a private chat or a group chat, perform an inline query by typing
-   `@YourBot monday` or any weekday you have in mind.
-2. Choose a day from the returned results. In effect, you are proposing that day
-   for appointment or gathering. Your friends will have a chance to accept or
-   reject your proposal (via an inline keyboard). But the final decision is yours.
-3. At the same time, you will receive a private message from the bot asking you
-   to make a decision (using a custom keyboard) whether to fix the appointment
-   or gathering on that date. You don't have to answer right away.
-4. As your friends cast their votes on the proposed date, you will see real-time
-   updates of the vote count.
-5. When you feel comfortable, use the custom keyboard (sent by the bot in a
-   private chat) to make a decision on the date.
+1. Go to a group chat. The bot does not need to be a group member. You are
+   going to inline-query it.
+
+2. Type `@YourBot monday` or any weekday you have in mind. It will suggest a
+   few dates based on it.
+
+3. Choose a day from the returned results. The idea is to propose a date to
+   the group. Group members have 30 seconds to vote on the proposed date.
+
+4. After 30 seconds, the voting result is announced.
+
+This example dynamically maps callback query back to their originating
+`InlineUserHandler`, so you can do question-asking (sending a message containing
+an inline keyboard) and answer-gathering (receiving callback query) in the same
+object.
 """
 
-class DateCalculator(telepot.helper.UserHandler, telepot.helper.AnswererMixin):
-    def __init__(self, seed_tuple, timeout):
-        super(DateCalculator, self).__init__(seed_tuple, timeout)
-        self._suggested_date = None
-        self._suggestion_editor = None
-        self._counter_editor = None
-        self._votes = None
+user_ballots = telepot.helper.SafeDict()  # thread-safe dict
+
+class DateCalculator(telepot.helper.InlineUserHandler,
+                     telepot.helper.AnswererMixin,
+                     telepot.helper.InterceptCallbackQueryMixin):
+    def __init__(self, *args, **kwargs):
+        super(DateCalculator, self).__init__(*args, **kwargs)
+
+        global user_ballots
+        if self.id in user_ballots:
+            self._ballots = user_ballots[self.id]
+            print('Ballot retrieved.')
+        else:
+            self._ballots = {}
+            print('Ballot initialized.')
+
+        self.router.routing_table['_expired'] = self.on__expired
 
     def on_inline_query(self, msg):
         def compute():
@@ -92,72 +103,56 @@ class DateCalculator(telepot.helper.UserHandler, telepot.helper.AnswererMixin):
         self.answerer.answer(msg, compute)
 
     def on_chosen_inline_result(self, msg):
-        result_id, from_id, query = telepot.glance(msg, flavor='chosen_inline_result')
-        print('Chosen inline result:', result_id, from_id, query)
-
-        self._suggested_date = datetime.strptime(msg['result_id'], '%Y-%m-%d')
-        self._suggestion_editor = telepot.helper.Editor(self.bot, msg)
-        self._votes = {}
-
-        self.sender.sendMessage('Decided on %s?' % msg['result_id'],
-            reply_markup=ReplyKeyboardMarkup(
-                keyboard=[[
-                    KeyboardButton(text='Decided'),
-                    KeyboardButton(text='Cancel'),
-                ]],
-                one_time_keyboard=True
-            )
-        )
-
-        sent = self.sender.sendMessage('Yes: %d\nNo: %d' % self._count_votes())
-        self._counter_editor = telepot.helper.Editor(self.bot, sent)
-
-    def _count_votes(self):
-        yes = reduce(lambda a,b: a+(1 if b=='yes' else 0), self._votes.values(), 0)
-        no = reduce(lambda a,b: a+(1 if b=='no' else 0), self._votes.values(), 0)
-        return yes, no
+        if 'inline_message_id' in msg:
+            inline_message_id = msg['inline_message_id']
+            suggested_date = msg['result_id']
+            self._ballots[inline_message_id] = {}
+            self.scheduler.event_later(30, ('_expired', {'seconds': 30,
+                                                         'inline_message_id': inline_message_id,
+                                                         'date': suggested_date}))
 
     def on_callback_query(self, msg):
-        query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
-        print('Callback query:', query_id, from_id, query_data)
+        if 'inline_message_id' in msg:
+            inline_message_id = msg['inline_message_id']
+            ballot = self._ballots[inline_message_id]
 
-        if from_id in self._votes:
-            self.bot.answerCallbackQuery(query_id, text='You have already voted %s' % self._votes[from_id])
-        else:
-            self.bot.answerCallbackQuery(query_id, text='Ok')
-            self._votes[from_id] = query_data
-            self._counter_editor.editMessageText('Yes: %d\nNo: %d' % self._count_votes())
+            query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
+            if from_id in ballot:
+                self.bot.answerCallbackQuery(query_id, text='You have already voted %s' % ballot[from_id])
+            else:
+                self.bot.answerCallbackQuery(query_id, text='Ok')
+                ballot[from_id] = query_data
 
-    def on_chat_message(self, msg):
-        content_type, chat_type, chat_id = telepot.glance(msg)
-        print('Chat:', content_type, chat_type, chat_id)
+    def _count(self, ballot):
+        yes = reduce(lambda a,b: a+(1 if b=='yes' else 0), ballot.values(), 0)
+        no = reduce(lambda a,b: a+(1 if b=='no' else 0), ballot.values(), 0)
+        return yes, no
 
-        # Ignore group messages
-        if not self._suggested_date:
-            return
+    def on__expired(self, event):
+        evt = telepot.peel(event)
+        inline_message_id = evt['inline_message_id']
+        suggested_date = evt['date']
 
-        if content_type != 'text':
-            return
+        ballot = self._ballots[inline_message_id]
+        text = '%s\nYes: %d\nNo: %d' % ((suggested_date,) + self._count(ballot))
 
-        text = msg['text']
-        date_string = self._suggested_date.strftime('%A, %Y-%m-%d')
+        editor = telepot.helper.Editor(self.bot, inline_message_id)
+        editor.editMessageText(text=text, reply_markup=None)
 
-        if text == 'Decided':
-            THUMB_UP = u'\U0001f44d\U0001f3fb'
-            self._suggestion_editor.editMessageText(date_string + '\n' + THUMB_UP + "Let's meet on this day.")
-        else:
-            CROSS = u'\u274c'
-            self._suggestion_editor.editMessageText(date_string + '\n' + CROSS + "Let me find another day.")
+        del self._ballots[inline_message_id]
+        self.close()
 
-    # Ignore group messages
-    def on_edited_chat_message(self, msg):
-        content_type, chat_type, chat_id = telepot.glance(msg, flavor='edited_chat')
-        print('Edited chat:', content_type, chat_type, chat_id)
+    def on_close(self, ex):
+        global user_ballots
+        user_ballots[self.id] = self._ballots
+        print('Closing, ballots saved.')
 
 
 TOKEN = sys.argv[1]
 
 bot = telepot.DelegatorBot(TOKEN, [
-    (per_from_id(), create_open(DateCalculator, timeout=20))
+    pave_callback_query_origin_map(pave_event_space())(
+        per_inline_from_id(),
+        create_open, DateCalculator, timeout=10),
 ])
 bot.message_loop(run_forever='Listening ...')

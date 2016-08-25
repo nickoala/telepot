@@ -9,10 +9,10 @@ urllib3.disable_warnings()
 
 
 _pools = {
-    'default': urllib3.PoolManager(num_pools=3, maxsize=10, retries=False, timeout=30),
+    'default': urllib3.PoolManager(num_pools=3, maxsize=10, retries=3, timeout=30),
 }
 
-_onetime_pool_spec = (urllib3.PoolManager, dict(num_pools=1, maxsize=1, retries=False, timeout=30))
+_onetime_pool_spec = (urllib3.PoolManager, dict(num_pools=1, maxsize=1, retries=3, timeout=30))
 
 
 def _create_onetime_pool():

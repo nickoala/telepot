@@ -1,7 +1,7 @@
 import sys
 from flask import Flask, request
 import telepot
-from telepot.delegate import per_chat_id, create_open
+from telepot.delegate import per_chat_id, create_open, pave_event_space
 
 try:
     from Queue import Queue
@@ -17,8 +17,8 @@ Webhook path is '/abc', therefore:
 """
 
 class MessageCounter(telepot.helper.ChatHandler):
-    def __init__(self, seed_tuple, timeout):
-        super(MessageCounter, self).__init__(seed_tuple, timeout)
+    def __init__(self, *args, **kwargs):
+        super(MessageCounter, self).__init__(*args, **kwargs)
         self._count = 0
 
     def on_chat_message(self, msg):
@@ -34,7 +34,8 @@ app = Flask(__name__)
 update_queue = Queue()  # channel between `app` and `bot`
 
 bot = telepot.DelegatorBot(TOKEN, [
-    (per_chat_id(), create_open(MessageCounter, timeout=10)),
+    pave_event_space()(
+        per_chat_id(), create_open, MessageCounter, timeout=10),
 ])
 bot.message_loop(source=update_queue)  # take updates from queue
 

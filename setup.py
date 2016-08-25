@@ -30,7 +30,7 @@ PY_35 = sys.version_info >= (3,5)
 
 here = path.abspath(path.dirname(__file__))
 
-install_requires = ['urllib3==1.9.1']
+install_requires = ['urllib3>=1.9.1']
 cmdclass = {}
 
 if PY_35:
@@ -66,7 +66,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='8.3',
+    version='9.0',
 
     description='Python framework for Telegram Bot API',
 

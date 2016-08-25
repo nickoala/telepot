@@ -49,35 +49,27 @@ class BadHTTPResponse(TelepotException):
         else:
             return unicode(self).encode('utf-8')
 
+class EventNotFound(TelepotException):
+    def __init__(self, event):
+        super(EventNotFound, self).__init__(event)
+
+    @property
+    def event(self):
+        return self.args[0]
+
 class WaitTooLong(TelepotException):
-    def __init__(self, seconds, expired_criteria):
-        super(WaitTooLong, self).__init__(seconds, expired_criteria)
+    def __init__(self, seconds):
+        super(WaitTooLong, self).__init__(seconds)
 
     @property
     def seconds(self):
         return self.args[0]
 
-    @property
-    def expired_criteria(self):
-        return self.args[1]
-
 class IdleTerminate(WaitTooLong):
     pass
 
-class AbsentCallbackQuery(WaitTooLong):
-    pass
-
 class StopListening(TelepotException):
-    def __init__(self, code=None, reason=None):
-        super(StopListening, self).__init__(code, reason)
-
-    @property
-    def code(self):
-        return self.args[0]
-
-    @property
-    def reason(self):
-        return self.args[1]
+    pass
 
 class TelegramError(TelepotException):
     """

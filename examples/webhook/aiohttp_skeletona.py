@@ -66,10 +66,13 @@ def init(loop):
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(init(loop))
-loop.create_task(bot.message_loop({'chat': on_chat_message,
-                                   'callback_query': on_callback_query,
-                                   'inline_query': on_inline_query,
-                                   'chosen_inline_result': on_chosen_inline_result}, source=update_queue))  # take updates from queue
+loop.create_task(
+    bot.message_loop({
+        'chat': on_chat_message,
+        'callback_query': on_callback_query,
+        'inline_query': on_inline_query,
+        'chosen_inline_result': on_chosen_inline_result},
+        source=update_queue))  # take updates from queue
 try:
     loop.run_forever()
 except KeyboardInterrupt:

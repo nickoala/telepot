@@ -1,7 +1,8 @@
 import sys
 import asyncio
 import telepot
-from telepot.aio.delegate import per_chat_id_in, per_application, call, create_open
+from telepot.aio.delegate import (
+    per_chat_id_in, per_application, call, create_open, pave_event_space)
 
 """
 $ python3.5 chatboxa_nodb.py <token> <owner_id>
@@ -57,8 +58,8 @@ class UnreadStore(object):
 
 # Accept commands from owner. Give him unread messages.
 class OwnerHandler(telepot.aio.helper.ChatHandler):
-    def __init__(self, seed_tuple, timeout, store):
-        super(OwnerHandler, self).__init__(seed_tuple, timeout)
+    def __init__(self, seed_tuple, store, **kwargs):
+        super(OwnerHandler, self).__init__(seed_tuple, **kwargs)
         self._store = store
 
     async def _read_messages(self, messages):
@@ -110,7 +111,7 @@ class OwnerHandler(telepot.aio.helper.ChatHandler):
 class MessageSaver(telepot.aio.helper.Monitor):
     def __init__(self, seed_tuple, store, exclude):
         # The `capture` criteria means to capture all messages.
-        super(MessageSaver, self).__init__(seed_tuple, capture=[{'_': lambda msg: True}])
+        super(MessageSaver, self).__init__(seed_tuple, capture=[[lambda msg: not telepot.is_event(msg)]])
         self._store = store
         self._exclude = exclude
 
@@ -138,7 +139,8 @@ class ChatBox(telepot.aio.DelegatorBot):
 
         super(ChatBox, self).__init__(token, [
             # Here is a delegate to specially handle owner commands.
-            (per_chat_id_in([owner_id]), create_open(OwnerHandler, 20, self._store)),
+            pave_event_space()(
+                per_chat_id_in([owner_id]), create_open, OwnerHandler, self._store, timeout=20),
 
             # Only one MessageSaver is ever spawned for entire application.
             (per_application(), create_open(MessageSaver, self._store, exclude=[owner_id])),
@@ -149,6 +151,9 @@ class ChatBox(telepot.aio.DelegatorBot):
 
     # seed-calculating function: use returned value to indicate whether to spawn a delegate
     def _is_newcomer(self, msg):
+        if telepot.is_event(msg):
+            return None
+
         chat_id = msg['chat']['id']
         if chat_id == self._owner_id:  # Sender is owner
             return None  # No delegate spawned

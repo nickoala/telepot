@@ -1,16 +1,16 @@
 import sys
 import telepot
-from telepot.delegate import per_inline_from_id, create_open
+from telepot.delegate import per_inline_from_id, create_open, pave_event_space
 
 """
 $ python3.5 inline.py <token>
 
-A bot that only cares about inline stuff.
+It demonstrates answering inline query and getting chosen inline results.
 """
 
 class InlineHandler(telepot.helper.InlineUserHandler, telepot.helper.AnswererMixin):
-    def __init__(self, seed_tuple, timeout):
-        super(InlineHandler, self).__init__(seed_tuple, timeout)
+    def __init__(self, *args, **kwargs):
+        super(InlineHandler, self).__init__(*args, **kwargs)
 
     def on_inline_query(self, msg):
         def compute_answer():
@@ -25,6 +25,8 @@ class InlineHandler(telepot.helper.InlineUserHandler, telepot.helper.AnswererMix
         self.answerer.answer(msg, compute_answer)
 
     def on_chosen_inline_result(self, msg):
+        from pprint import pprint
+        pprint(msg)
         result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
         print(self.id, ':', 'Chosen Inline Result:', result_id, from_id, query_string)
 
@@ -32,6 +34,7 @@ class InlineHandler(telepot.helper.InlineUserHandler, telepot.helper.AnswererMix
 TOKEN = sys.argv[1]
 
 bot = telepot.DelegatorBot(TOKEN, [
-    (per_inline_from_id(), create_open(InlineHandler, timeout=10)),
+    pave_event_space()(
+        per_inline_from_id(), create_open, InlineHandler, timeout=10),
 ])
 bot.message_loop(run_forever='Listening ...')

@@ -10,7 +10,9 @@ from telepot.namedtuple import InlineQueryResultArticle, InlineQueryResultPhoto,
 """
 $ python3.5 skeleton_route.py <token>
 
-Demonstrates the use of custom keyboard and inline keyboard, and their various buttons.
+It demonstrates:
+- passing a routing table to `message_loop()` to filter flavors.
+- the use of custom keyboard and inline keyboard, and their various buttons.
 
 Remember to `/setinline` and `/setinlinefeedback` to enable inline mode for your bot.
 

@@ -2,17 +2,17 @@ import sys
 import asyncio
 import telepot
 from telepot.aio.helper import InlineUserHandler, AnswererMixin
-from telepot.aio.delegate import per_inline_from_id, create_open
+from telepot.aio.delegate import per_inline_from_id, create_open, pave_event_space
 
 """
 $ python3.5 inlinea.py <token>
 
-A bot that only cares about inline stuff.
+It demonstrates answering inline query and getting chosen inline results.
 """
 
 class InlineHandler(InlineUserHandler, AnswererMixin):
-    def __init__(self, seed_tuple, timeout):
-        super(InlineHandler, self).__init__(seed_tuple, timeout)
+    def __init__(self, *args, **kwargs):
+        super(InlineHandler, self).__init__(*args, **kwargs)
 
     def on_inline_query(self, msg):
         def compute_answer():
@@ -27,6 +27,8 @@ class InlineHandler(InlineUserHandler, AnswererMixin):
         self.answerer.answer(msg, compute_answer)
 
     def on_chosen_inline_result(self, msg):
+        from pprint import pprint
+        pprint(msg)
         result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
         print(self.id, ':', 'Chosen Inline Result:', result_id, from_id, query_string)
 
@@ -34,7 +36,8 @@ class InlineHandler(InlineUserHandler, AnswererMixin):
 TOKEN = sys.argv[1]
 
 bot = telepot.aio.DelegatorBot(TOKEN, [
-    (per_inline_from_id(), create_open(InlineHandler, timeout=10)),
+    pave_event_space()(
+        per_inline_from_id(), create_open, InlineHandler, timeout=10),
 ])
 loop = asyncio.get_event_loop()
 

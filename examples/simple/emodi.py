@@ -10,7 +10,7 @@ Emodi: An Emoji Unicode Decoder - You send it some emoji, it tells you the unico
 
 Caution: Python's treatment of unicode characters longer than 2 bytes (which
 most emojis are) varies across versions and platforms. I have tested this program
-on Python2.7.3/Raspbian. If you try it on other versions/platforms, the length-
+on Python2.7.9/Raspbian. If you try it on other versions/platforms, the length-
 checking and substring-extraction below may not work as expected.
 """
 

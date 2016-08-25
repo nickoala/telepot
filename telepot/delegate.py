@@ -1,6 +1,6 @@
 import traceback
 from . import exception
-from . import flavor, chat_flavors, inline_flavors
+from . import flavor, peel, is_event, chat_flavors, inline_flavors
 
 def _wrap_none(fn):
     def w(*args, **kwargs):
@@ -148,6 +148,65 @@ def per_message(flavors='all'):
     """
     return _wrap_none(lambda msg: [] if flavors == 'all' or flavor(msg) in flavors else None)
 
+def per_event_source_id(event_space):
+    """
+    :return:
+        a seeder function that returns an event's source id only if that event's
+        source space equals to ``event_space``.
+    """
+    def f(event):
+        if is_event(event):
+            v = peel(event)
+            if v['source']['space'] == event_space:
+                return v['source']['id']
+            else:
+                return None
+        else:
+            return None
+    return _wrap_none(f)
+
+def per_callback_query_chat_id(types='all'):
+    """
+    :param types:
+        ``all`` or a list of chat types (``private``, ``group``, ``channel``)
+
+    :return:
+        a seeder function that returns a callback query's originating chat id
+        if the chat type is in ``types``.
+    """
+    def f(msg):
+        if (flavor(msg) == 'callback_query' and 'message' in msg
+            and (types == 'all' or msg['message']['chat']['type'] in types)):
+            return msg['message']['chat']['id']
+        else:
+            return None
+    return f
+
+def per_callback_query_origin(origins='all'):
+    """
+    :param origins:
+        ``all`` or a list of origin types (``chat``, ``inline``)
+
+    :return:
+        a seeder function that returns a callback query's origin identifier if
+        that origin type is in ``origins``. The origin identifier is guaranteed
+        to be a tuple.
+    """
+    def f(msg):
+        def origin_type_ok():
+            return (origins == 'all'
+                or ('chat' in origins and 'message' in msg)
+                or ('inline' in origins and 'inline_message_id' in msg))
+
+        if flavor(msg) == 'callback_query' and origin_type_ok():
+            if 'inline_message_id' in msg:
+                return msg['inline_message_id'],
+            else:
+                return msg['message']['chat']['id'], msg['message']['message_id']
+        else:
+            return None
+    return f
+
 def call(func, *args, **kwargs):
     """
     :return:
@@ -178,8 +237,7 @@ def create_open(cls, *args, **kwargs):
         a delegator function that calls the ``cls`` constructor whose arguments being
         a seed tuple followed by supplied ``*args`` and ``**kwargs``, then returns
         a looping function that uses the object's ``listener`` to wait for messages
-        and invokes instance method ``open``, ``on_message``, ``on_timeout``,
-        and ``on_close`` accordingly.
+        and invokes instance method ``open``, ``on_message``, and ``on_close`` accordingly.
         By default, a thread wrapping that looping function is spawned.
     """
     def f(seed_tuple):
@@ -193,13 +251,8 @@ def create_open(cls, *args, **kwargs):
                     j.on_message(msg)
 
                 while 1:
-                    try:
-                        msg = j.listener.wait()
-                        j.on_message(msg)
-                    except exception.IdleTerminate:
-                        raise
-                    except exception.WaitTooLong as e:
-                        j.on_timeout(e)
+                    msg = j.listener.wait()
+                    j.on_message(msg)
 
             # These exceptions are "normal" exits.
             except (exception.IdleTerminate, exception.StopListening) as e:
@@ -214,3 +267,103 @@ def create_open(cls, *args, **kwargs):
 
         return wait_loop
     return f
+
+def until(condition, fns):
+    def f(msg):
+        for fn in fns:
+            seed = fn(msg)
+            if condition(seed):
+                return seed
+        return None
+    return f
+
+def chain(*fns):
+    return until(lambda seed: seed is not None, fns)
+
+def _ensure_seeders_list(fn):
+    def e(seeders, *aa, **kw):
+        return fn(seeders if isinstance(seeders, list) else [seeders], *aa, **kw)
+    return e
+
+@_ensure_seeders_list
+def pair(seeders, delegator_factory, *args, **kwargs):
+    """
+    The basic pair producer.
+
+    :return:
+        a (seeder, delegator_factory(*args, **kwargs)) tuple.
+
+    :param seeders:
+        If it is a seeder function or a list of one seeder function, it is returned
+        as the final seeder. If it is a list of more than one seeder function, they
+        are chained together before returning as the final seeder.
+    """
+    return (chain(*seeders) if len(seeders) > 1 else seeders[0],
+            delegator_factory(*args, **kwargs))
+
+def _natural_numbers():
+    x = 0
+    while 1:
+        x += 1
+        yield x
+
+_event_space = _natural_numbers()
+
+def pave_event_space(fn=pair):
+    """
+    :return:
+        a pair producer that ensures the seeder and delegator share the same event space.
+    """
+    global _event_space
+    event_space = next(_event_space)
+
+    @_ensure_seeders_list
+    def p(seeders, delegator_factory, *args, **kwargs):
+        return fn(seeders + [per_event_source_id(event_space)],
+                  delegator_factory, *args, event_space=event_space, **kwargs)
+    return p
+
+from . import helper
+
+def pave_callback_query_origin_map(fn=pair, origins='all'):
+    """
+    :return:
+        a pair producer that enables dynamic callback query origin mapping
+        across seeder and delegator.
+
+    :param origins:
+        ``all`` or a list of origin types (``chat``, ``inline``).
+        Origin mapping is only enabled for specified origin types.
+    """
+    origin_map = helper.SafeDict()
+
+    # For key functions that returns a tuple as key (e.g. per_callback_query_origin()),
+    # wrap the key in another tuple to prevent router from mistaking it as
+    # a key followed by some arguments.
+    def tuplize(fn):
+        def tp(msg):
+            return (fn(msg),)
+        return tp
+
+    router = helper.Router(tuplize(per_callback_query_origin()), origin_map)
+
+    def modify_origin_map(origin, dest, set):
+        if set:
+            origin_map[origin] = dest
+        else:
+            try:
+                del origin_map[origin]
+            except KeyError:
+                pass
+
+    if origins == 'all':
+        intercept = modify_origin_map
+    else:
+        intercept = (modify_origin_map if 'chat' in origins else False,
+                     modify_origin_map if 'inline' in origins else False)
+
+    @_ensure_seeders_list
+    def p(seeders, delegator_factory, *args, **kwargs):
+        return fn(seeders + [_wrap_none(router.map)],
+                  delegator_factory, *args, intercept_callback_query=intercept, **kwargs)
+    return p

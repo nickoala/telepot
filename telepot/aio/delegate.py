@@ -13,6 +13,14 @@ and delegator factories.
 .. autofunction:: per_inline_from_id_except
 .. autofunction:: per_application
 .. autofunction:: per_message
+.. autofunction:: per_event_source_id
+.. autofunction:: per_callback_query_chat_id
+.. autofunction:: per_callback_query_origin
+.. autofunction:: until
+.. autofunction:: chain
+.. autofunction:: pair
+.. autofunction:: pave_event_space
+.. autofunction:: pave_callback_query_origin_map
 """
 
 import asyncio
@@ -25,7 +33,9 @@ from ..delegate import (
     per_chat_id, per_chat_id_in, per_chat_id_except,
     per_from_id, per_from_id_in, per_from_id_except,
     per_inline_from_id, per_inline_from_id_in, per_inline_from_id_except,
-    per_application, per_message
+    per_application, per_message, per_event_source_id,
+    per_callback_query_chat_id, per_callback_query_origin,
+    until, chain, pair, pave_event_space, pave_callback_query_origin_map
 )
 
 def _ensure_coroutine_function(fn):
@@ -61,8 +71,8 @@ def create_open(cls, *args, **kwargs):
         a delegator function that calls the ``cls`` constructor whose arguments being
         a seed tuple followed by supplied ``*args`` and ``**kwargs``, then returns
         a looping coroutine object that uses the object's ``listener`` to wait for
-        messages and invokes instance method ``open``, ``on_message``, ``on_timeout``,
-        and ``on_close`` accordingly.
+        messages and invokes instance method ``open``, ``on_message``, and ``on_close``
+        accordingly.
     """
     def f(seed_tuple):
         j = cls(seed_tuple, *args, **kwargs)
@@ -75,13 +85,8 @@ def create_open(cls, *args, **kwargs):
                     await helper._yell(j.on_message, msg)
 
                 while 1:
-                    try:
-                        msg = await j.listener.wait()
-                        await helper._yell(j.on_message, msg)
-                    except exception.IdleTerminate:
-                        raise
-                    except exception.WaitTooLong as e:
-                        await helper._yell(j.on_timeout, e)
+                    msg = await j.listener.wait()
+                    await helper._yell(j.on_message, msg)
 
             # These exceptions are "normal" exits.
             except (exception.IdleTerminate, exception.StopListening) as e:

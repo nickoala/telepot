@@ -17,11 +17,9 @@ but accepts two commands:
 
 ### Emodi - an Emoji Unicode Decoder
 
-```
-$ python2.7 emodi.py <token>
-```
-
 You send it some emoji, it tells you the unicodes.
+
+**[Traditional version »](emodi.py)**   
 
 But if you really want to put emoji in a string, I recommend using this
 **[emoji](https://pypi.python.org/pypi/emoji/)** package.
@@ -43,7 +41,10 @@ $ python3.5 skeleton_route.py <token>   # traditional
 $ python3.5 skeletona_route.py <token>  # async
 ```
 
-Demonstrates the use of custom keyboard and inline keyboard, and their various buttons.
+It demonstrates:
+
+- passing a routing table to `message_loop()` to filter flavors.
+- the use of custom keyboard and inline keyboard, and their various buttons.
 
 Remember to `/setinline` and `/setinlinefeedback` to enable inline mode for your bot.
 

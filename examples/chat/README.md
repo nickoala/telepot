@@ -1,11 +1,6 @@
-# Chat-only Examples
+# Chat Examples
 
 ### Message Counter
-
-```
-$ python2.7 counter.py <token>   # traditional
-$ python3.5 countera.py <token>  # async
-```
 
 Counts number of messages a user has sent. Starts over if silent for 10 seconds.
 Illustrates the basic usage of `DelegateBot` and `ChatHandler`.
@@ -14,11 +9,6 @@ Illustrates the basic usage of `DelegateBot` and `ChatHandler`.
 **[Async »](countera.py)**
 
 ### Guess a number
-
-```
-$ python3.5 guess.py <token>   # traditional
-$ python3.5 guessa.py <token>  # async
-```
 
 1. Send the bot anything to start a game.
 2. The bot randomly picks an integer between 0-99.
@@ -30,11 +20,6 @@ $ python3.5 guessa.py <token>  # async
 **[Async »](guessa.py)**
 
 ### Chatbox - a Mailbox for Chats
-
-```
-$ python3.5 chatbox_nodb.py <token> <owner_id>   # traditional
-$ python3.5 chatboxa_nodb.py <token> <owner_id>  # async
-```
 
 1. People send messages to your bot.
 2. Your bot remembers the messages.

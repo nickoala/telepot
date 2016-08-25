@@ -5,6 +5,7 @@ import json
 import threading
 import traceback
 import collections
+import bisect
 
 try:
     import Queue as queue
@@ -18,13 +19,17 @@ from . import exception
 
 def flavor(msg):
     """
-    Return flavor of message:
+    Return flavor of message or event.
+
+    A message's flavor may be one of these:
 
     - ``chat``
     - ``edited_chat``
     - ``callback_query``
     - ``inline_query``
     - ``chosen_inline_result``
+
+    An event's flavor is determined by the single top-level key.
     """
     if 'message_id' in msg:
         if 'edit_date' in msg:
@@ -38,7 +43,12 @@ def flavor(msg):
     elif 'result_id' in msg:
         return 'chosen_inline_result'
     else:
+        top_keys = list(msg.keys())
+        if len(top_keys) == 1:
+            return top_keys[0]
+
         raise exception.BadFlavor(msg)
+
 
 chat_flavors = ['chat', 'edited_chat']
 inline_flavors = ['inline_query', 'chosen_inline_result']
@@ -133,17 +143,55 @@ def flance(msg, long=False):
     return f,g
 
 
+def peel(event):
+    """
+    Remove an event's top-level skin (where its flavor is determined), and return
+    the core content.
+    """
+    return list(event.values())[0]
+
+
+def fleece(event):
+    """
+    A combination of :meth:`telepot.flavor` and :meth:`telepot.peel`,
+    return a 2-tuple (flavor, content) of an event.
+    """
+    return flavor(event), peel(event)
+
+
+def is_event(msg):
+    """
+    Return whether the message looks like an event. That is, whether it has a flavor
+    that starts with an underscore.
+    """
+    return flavor(msg).startswith('_')
+
+
+def origin_identifier(msg):
+    """
+    Extract the message identifier of a callback query's origin. Returned value
+    is guaranteed to be a tuple.
+
+    ``msg`` is expected to be ``callback_query``.
+    """
+    if 'message' in msg:
+        return msg['message']['chat']['id'], msg['message']['message_id']
+    elif 'inline_message_id' in msg:
+        return msg['inline_message_id'],
+    else:
+        raise ValueError()
+
 def message_identifier(msg):
     """
     Extract an identifier for message editing. Useful with :meth:`telepot.Bot.editMessageText`
-    and similar methods.
+    and similar methods. Returned value is guaranteed to be a tuple.
 
-    ``msg`` is expected to be of flavor ``chat`` or ``choson_inline_result``.
+    ``msg`` is expected to be ``chat`` or ``choson_inline_result``.
     """
     if 'chat' in msg and 'message_id' in msg:
         return msg['chat']['id'], msg['message_id']
     elif 'inline_message_id' in msg:
-        return msg['inline_message_id']
+        return msg['inline_message_id'],
     else:
         raise ValueError()
 
@@ -211,8 +259,121 @@ def _rectify(params):
 from . import api
 
 class Bot(_BotBase):
+    class Scheduler(threading.Thread):
+        # A class that is sorted by timestamp. Use `bisect` module to ensure order in event queue.
+        Event = collections.namedtuple('Event', ['timestamp', 'data'])
+        Event.__eq__ = lambda self, other: self.timestamp == other.timestamp
+        Event.__ne__ = lambda self, other: self.timestamp != other.timestamp
+        Event.__gt__ = lambda self, other: self.timestamp > other.timestamp
+        Event.__ge__ = lambda self, other: self.timestamp >= other.timestamp
+        Event.__lt__ = lambda self, other: self.timestamp < other.timestamp
+        Event.__le__ = lambda self, other: self.timestamp <= other.timestamp
+
+        def __init__(self):
+            super(Bot.Scheduler, self).__init__()
+            self._eventq = []
+            self._lock = threading.RLock()  # reentrant lock to allow locked method calling locked method
+            self._output_queue = None
+
+        def _locked(fn):
+            def k(self, *args, **kwargs):
+                with self._lock:
+                    return fn(self, *args, **kwargs)
+            return k
+
+        @_locked
+        def _insert_event(self, data, when):
+            ev = self.Event(when, data)
+            bisect.insort(self._eventq, ev)
+            return ev
+
+        @_locked
+        def _remove_event(self, event):
+            # Find event according to its timestamp.
+            # Index returned should be one behind.
+            i = bisect.bisect(self._eventq, event)
+
+            # Having two events with identical timestamp is unlikely but possible.
+            # I am going to move forward and compare timestamp AND object address
+            # to make sure the correct object is found.
+
+            while i > 0:
+                i -= 1
+                e = self._eventq[i]
+
+                if e.timestamp != event.timestamp:
+                    raise exception.EventNotFound(event)
+                elif id(e) == id(event):
+                    self._eventq.pop(i)
+                    return
+
+            raise exception.EventNotFound(event)
+
+        @_locked
+        def _pop_expired_event(self):
+            if not self._eventq:
+                return None
+
+            if self._eventq[0].timestamp <= time.time():
+                return self._eventq.pop(0)
+            else:
+                return None
+
+        def event_at(self, when, data):
+            """
+            Schedule some data to emit at an absolute timestamp.
+
+            :type when: int or float
+            :type data: dictionary
+            :return: an internal Event object
+            """
+            return self._insert_event(data, when)
+
+        def event_later(self, delay, data):
+            """
+            Schedule some data to emit after a number of seconds.
+
+            :type delay: int or float
+            :type data: dictionary
+            :return: an internal Event object
+            """
+            return self._insert_event(data, time.time()+delay)
+
+        def event_now(self, data):
+            """
+            Emit some data as soon as possible.
+
+            :type data: dictionary
+            :return: an internal Event object
+            """
+            return self._insert_event(data, time.time())
+
+        def cancel(self, event):
+            """
+            Cancel an event.
+
+            :type event: an internal Event object
+            """
+            self._remove_event(event)
+
+        def run(self):
+            while 1:
+                e = self._pop_expired_event()
+                while e:
+                    if callable(e.data):
+                        d = e.data()
+                        if d is not None:
+                            self._output_queue.put(d)
+                    else:
+                        self._output_queue.put(e.data)
+
+                    e = self._pop_expired_event()
+                time.sleep(0.1)
+
     def __init__(self, token):
         super(Bot, self).__init__(token)
+
+        self._scheduler = self.Scheduler()
 
         self._router = helper.Router(flavor, {'chat': lambda msg: self.on_chat_message(msg),
                                               'edited_chat': lambda msg: self.on_edited_chat_message(msg),
@@ -221,6 +382,14 @@ class Bot(_BotBase):
                                               'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
                                               # use lambda to delay evaluation of self.on_ZZZ to runtime because
                                               # I don't want to require defining all methods right here.
+
+    @property
+    def scheduler(self):
+        return self._scheduler
+
+    @property
+    def router(self):
+        return self._router
 
     def handle(self, msg):
         self._router.route(msg)
@@ -491,7 +660,8 @@ class Bot(_BotBase):
     def message_loop(self, callback=None, relax=0.1, timeout=20, source=None, ordered=True, maxhold=3, run_forever=False):
         """
         Spawn a thread to constantly ``getUpdates`` or pull updates from a queue.
-        Apply ``callback`` to every message received.
+        Apply ``callback`` to every message received. Also starts the scheduler thread
+        for internal events.
 
         :param callback:
             a function that takes one argument (the message), or a routing table.
@@ -559,20 +729,25 @@ class Bot(_BotBase):
         elif isinstance(callback, dict):
             callback = flavor_router(callback)
 
-        def handle(update):
-            try:
-                key = _find_first_key(update, ['message',
-                                               'edited_message',
-                                               'callback_query',
-                                               'inline_query',
-                                               'chosen_inline_result'])
+        collect_queue = queue.Queue()
 
-                callback(update[key])
-            except:
-                # Localize the error so message thread can keep going.
-                traceback.print_exc()
-            finally:
-                return update['update_id']
+        def collector():
+            while 1:
+                try:
+                    item = collect_queue.get(block=True)
+                    callback(item)
+                except:
+                    # Localize error so thread can keep going.
+                    traceback.print_exc()
+
+        def relay_to_collector(update):
+            key = _find_first_key(update, ['message',
+                                           'edited_message',
+                                           'callback_query',
+                                           'inline_query',
+                                           'chosen_inline_result'])
+            collect_queue.put(update[key])
+            return update['update_id']
 
         def get_from_telegram_server():
             offset = None  # running offset
@@ -583,7 +758,7 @@ class Bot(_BotBase):
                     if len(result) > 0:
                         # No sort. Trust server to give messages in correct order.
                         # Update offset to max(update_id) + 1
-                        offset = max([handle(update) for update in result]) + 1
+                        offset = max([relay_to_collector(update) for update in result]) + 1
                 except:
                     traceback.print_exc()
                 finally:
@@ -613,7 +788,7 @@ class Bot(_BotBase):
                 try:
                     data = qu.get(block=True)
                     update = dictify(data)
-                    handle(update)
+                    relay_to_collector(update)
                 except:
                     traceback.print_exc()
 
@@ -633,11 +808,11 @@ class Bot(_BotBase):
 
                     if max_id is None:
                         # First message received, handle regardless.
-                        max_id = handle(update)
+                        max_id = relay_to_collector(update)
 
                     elif update['update_id'] == max_id + 1:
                         # No update_id skipped, handle naturally.
-                        max_id = handle(update)
+                        max_id = relay_to_collector(update)
 
                         # clear contagious updates in buffer
                         if len(buffer) > 0:
@@ -645,7 +820,7 @@ class Bot(_BotBase):
                             while 1:
                                 try:
                                     if type(buffer[0]) is dict:
-                                        max_id = handle(buffer.popleft())  # updates that arrived earlier, handle them.
+                                        max_id = relay_to_collector(buffer.popleft())  # updates that arrived earlier, handle them.
                                     else:
                                         break  # gap, no more contagious updates
                                 except IndexError:
@@ -676,7 +851,7 @@ class Bot(_BotBase):
                     while 1:
                         try:
                             if type(buffer[0]) is dict:
-                                max_id = handle(buffer.popleft())
+                                max_id = relay_to_collector(buffer.popleft())
                             else:
                                 expire = buffer[0]
                                 if expire <= time.time():
@@ -701,18 +876,26 @@ class Bot(_BotBase):
                     # debug message
                     # print ('Buffer:', str(buffer), ', To Wait:', qwait, ', Max ID:', max_id)
 
+        collector_thread = threading.Thread(target=collector)
+        collector_thread.daemon = True
+        collector_thread.start()
+
         if source is None:
-            t = threading.Thread(target=get_from_telegram_server)
+            message_thread = threading.Thread(target=get_from_telegram_server)
         elif isinstance(source, queue.Queue):
             if ordered:
-                t = threading.Thread(target=get_from_queue, args=(source,))
+                message_thread = threading.Thread(target=get_from_queue, args=(source,))
             else:
-                t = threading.Thread(target=get_from_queue_unordered, args=(source,))
+                message_thread = threading.Thread(target=get_from_queue_unordered, args=(source,))
         else:
             raise ValueError('Invalid source')
 
-        t.daemon = True  # need this for main thread to be killable by Ctrl-C
-        t.start()
+        message_thread.daemon = True  # need this for main thread to be killable by Ctrl-C
+        message_thread.start()
+
+        self._scheduler._output_queue = collect_queue
+        self._scheduler.daemon = True
+        self._scheduler.start()
 
         if run_forever:
             if _isstring(run_forever):

@@ -16,7 +16,7 @@ Handles inline query using `Answerer`.
 
 ## Callback
 
-Interacts with callback query.
+Various styles of handling callback query.
 
 ## Webhook
 

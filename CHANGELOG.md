@@ -1,5 +1,20 @@
 # telepot changelog
 
+## 9.0 (2016-08-25)
+
+- I am finally satisfied with callback query handling. Many styles of dealing with
+callback query are now possible.
+- Added a few `per_callback_query_*()` seeder factories
+- Added a few pair producers, e.g. `pave_event_space()`, `pave_callback_query_origin_map()`
+- Added `Bot.Scheduler` to schedule internal events
+- Invented a standard event format for delegates to create their own events easily
+- Improved Mixin framework. Added `StandardEventMixin`, `IdleTerminateMixin`, and
+`InterceptCallbackQueryMixin`.
+- Added `CallbackQueryOriginHandler`
+- Revamped `Listener` and message capture specifications
+- Default `retries=3` for `urllib3`
+- Relax `urllib3>=1.9.1` in `setup.py`
+
 ## 8.3 (2016-07-17)
 
 - Fixed `urllib3==1.9.1` in `setup.py`
