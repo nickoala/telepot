@@ -1,6 +1,6 @@
 # telepot - Python framework for Telegram Bot API
 
-Version 9.0 just came out (August 25, 2016). I am finally satisfied with callback query handling.
+With the release of 9.0 (August 25, 2016), I am finally satisfied with callback query handling.
 Many styles of dealing with callback query are now possible.
 
 Documentations are incomplete. They will be filled in gradually over time. Interested users can
