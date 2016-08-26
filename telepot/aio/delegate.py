@@ -20,7 +20,8 @@ and delegator factories.
 .. autofunction:: chain
 .. autofunction:: pair
 .. autofunction:: pave_event_space
-.. autofunction:: pave_callback_query_origin_map
+.. autofunction:: include_callback_query_chat_id
+.. autofunction:: intercept_callback_query_origin
 """
 
 import asyncio
@@ -35,7 +36,8 @@ from ..delegate import (
     per_inline_from_id, per_inline_from_id_in, per_inline_from_id_except,
     per_application, per_message, per_event_source_id,
     per_callback_query_chat_id, per_callback_query_origin,
-    until, chain, pair, pave_event_space, pave_callback_query_origin_map
+    until, chain, pair, pave_event_space,
+    include_callback_query_chat_id, intercept_callback_query_origin
 )
 
 def _ensure_coroutine_function(fn):

@@ -323,9 +323,24 @@ def pave_event_space(fn=pair):
                   delegator_factory, *args, event_space=event_space, **kwargs)
     return p
 
+def include_callback_query_chat_id(fn=pair, types='all'):
+    """
+    :return:
+        a pair producer that enables static calling query capturing
+        across seeder and delegator.
+
+    :param types:
+        ``all`` or a list of chat types (``private``, ``group``, ``channel``)
+    """
+    @_ensure_seeders_list
+    def p(seeders, delegator_factory, *args, **kwargs):
+        return fn(seeders + [per_callback_query_chat_id(types=types)],
+                  delegator_factory, *args, include_callback_query=True, **kwargs)
+    return p
+
 from . import helper
 
-def pave_callback_query_origin_map(fn=pair, origins='all'):
+def intercept_callback_query_origin(fn=pair, origins='all'):
     """
     :return:
         a pair producer that enables dynamic callback query origin mapping
@@ -345,7 +360,8 @@ def pave_callback_query_origin_map(fn=pair, origins='all'):
             return (fn(msg),)
         return tp
 
-    router = helper.Router(tuplize(per_callback_query_origin()), origin_map)
+    router = helper.Router(tuplize(per_callback_query_origin(origins=origins)),
+                           origin_map)
 
     def modify_origin_map(origin, dest, set):
         if set:

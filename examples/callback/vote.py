@@ -5,7 +5,7 @@ import telepot
 import telepot.helper
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.delegate import (
-    per_chat_id, per_callback_query_chat_id, create_open, pave_event_space)
+    per_chat_id, create_open, pave_event_space, include_callback_query_chat_id)
 
 """
 $ python3.5 vote.py <token>
@@ -127,10 +127,8 @@ class VoteCounter(telepot.helper.ChatHandler):
 TOKEN = sys.argv[1]
 
 bot = telepot.DelegatorBot(TOKEN, [
-    pave_event_space()(
-        # Produce the same seed for a chat message and its resulting callback query
-        [per_chat_id(types=['group']), per_callback_query_chat_id(types=['group'])],
-        # Tell ChatHandler to capture callback query with the same originating chat id
-        create_open, VoteCounter, timeout=10, include_callback_query=True),
+    include_callback_query_chat_id(
+        pave_event_space())(
+            per_chat_id(types=['group']), create_open, VoteCounter, timeout=10),
 ])
 bot.message_loop(run_forever='Listening ...')

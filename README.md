@@ -1,6 +1,6 @@
 # telepot - Python framework for Telegram Bot API
 
-Version 9.0 just came out (August 25, 2016). I am finally satisfied with callback query handling. 
+Version 9.0 just came out (August 25, 2016). I am finally satisfied with callback query handling.
 Many styles of dealing with callback query are now possible.
 
 Documentations are incomplete. They will be filled in gradually over time. Interested users can
@@ -11,6 +11,11 @@ look into the [examples](https://github.com/nickoala/telepot/tree/master/example
 **[Examples »](https://github.com/nickoala/telepot/tree/master/examples)**
 
 ### Recent changes
+
+**9.1 (2016-08-26)**
+
+- Changed the name `pave_callback_query_origin_map()` to `intercept_callback_query_origin()`
+- Added `include_callback_query_chat_id()`
 
 **9.0 (2016-08-25)**
 

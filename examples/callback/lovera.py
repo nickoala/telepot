@@ -5,7 +5,7 @@ import telepot.aio
 import telepot.aio.helper
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.aio.delegate import (
-    per_chat_id, per_callback_query_chat_id, create_open, pave_event_space)
+    per_chat_id, create_open, pave_event_space, include_callback_query_chat_id)
 
 """
 $ python3.5 lovera.py <token>
@@ -84,11 +84,9 @@ class Lover(telepot.aio.helper.ChatHandler):
 TOKEN = sys.argv[1]
 
 bot = telepot.aio.DelegatorBot(TOKEN, [
-    pave_event_space()(
-        # Produce the same seed for a chat message and its resulting callback query
-        [per_chat_id(types=['private']), per_callback_query_chat_id(types=['private'])],
-        # Tell ChatHandler to capture callback query with the same originating chat id
-        create_open, Lover, timeout=10, include_callback_query=True),
+    include_callback_query_chat_id(
+        pave_event_space())(
+            per_chat_id(types=['private']), create_open, Lover, timeout=10),
 ])
 
 loop = asyncio.get_event_loop()

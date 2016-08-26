@@ -12,7 +12,7 @@ from telepot.namedtuple import (
     ReplyKeyboardMarkup, KeyboardButton)
 from telepot.aio.delegate import (
     per_inline_from_id, create_open, pave_event_space,
-    pave_callback_query_origin_map)
+    intercept_callback_query_origin)
 
 """
 $ python3.5 datecalca.py <token>
@@ -154,9 +154,9 @@ class DateCalculator(InlineUserHandler,
 TOKEN = sys.argv[1]
 
 bot = telepot.aio.DelegatorBot(TOKEN, [
-    pave_callback_query_origin_map(pave_event_space())(
-        per_inline_from_id(),
-        create_open, DateCalculator, timeout=10),
+    intercept_callback_query_origin(
+        pave_event_space())(
+            per_inline_from_id(), create_open, DateCalculator, timeout=10),
 ])
 
 loop = asyncio.get_event_loop()
