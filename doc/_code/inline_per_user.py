@@ -1,11 +1,11 @@
 import sys
 import telepot
-from telepot.delegate import per_inline_from_id, create_open
+from telepot.delegate import pave_event_space, per_inline_from_id, create_open
 from telepot.namedtuple import InlineQueryResultArticle, InputTextMessageContent
 
 class QueryCounter(telepot.helper.InlineUserHandler, telepot.helper.AnswererMixin):
-    def __init__(self, seed_tuple, timeout):
-        super(QueryCounter, self).__init__(seed_tuple, timeout)
+    def __init__(self, *args, **kwargs):
+        super(QueryCounter, self).__init__(*args, **kwargs)
         self._count = 0
 
     def on_inline_query(self, msg):
@@ -35,6 +35,7 @@ class QueryCounter(telepot.helper.InlineUserHandler, telepot.helper.AnswererMixi
 TOKEN = sys.argv[1]  # get token from command-line
 
 bot = telepot.DelegatorBot(TOKEN, [
-    (per_inline_from_id(), create_open(QueryCounter, timeout=10)),
+    pave_event_space()(
+        per_inline_from_id(), create_open, QueryCounter, timeout=10),
 ])
 bot.message_loop(run_forever='Listening ...')
