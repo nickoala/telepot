@@ -290,7 +290,7 @@ In the code sample below, pay attention to these things:
 - ``per_inline_from_id()`` ensures one instance of ``QueryCounter`` per originating user
 
 .. literalinclude:: _code/inline_per_user.py
-   :emphasize-lines: 6,29,38
+   :emphasize-lines: 6,29,39
 
 Async Version (Python 3.5+)
 ---------------------------
