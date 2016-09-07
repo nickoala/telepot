@@ -121,8 +121,12 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    'description': 'Python Framework for Telegram Bot API',
+    'description': 'Python framework for Telegram Bot API',
     'show_powered_by': False,
+    'fixed_sidebar': True,
+    'github_user': 'nickoala',
+    'github_repo': 'telepot',
+    'github_type': 'star',
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
