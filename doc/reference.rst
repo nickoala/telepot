@@ -1,5 +1,47 @@
-telepot 8.2 reference (traditional version, Python 2.7 & Python 3)
-==================================================================
+telepot 9.1 reference
+=====================
+
+Telepot has two versions:
+
+- **Traditional version works on Python 2.7 and Python 3.** It uses
+  `urllib3 <https://urllib3.readthedocs.io/en/latest/>`_ to make HTTP requests,
+  and uses threads to achieve delegation by default.
+- **Async version works on Python 3.5 or above.** It is based on
+  `asyncio <https://docs.python.org/3/library/asyncio.html>`_, uses
+  `aiohttp <http://aiohttp.readthedocs.io/en/stable/>`_ to make asynchronous
+  HTTP requests, and uses asyncio tasks to achieve delegation.
+
+This page focuses on traditional version. Async version's usage is very similar,
+the most significant differences being:
+
+- Blocking methods (mostly network operations) become coroutines, and should be
+  called with ``await``.
+- Delegation is achieved by tasks, instead of threads. Thread-safety ceases to
+  be a concern.
+
+Traditional modules are under the package :mod:`telepot`, while async modules are
+under :mod:`telepot.aio`:
+
++-------------------+-----------------------+
+| Traditional       | Async                 |
++===================+=======================+
+| telepot           | telepot.aio           |
++-------------------+-----------------------+
+| telepot.delegate  | telepot.aio.delegate  |
++-------------------+-----------------------+
+| telepot.helper    | telepot.aio.helper    |
++-------------------+-----------------------+
+| telepot.routing   | telepot.aio.routing   |
++-------------------+-----------------------+
+| telepot.api       | telepot.aio.api       |
++-------------------+-----------------------+
+
+Some modules do not have async counterparts, e.g. :mod:`telepot.namedtuple` and
+:mod:`telepot.exception`, because they are shared.
+
+Try to combine this reading with the provided
+`examples <https://github.com/nickoala/telepot/tree/master/examples>`_ .
+One example is worth a thousand words. I hope they make things clear.
 
 Basic Bot
 ---------
@@ -17,7 +59,11 @@ Functions
 .. autofunction:: telepot.flavor
 .. autofunction:: telepot.glance
 .. autofunction:: telepot.flance
+.. autofunction:: telepot.peel
+.. autofunction:: telepot.fleece
+.. autofunction:: telepot.is_event
 .. autofunction:: telepot.message_identifier
+.. autofunction:: telepot.origin_identifier
 
 DelegatorBot
 ------------
@@ -70,50 +116,58 @@ In the rest of discussions, *seed tuple* means a (bot, message, seed) tuple,
 referring to the single argument taken by delegator functions.
 
 ``telepot.delegate``
-++++++++++++++++++++
+--------------------
 
 .. automodule:: telepot.delegate
    :members:
 
 ``telepot.helper``
-++++++++++++++++++
+------------------
+
+Handlers
+++++++++
 
 .. autoclass:: telepot.helper.Monitor
    :show-inheritance:
    :members:
-   :inherited-members:
-   :undoc-members:
-   :member-order: groupwise
 
 .. autoclass:: telepot.helper.ChatHandler
    :show-inheritance:
    :members:
-   :inherited-members:
-   :undoc-members:
-   :member-order: groupwise
 
 .. autoclass:: telepot.helper.UserHandler
    :show-inheritance:
    :members:
-   :inherited-members:
-   :undoc-members:
-   :member-order: groupwise
 
 .. autoclass:: telepot.helper.InlineUserHandler
    :show-inheritance:
    :members:
-   :inherited-members:
+
+.. autoclass:: telepot.helper.CallbackQueryOriginHandler
+   :show-inheritance:
+   :members:
+
+Contexts
+++++++++
+
+.. autoclass:: telepot.helper.ListenerContext
+   :members:
    :undoc-members:
-   :member-order: groupwise
 
-Other Helpers
--------------
-
-.. autoclass:: telepot.helper.Timer
+.. autoclass:: telepot.helper.ChatContext
+   :show-inheritance:
    :members:
+   :undoc-members:
 
-.. autoclass:: telepot.helper.Listener
+.. autoclass:: telepot.helper.UserContext
+   :show-inheritance:
    :members:
+   :undoc-members:
+
+.. autoclass:: telepot.helper.CallbackQueryOriginContext
+   :show-inheritance:
+   :members:
+   :undoc-members:
 
 .. autoclass:: telepot.helper.Sender
    :members:
@@ -124,18 +178,70 @@ Other Helpers
 .. autoclass:: telepot.helper.Editor
    :members:
 
+.. autoclass:: telepot.helper.Listener
+   :members:
+
+Mixins
+++++++
+
+.. autoclass:: telepot.helper.Router
+   :members:
+
+.. autoclass:: telepot.helper.DefaultRouterMixin
+   :members:
+   :undoc-members:
+
+.. autoclass:: telepot.helper.StandardEventScheduler
+   :members:
+   :undoc-members:
+
+.. autoclass:: telepot.helper.StandardEventMixin
+   :members:
+   :undoc-members:
+   :exclude-members: StandardEventScheduler
+
+.. autoclass:: telepot.helper.IdleEventCoordinator
+   :members:
+
+.. autoclass:: telepot.helper.IdleTerminateMixin
+   :members:
+   :undoc-members:
+   :exclude-members: IdleEventCoordinator
+
+.. autoclass:: telepot.helper.CallbackQueryCoordinator
+   :members:
+   :undoc-members:
+
+.. autoclass:: telepot.helper.InterceptCallbackQueryMixin
+   :members:
+   :undoc-members:
+   :exclude-members: CallbackQueryCoordinator
+
 .. autoclass:: telepot.helper.Answerer
    :members:
 
-Exceptions
-----------
+.. autoclass:: telepot.helper.AnswererMixin
+   :members:
+   :undoc-members:
+   :exclude-members: Answerer
+
+Utilities
++++++++++
+
+.. autoclass:: telepot.helper.SafeDict
+   :members:
+
+.. autofunction:: telepot.helper.openable
+
+``telepot.exception``
+---------------------
 
 .. automodule:: telepot.exception
    :members:
    :undoc-members:
 
-Namedtuples
------------
+``telepot.namedtuple``
+----------------------
 
 Telepot's custom is to represent Bot API object as *dictionary*.
 On the other hand, the module :mod:`telepot.namedtuple` also provide namedtuple
@@ -186,19 +292,8 @@ Outgoing objects include:
 - Various types of `InlineQueryResult <https://core.telegram.org/bots/api#inlinequeryresult>`_
 - Various types of `InputMessageContent <https://core.telegram.org/bots/api#inputmessagecontent>`_
 
-Routing
--------
-
-.. autoclass:: telepot.helper.Router
-   :members:
-
 ``telepot.routing``
-+++++++++++++++++++
+-------------------
 
 .. automodule:: telepot.routing
    :members:
-
-Low-level HTTP
---------------
-
-Coming soon ...

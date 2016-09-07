@@ -1,6 +1,6 @@
 """
 This module has a bunch of key function factories and routing table factories
-to facilitate the use of :class:`.helper.Router`.
+to facilitate the use of :class:`.Router`.
 
 Things to remember:
 

@@ -1,13 +1,13 @@
-Telepot Tutorial
-================
+Getting Started
+===============
 
 Installation
 ------------
 
 pip::
 
-    $ sudo pip install telepot
-    $ sudo pip install telepot --upgrade  # UPGRADE
+    $ pip install telepot
+    $ pip install telepot --upgrade  # UPGRADE
 
 easy_install::
 
@@ -16,9 +16,9 @@ easy_install::
 
 Download manually::
 
-    $ wget https://pypi.python.org/packages/source/t/telepot/telepot-8.2.zip
-    $ unzip telepot-8.2.zip
-    $ cd telepot-8.2
+    $ wget https://pypi.python.org/packages/source/t/telepot/telepot-9.1.zip
+    $ unzip telepot-9.1.zip
+    $ cd telepot-9.1
     $ python setup.py install
 
 Get a token
@@ -144,7 +144,7 @@ construction of these keyboards.
 
 Pressing a button on a *custom* keyboard results in a
 `Message <https://core.telegram.org/bots/api#message>`_ object sent to the bot,
-which is no different from a regular chat message sent by typing.
+which is no different from a regular chat message composed by typing.
 
 Pressing a button on an *inline* keyboard results in a
 `CallbackQuery <https://core.telegram.org/bots/api#callbackquery>`_ object sent
@@ -162,7 +162,7 @@ underlying object:
 - a Message object gives the flavor ``chat`` or ``edited_chat`` (because the
   sender may edit a previous message)
 - a CallbackQuery object gives the flavor ``callback_query``
-- and there are more flavors, which you will come to shortly.
+- there are two more flavors, which you will come to shortly.
 
 Use :func:`telepot.flavor` to check a message's flavor.
 
@@ -356,14 +356,3 @@ below in async style. Pay attention to these things:
 
 .. literalinclude:: _code/countera.py
    :emphasize-lines: 4,6,11-13
-
-Usage
------
-
-I am composing a page illustrating common usages. It is coming soon ...
-
-Reference
----------
-
-| `Traditional Version <reference.html>`_
-| `Async Version <referencea.html>`_

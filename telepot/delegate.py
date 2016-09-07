@@ -1,4 +1,5 @@
 import traceback
+from functools import wraps
 from . import exception
 from . import flavor, peel, is_event, chat_flavors, inline_flavors
 
@@ -269,6 +270,21 @@ def create_open(cls, *args, **kwargs):
     return f
 
 def until(condition, fns):
+    """
+    Try a list of seeder functions until a condition is met.
+
+    :param condition:
+        a function that takes one argument - a seed - and returns ``True``
+        or ``False``
+
+    :param fns:
+        a list of seeder functions
+
+    :return:
+        a "composite" seeder function that calls each supplied function in turn,
+        and returns the first seed where the condition is met. If the condition
+        is never met, it returns ``None``.
+    """
     def f(msg):
         for fn in fns:
             seed = fn(msg)
@@ -278,9 +294,15 @@ def until(condition, fns):
     return f
 
 def chain(*fns):
+    """
+    :return:
+        a "composite" seeder function that calls each supplied function in turn,
+        and returns the first seed that is not ``None``.
+    """
     return until(lambda seed: seed is not None, fns)
 
 def _ensure_seeders_list(fn):
+    @wraps(fn)
     def e(seeders, *aa, **kw):
         return fn(seeders if isinstance(seeders, list) else [seeders], *aa, **kw)
     return e
@@ -291,12 +313,12 @@ def pair(seeders, delegator_factory, *args, **kwargs):
     The basic pair producer.
 
     :return:
-        a (seeder, delegator_factory(*args, **kwargs)) tuple.
+        a (seeder, delegator_factory(\*args, \*\*kwargs)) tuple.
 
     :param seeders:
         If it is a seeder function or a list of one seeder function, it is returned
         as the final seeder. If it is a list of more than one seeder function, they
-        are chained together before returning as the final seeder.
+        are chained together before returned as the final seeder.
     """
     return (chain(*seeders) if len(seeders) > 1 else seeders[0],
             delegator_factory(*args, **kwargs))
@@ -326,7 +348,7 @@ def pave_event_space(fn=pair):
 def include_callback_query_chat_id(fn=pair, types='all'):
     """
     :return:
-        a pair producer that enables static calling query capturing
+        a pair producer that enables static callback query capturing
         across seeder and delegator.
 
     :param types:

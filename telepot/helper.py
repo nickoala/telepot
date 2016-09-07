@@ -46,10 +46,6 @@ class Microphone(object):
 
 
 class Listener(object):
-    """
-    Suspends execution until specified messages arrive.
-    """
-
     def __init__(self, mic, q):
         self._mic = mic
         self._queue = q
@@ -62,15 +58,17 @@ class Listener(object):
         """
         Add a pattern to capture.
 
-        :type pattern: a list of templates.
+        :param pattern: a list of templates.
 
         A template may be a function that:
             - takes one argument - a message
             - returns ``True`` to indicate a match
 
-        A template may also be a dictionary:
-            - the **keys** are used to *select* parts of message
-            - the **values** are used to match against the selected parts
+        A template may also be a dictionary whose:
+            - **keys** are used to *select* parts of message. Can be strings or
+              regular expressions (as obtained by ``re.compile()``)
+            - **values** are used to match against the selected parts. Can be
+              typical data or a function.
 
         All templates must produce a match for a message to be considered a match.
         """
@@ -102,6 +100,7 @@ class Sender(object):
 
     - :meth:`.Bot.sendMessage`
     - :meth:`.Bot.forwardMessage`
+    - :meth:`.Bot.sendPhoto`
     - :meth:`.Bot.sendAudio`
     - :meth:`.Bot.sendDocument`
     - :meth:`.Bot.sendSticker`
@@ -197,7 +196,7 @@ class Editor(object):
 
 class Answerer(object):
     """
-    When processing inline queries, ensures **at most one active thread** per user id.
+    When processing inline queries, ensure **at most one active thread** per user id.
     """
 
     def __init__(self, bot):
@@ -280,7 +279,7 @@ class Answerer(object):
 
 class AnswererMixin(object):
     """
-    Bring in an :class:`Answerer` object to handle inline query.
+    Install an :class:`.Answerer` to handle inline query.
     """
     Answerer = Answerer  # let subclass customize Answerer class
 
@@ -444,6 +443,15 @@ class CallbackQueryCoordinator(object):
 
 
 class SafeDict(dict):
+    """
+    A subclass of ``dict``, thread-safety added::
+
+        d = SafeDict()  # Thread-safe operations include:
+        d['a'] = 3      # key assignment
+        d['a']          # key retrieval
+        del d['a']      # key deletion
+    """
+
     def __init__(self, *args, **kwargs):
         super(SafeDict, self).__init__(*args, **kwargs)
         self._lock = threading.Lock()
@@ -471,8 +479,8 @@ _cqc_origins = SafeDict()
 
 class InterceptCallbackQueryMixin(object):
     """
-    Bring in a :class:`CallbackQueryCoordinator` to enable dynamic
-    callback query handling.
+    Install a :class:`.CallbackQueryCoordinator` to capture callback query
+    dynamically.
     """
     CallbackQueryCoordinator = CallbackQueryCoordinator
 
@@ -509,7 +517,6 @@ class InterceptCallbackQueryMixin(object):
 
     @property
     def callback_query_coordinator(self):
-        """ See :class:`.helper.CallbackQueryCoordinator` """
         return self._callback_query_coordinator
 
 
@@ -520,6 +527,7 @@ class IdleEventCoordinator(object):
         self._timeout_event = None
 
     def refresh(self):
+        """ Refresh timeout timer """
         if self._timeout_event:
             self._scheduler.cancel(self._timeout_event)
 
@@ -527,6 +535,11 @@ class IdleEventCoordinator(object):
                                                           ('_idle', {'seconds': self._timeout_seconds}))
 
     def augment_on_message(self, handler):
+        """
+        :return:
+            a function wrapping ``handler`` to refresh timer for every
+            non-event message
+        """
         def augmented(msg):
             # Reset timer if this is an external message
             is_event(msg) or self.refresh()
@@ -534,6 +547,10 @@ class IdleEventCoordinator(object):
         return augmented
 
     def augment_on_close(self, handler):
+        """
+        :return:
+            a function wrapping ``handler`` to cancel timeout event
+        """
         def augmented(ex):
             try:
                 if self._timeout_event:
@@ -549,8 +566,8 @@ class IdleEventCoordinator(object):
 
 class IdleTerminateMixin(object):
     """
-    Bring in an :class:`IdleEventCoordinator` to manage idle timeout. Also define
-    `on__idle` method to handle idle timeout events.
+    Install an :class:`.IdleEventCoordinator` to manage idle timeout. Also define
+    instance method ``on__idle()`` to handle idle timeout events.
     """
     IdleEventCoordinator = IdleEventCoordinator
 
@@ -568,12 +585,33 @@ class IdleTerminateMixin(object):
 
     def on__idle(self, event):
         """
-        Raise an :exception:`IdleTerminate` to close the delegate.
+        Raise an :class:`.IdleTerminate` to close the delegate.
         """
         raise exception.IdleTerminate(event['_idle']['seconds'])
 
 
 class StandardEventScheduler(object):
+    """
+    A proxy to the underlying :class:`.Bot`\'s scheduler, this object implements
+    the *standard event format*. A standard event looks like this::
+
+        {'_flavor': {
+            'source': {
+                'space': event_space, 'id': source_id}
+            'custom_key1': custom_value1,
+            'custom_key2': custom_value2,
+             ... }}
+
+    - There is a single top-level key indicating the flavor, starting with an _underscore.
+    - On the second level, there is a ``source`` key indicating the event source.
+    - An event source consists of an *event space* and a *source id*.
+    - An event space is shared by all delegates in a group. Source id simply refers
+      to a delegate's id. They combine to ensure a delegate is always able to capture
+      its own events, while its own events would not be mistakenly captured by others.
+
+    Events scheduled through this object always have the second-level ``source`` key fixed,
+    while the flavor and other data may be customized.
+    """
     def __init__(self, scheduler, event_space, source_id):
         self._base = scheduler
         self._event_space = event_space
@@ -584,38 +622,60 @@ class StandardEventScheduler(object):
         return self._event_space
 
     def configure(self, listener):
+        """
+        Configure a :class:`.Listener` to capture events with this object's
+        event space and source id.
+        """
         listener.capture([{re.compile('^_.+'): {'source': {'space': self._event_space, 'id': self._source_id}}}])
 
     def make_event_data(self, flavor, data):
+        """
+        Marshall ``flavor`` and ``data`` into a standard event.
+        """
+        if not flavor.startswith('_'):
+            raise ValueError('Event flavor must start with _underscore')
+
         d = {'source': {'space': self._event_space, 'id': self._source_id}}
         d.update(data)
         return {flavor: d}
 
-    def _verify_data(fn):
-        def w(self, t, data_tuple):
-            if not data_tuple[0].startswith('_'):
-                raise ValueError('Event flavor must start with _underscore')
-            return fn(self, t, self.make_event_data(*data_tuple))
-        return w
+    def event_at(self, when, data_tuple):
+        """
+        Schedule an event to be emitted at a certain time.
 
-    @_verify_data
-    def event_at(self, when, data):
-        return self._base.event_at(when, data)
+        :param when: an absolute timestamp
+        :param data_tuple: a 2-tuple (flavor, data)
+        :return: an event object, useful for cancelling.
+        """
+        return self._base.event_at(when, self.make_event_data(*data_tuple))
 
-    @_verify_data
-    def event_later(self, delay, data):
-        return self._base.event_later(delay, data)
+    def event_later(self, delay, data_tuple):
+        """
+        Schedule an event to be emitted after a delay.
 
-    def event_now(self, data):
-        return self.event_later(0, data)  # take advantage of @_verify_data
+        :param delay: number of seconds
+        :param data_tuple: a 2-tuple (flavor, data)
+        :return: an event object, useful for cancelling.
+        """
+        return self._base.event_later(delay, self.make_event_data(*data_tuple))
+
+    def event_now(self, data_tuple):
+        """
+        Schedule an event to be emitted now.
+
+        :param data_tuple: a 2-tuple (flavor, data)
+        :return: an event object, useful for cancelling.
+        """
+        return self._base.event_now(self.make_event_data(*data_tuple))
 
     def cancel(self, event):
+        """ Cancel an event. """
         return self._base.cancel(event)
 
 
 class StandardEventMixin(object):
     """
-    Bring in a :class:`StandardEventScheduler`.
+    Install a :class:`.StandardEventScheduler`.
     """
     StandardEventScheduler = StandardEventScheduler
 
@@ -640,8 +700,7 @@ class ListenerContext(object):
     @property
     def bot(self):
         """
-        The underlying :class:`.Bot` or an augmented version of it
-        able to handle callback query.
+        The underlying :class:`.Bot` or an augmented version thereof
         """
         return self._bot
 
@@ -651,7 +710,7 @@ class ListenerContext(object):
 
     @property
     def listener(self):
-        """ See :class:`.helper.Listener` """
+        """ See :class:`.Listener` """
         return self._listener
 
 
@@ -668,12 +727,12 @@ class ChatContext(ListenerContext):
 
     @property
     def sender(self):
-        """ See :class:`.helper.Sender` """
+        """ A :class:`.Sender` for this chat """
         return self._sender
 
     @property
     def administrator(self):
-        """ See :class:`.helper.Administrator` """
+        """ An :class:`.Administrator` for this chat """
         return self._administrator
 
 
@@ -689,7 +748,7 @@ class UserContext(ListenerContext):
 
     @property
     def sender(self):
-        """ See :class:`.helper.Sender` """
+        """ A :class:`.Sender` for this user """
         return self._sender
 
 
@@ -701,53 +760,40 @@ class CallbackQueryOriginContext(ListenerContext):
 
     @property
     def origin(self):
+        """ Mesasge identifier of callback query's origin """
         return self._origin
 
     @property
     def editor(self):
+        """ An :class:`.Editor` to the originating message """
         return self._editor
 
 
 def openable(cls):
+    """
+    A class decorator to fill in certain methods and properties to ensure
+    a class can be used by :func:`.create_open`.
+
+    These instance methods and property will be added, if not defined
+    by the class:
+
+    - ``open(self, initial_msg, seed)``
+    - ``on_message(self, msg)``
+    - ``on_close(self, ex)``
+    - ``close(self, ex=None)``
+    - property ``listener``
+    """
+
     def open(self, initial_msg, seed):
-        """
-        Called when the delegate is started.
-
-        :return:
-            Whether ``initial_msg`` is considered "handled".
-            If this object is created with :func:`.delegate.create_open` and
-            this method returns ``False`` (or anything evaluated to boolean ``False``),
-            ``self.on_message(initial_msg)`` is called immediately after.
-
-        By default, this method is empty, equivalent to returning a ``False``.
-        If you don't override, ``self.on_message(initial_msg)`` will be called.
-        The initial message will not be missed.
-        """
         pass
 
     def on_message(self, msg):
-        """
-        Called when a message is received. Subclasses have to implement.
-        """
         raise NotImplementedError()
 
     def on_close(self, ex):
-        """
-        Called when the delegate is about to die. An :class:`exception.IdleTerminate`
-        and all exceptions other than an :class:`exception.WaitTooLong` would cause
-        a delegate to die.
-
-        :param exception: Cause of death
-        """
         logging.error('on_close() called due to %s: %s', type(ex).__name__, ex)
 
     def close(self, ex=None):
-        """
-        Raise an :class:`.exception.StopListening`, causing the delegate to die.
-
-        :param code:
-        :param reason: No standard. You decide what they mean.
-        """
         raise ex if ex else exception.StopListening()
 
     @property
@@ -770,8 +816,8 @@ def openable(cls):
 
 class Router(object):
     """
-    This object maps a message to a handler function. It has
-    a **key function** and a **routing table** (which is a dictionary).
+    Map a message to a handler function, using a **key function** and
+    a **routing table** (dictionary).
 
     A *key function* digests a message down to a value. This value is treated
     as a key to the *routing table* to look up a corresponding handler function.
@@ -801,6 +847,9 @@ class Router(object):
         self.routing_table = routing_table
 
     def map(self, msg):
+        """
+        Apply key function to ``msg`` to obtain a key. Return the routing table entry.
+        """
         k = self.key_function(msg)
         key = k[0] if isinstance(k, (tuple, list)) else k
         return self.routing_table[key]
@@ -811,7 +860,7 @@ class Router(object):
         to obtain a handler function, then call the handler function with
         positional and keyword arguments, if any is returned by the key function.
 
-        ``*aa`` and ``**kw`` are dummy placeholders for easy nesting.
+        ``*aa`` and ``**kw`` are dummy placeholders for easy chaining.
         Regardless of any number of arguments returned by the key function,
         multi-level routing may be achieved like this::
 
@@ -840,6 +889,9 @@ class Router(object):
 
 
 class DefaultRouterMixin(object):
+    """
+    Install a default :class:`.Router` and the instance method ``on_message()``.
+    """
     def __init__(self, *args, **kwargs):
         self._router = Router(flavor, {'chat': lambda msg: self.on_chat_message(msg),
                                        'edited_chat': lambda msg: self.on_edited_chat_message(msg),
@@ -853,14 +905,10 @@ class DefaultRouterMixin(object):
 
     @property
     def router(self):
-        """ See :class:`.helper.Router` """
         return self._router
 
     def on_message(self, msg):
-        """
-        Called when a message is received.
-        By default, call :meth:`Router.route` to handle the message.
-        """
+        """ Call :meth:`.Router.route` to handle the message. """
         self._router.route(msg)
 
 
@@ -869,9 +917,9 @@ class Monitor(ListenerContext, DefaultRouterMixin):
     def __init__(self, seed_tuple, capture, **kwargs):
         """
         A delegate that never times-out, probably doing some kind of background monitoring
-        in the application. Most naturally paired with :func:`.delegate.per_application`.
+        in the application. Most naturally paired with :func:`.per_application`.
 
-        :param capture: a list of patterns for ``listener`` to capture
+        :param capture: a list of patterns for :class:`.Listener` to capture
         """
         bot, initial_msg, seed = seed_tuple
         super(Monitor, self).__init__(bot, seed, **kwargs)
