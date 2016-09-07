@@ -6,8 +6,8 @@ Many styles of dealing with callback query are now possible.
 Documentations are incomplete. They will be filled in gradually over time. Interested users can
 look into the [examples](https://github.com/nickoala/telepot/tree/master/examples). One example is worth a thousand words.
 
-**[Tutorial »](http://telepot.readthedocs.io/en/latest/)**  
-**[Reference, Traditional version »](http://telepot.readthedocs.io/en/latest/reference.html)**  
+**[Getting Started »](http://telepot.readthedocs.io/en/latest/)**  
+**[Reference »](http://telepot.readthedocs.io/en/latest/reference.html)**  
 **[Examples »](https://github.com/nickoala/telepot/tree/master/examples)**
 
 ### Recent changes
