@@ -1,6 +1,12 @@
 Getting Started
 ===============
 
+.. toctree::
+   :hidden:
+   :maxdepth: 2
+
+   reference
+
 Installation
 ------------
 
