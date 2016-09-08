@@ -3,9 +3,6 @@
 With the release of 9.0 (August 25, 2016), I am finally satisfied with callback query handling.
 Many styles of dealing with callback query are now possible.
 
-Documentations are incomplete. They will be filled in gradually over time. Interested users can
-look into the [examples](https://github.com/nickoala/telepot/tree/master/examples). One example is worth a thousand words.
-
 **[Getting Started »](http://telepot.readthedocs.io/en/latest/)**  
 **[Reference »](http://telepot.readthedocs.io/en/latest/reference.html)**  
 **[Examples »](https://github.com/nickoala/telepot/tree/master/examples)**
