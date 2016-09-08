@@ -242,13 +242,13 @@ inline queries sequentially. Ideally, whenever we see a new inline query coming 
 the same user, it should override and cancel any preceding inline queries being processed
 (that belong to the same user).
 
-My solution is this. An ``Answerer`` takes an inline query, inspects its ``from`` ``id``
+My solution is this. An :class:`.Answerer` takes an inline query, inspects its ``from`` ``id``
 (the originating user id), and checks to see whether that user has an *unfinished* thread
 processing a preceding inline query. If there is, the unfinished thread will be cancelled
 before a new thread is spawned to process the latest inline query. In other words,
-an ``Answerer`` ensures **at most one** active inline-query-processing thread per user.
+an :class:`.Answerer` ensures **at most one** active inline-query-processing thread per user.
 
-``Answerer`` also frees you from having to call :meth:`.Bot.answerInlineQuery` every time.
+:class:`.Answerer` also frees you from having to call :meth:`.Bot.answerInlineQuery` every time.
 You supply it with a *compute function*. It takes that function's returned value and calls
 :meth:`.Bot.answerInlineQuery` to send the results. Being accessible by multiple threads,
 the compute function must be **thread-safe**.
@@ -275,15 +275,19 @@ by an individual user. If no message is received after 10 seconds, it starts ove
 The counting is done *per chat* - that's the important point.
 
 .. literalinclude:: _code/counter.py
-   :emphasize-lines: 16-18
+   :emphasize-lines: 16-19
 
-A ``DelegatorBot`` is able to spawn *delegates*. Above, it is spawning one ``MessageCounter``
+A :class:`.DelegatorBot` is able to spawn *delegates*. Above, it is spawning one ``MessageCounter``
 *per chat id*.
 
-Detailed explanation of the delegation mechanism (e.g. how and when a ``MessageCounter`` is created, and why)
-is beyond the scope here. Please refer to :class:`telepot.DelegatorBot`.
+Also noteworthy is :func:`.pave_event_space()`. To kill itself after 10 seconds
+of inactivity, the delegate schedules a timeout event. For events to work, we
+need to prepare an *event space*.
 
-Per-User Inline Handler
+Detailed explanation of the delegation mechanism (e.g. how and when a ``MessageCounter`` is created, and why)
+is beyond the scope here. Please refer to :class:`.DelegatorBot`.
+
+Inline Handler per User
 -----------------------
 
 You may also want to answer inline query differently depending on user. When Alice asks Bot
@@ -292,8 +296,8 @@ the same question.
 
 In the code sample below, pay attention to these things:
 
-- ``AnswererMixin`` adds an ``answerer`` instance to the object
-- ``per_inline_from_id()`` ensures one instance of ``QueryCounter`` per originating user
+- :class:`.AnswererMixin` adds an :class:`.Answerer` instance to the object
+- :func:`.per_inline_from_id` ensures one instance of :class:`QueryCounter` per originating user
 
 .. literalinclude:: _code/inline_per_user.py
    :emphasize-lines: 6,29,39
@@ -323,7 +327,7 @@ If your O/S does not have Python 3.5 built in, you have to compile it yourself::
 
 Finally::
 
-    $ sudo pip3.5 install telepot
+    $ pip3.5 install telepot
 
 In case you are not familiar with asynchronous programming, let's start by learning about generators and coroutines:
 
@@ -355,10 +359,13 @@ will not work in the interactive Python interpreter like regular functions would
 They will have to be driven by an event loop.
 
 Async version is under module :mod:`telepot.aio`. I duplicate the message counter example
-below in async style. Pay attention to these things:
+below in async style:
 
 - Substitute async version of selected classes and functions
 - Use ``async/await`` to do asynchronous operations
 
 .. literalinclude:: _code/countera.py
    :emphasize-lines: 4,6,11-13
+
+`More Examples » <https://github.com/nickoala/telepot/tree/master/examples>`_
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

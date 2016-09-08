@@ -294,6 +294,25 @@ class AnswererMixin(object):
 
 class CallbackQueryCoordinator(object):
     def __init__(self, id, origin_set, enable_chat, enable_inline):
+        """
+        :param origin_set:
+            Callback query whose origin belongs to this set will be captured
+
+        :param enable_chat:
+            - ``False``: Do not intercept *chat-originated* callback query
+            - ``True``: Do intercept
+            - Notifier function: Do intercept and call the notifier function
+              on adding or removing an origin
+
+        :param enable_inline:
+            Same meaning as ``enable_chat``, but apply to *inline-originated*
+            callback query
+
+        Notifier functions should have the signature ``notifier(origin, id, adding)``:
+
+        - On adding an origin, ``notifier(origin, my_id, True)`` will be called.
+        - On removing an origin, ``notifier(origin, my_id, False)`` will be called.
+        """
         self._id = id
         self._origin_set = origin_set
 
@@ -311,6 +330,9 @@ class CallbackQueryCoordinator(object):
         self._enable_inline, self._inline_notify = dissolve(enable_inline)
 
     def configure(self, listener):
+        """
+        Configure a :class:`.Listener` to capture callback query
+        """
         listener.capture([
             lambda msg: flavor(msg) == 'callback_query',
             {'message': self._chat_origin_included}
@@ -368,6 +390,15 @@ class CallbackQueryCoordinator(object):
         return False
 
     def augment_send(self, send_func):
+        """
+        :param send_func:
+            functions that send messages, such as :meth:`.Bot.send\*`
+
+        :return:
+            a function that wraps around ``send_func`` and examines whether the
+            sent message contains an inline keyboard with callback data. If so,
+            future callback query originating from the sent message will be captured.
+        """
         def augmented(*aa, **kw):
             sent = send_func(*aa, **kw)
 
@@ -378,6 +409,16 @@ class CallbackQueryCoordinator(object):
         return augmented
 
     def augment_edit(self, edit_func):
+        """
+        :param edit_func:
+            functions that edit messages, such as :meth:`.Bot.edit*`
+
+        :return:
+            a function that wraps around ``edit_func`` and examines whether the
+            edited message contains an inline keyboard with callback data. If so,
+            future callback query originating from the edited message will be captured.
+            If not, such capturing will be stopped.
+        """
         def augmented(msg_identifier, *aa, **kw):
             edited = edit_func(msg_identifier, *aa, **kw)
 
@@ -391,6 +432,16 @@ class CallbackQueryCoordinator(object):
         return augmented
 
     def augment_on_message(self, handler):
+        """
+        :param handler:
+            an ``on_message()`` handler function
+
+        :return:
+            a function that wraps around ``handler`` and examines whether the
+            incoming message is a chosen inline result with an ``inline_message_id``
+            field. If so, future callback query originating from this chosen
+            inline result will be captured.
+        """
         def augmented(msg):
             if (self._enable_inline
                     and flavor(msg) == 'chosen_inline_result'
@@ -402,6 +453,14 @@ class CallbackQueryCoordinator(object):
         return augmented
 
     def augment_bot(self, bot):
+        """
+        :return:
+            a proxy to ``bot`` with these modifications:
+
+            - all ``send*`` methods augmented by :meth:`augment_send`
+            - all ``edit*`` methods augmented by :meth:`augment_edit`
+            - all other public methods, including properties, copied unchanged
+        """
         # Because a plain object cannot be set attributes, we need a class.
         class BotProxy(object):
             pass
@@ -481,10 +540,20 @@ class InterceptCallbackQueryMixin(object):
     """
     Install a :class:`.CallbackQueryCoordinator` to capture callback query
     dynamically.
+
+    Using this mixin has one consequence. The :meth:`self.bot` property no longer
+    returns the original :class:`.Bot` object. Instead, it returns an augmented
+    version of the :class:`.Bot` (augmented by :class:`.CallbackQueryCoordinator`).
+    The original :class:`.Bot` can be accessed with ``self.__bot`` (double underscore).
     """
     CallbackQueryCoordinator = CallbackQueryCoordinator
 
     def __init__(self, intercept_callback_query, *args, **kwargs):
+        """
+        :param intercept_callback_query:
+            a 2-tuple (enable_chat, enable_inline) to pass to
+            :class:`.CallbackQueryCoordinator`
+        """
         global _cqc_origins
 
         # Restore origin set to CallbackQueryCoordinator
