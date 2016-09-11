@@ -1,11 +1,22 @@
-Getting Started
-===============
+Introduction
+============
 
 .. toctree::
    :hidden:
    :maxdepth: 2
 
    reference
+
+Telepot helps you build applications for `Telegram Bot API <https://core.telegram.org/bots>`_.
+It works on Python 2.7 and Python 3. It also has an `async version <#async-version-python-3-5>`_
+based on `asyncio <https://docs.python.org/3/library/asyncio.html>`_ and Python 3.5+.
+
+For a time, I tried to list the features here like many projects do. Eventually, I gave up.
+
+For common and straight-forward features, I find them too trivial to worth listing.
+For more unique and novel features, I cannot find standard terms to describe them.
+The best way to experience telepot is by reading this page and going through the
+`examples <https://github.com/nickoala/telepot/tree/master/examples>`_. Let's go.
 
 Installation
 ------------
