@@ -1,6 +1,6 @@
 # telepot - Python framework for Telegram Bot API
 
-I am aware that the [Gaming Platform](https://core.telegram.org/bots/games) has come out.
+I am aware that [Gaming Platform](https://core.telegram.org/bots/games) has come out.
 Expect an update on or before Oct 31<sup>st</sup>, 2016.
 
 **[Introduction »](http://telepot.readthedocs.io/en/latest/)**  
