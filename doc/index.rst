@@ -31,13 +31,6 @@ easy_install::
     $ easy_install telepot
     $ easy_install --upgrade telepot  # UPGRADE
 
-Download manually::
-
-    $ wget https://pypi.python.org/packages/source/t/telepot/telepot-9.1.zip
-    $ unzip telepot-9.1.zip
-    $ cd telepot-9.1
-    $ python setup.py install
-
 Get a token
 -----------
 
