@@ -1,13 +1,20 @@
 # telepot - Python framework for Telegram Bot API
 
-I am aware that [Gaming Platform](https://core.telegram.org/bots/games) has come out.
-Expect an update on or before Oct 31<sup>st</sup>, 2016.
-
 **[Introduction »](http://telepot.readthedocs.io/en/latest/)**  
 **[Reference »](http://telepot.readthedocs.io/en/latest/reference.html)**  
 **[Examples »](https://github.com/nickoala/telepot/tree/master/examples)**
 
 ### Recent changes
+
+**10.0 (2016-10-19)**
+
+- Implemented [Gaming Platform](https://core.telegram.org/bots/games) stuff
+- Added game-related methods, e.g. `sendGame`, `setGameScore`, etc.
+- Added game-related namedtuple, e.g. `InlineQueryResultGame`, etc.
+- `telepot.glance()` may return content type `game`
+- Added method `getWebhookInfo`
+- Added new parameters to some methods, e.g. `caption` for `sendAudio()`, etc.
+- Handled `EventNotFound` in `IdleEventCoordinator.refresh()`
 
 **9.1 (2016-08-26)**
 

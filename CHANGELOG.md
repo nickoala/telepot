@@ -1,5 +1,15 @@
 # telepot changelog
 
+## 10.0 (2016-10-19)
+
+- Implemented Gaming Platform stuff
+- Added game-related methods, e.g. `sendGame`, `setGameScore`, etc.
+- Added game-related namedtuple, e.g. `InlineQueryResultGame`, etc.
+- `telepot.glance()` may return content type `game`
+- Added method `getWebhookInfo`
+- Added new parameters to some methods, e.g. `caption` for `sendAudio()`, etc.
+- Handled `EventNotFound` in `IdleEventCoordinator.refresh()`
+
 ## 9.1 (2016-08-26)
 
 - Changed the name `pave_callback_query_origin_map()` to `intercept_callback_query_origin()`

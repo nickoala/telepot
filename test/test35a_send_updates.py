@@ -217,6 +217,16 @@ async def send_everything(msg):
 
     await bot.sendLocation(chat_id, -37.82, 144.97, reply_markup=hide_keyboard)  # Melbourne
 
+    ##### sendGame
+
+    await bot.sendGame(chat_id, 'sunchaser')
+
+    game_keyboard = telepot.namedtuple.InlineKeyboardMarkup(inline_keyboard=[[
+                        telepot.namedtuple.InlineKeyboardButton(text='Play now', callback_game=True),
+                        telepot.namedtuple.InlineKeyboardButton(text='How to play?', url='https://mygame.com/howto'),
+                    ]])
+    await bot.sendGame(chat_id, 'sunchaser', reply_markup=game_keyboard)
+
     ##### Done sending messages
 
     await bot.sendMessage(chat_id, 'I am done.')

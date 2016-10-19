@@ -62,7 +62,7 @@ def _find_first_key(d, keys):
 
 
 all_content_types = [
-    'text', 'audio', 'document', 'photo', 'sticker', 'video', 'voice',
+    'text', 'audio', 'document', 'game', 'photo', 'sticker', 'video', 'voice',
     'contact', 'location', 'venue', 'new_chat_member', 'left_chat_member',  'new_chat_title',
     'new_chat_photo',  'delete_chat_photo', 'group_chat_created', 'supergroup_chat_created',
     'channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id', 'pinned_message',
@@ -79,7 +79,7 @@ def glance(msg, flavor='chat', long=False):
     - short: (content_type, ``msg['chat']['type']``, ``msg['chat']['id']``)
     - long: (content_type, ``msg['chat']['type']``, ``msg['chat']['id']``, ``msg['date']``, ``msg['message_id']``)
 
-    *content_type* can be: ``text``, ``audio``, ``document``, ``photo``, ``sticker``, ``video``, ``voice``,
+    *content_type* can be: ``text``, ``audio``, ``document``, ``game``, ``photo``, ``sticker``, ``video``, ``voice``,
     ``contact``, ``location``, ``venue``, ``new_chat_member``, ``left_chat_member``, ``new_chat_title``,
     ``new_chat_photo``, ``delete_chat_photo``, ``group_chat_created``, ``supergroup_chat_created``,
     ``channel_chat_created``, ``migrate_to_chat_id``, ``migrate_from_chat_id``, ``pinned_message``.
@@ -448,7 +448,7 @@ class Bot(_BotBase):
         return self._sendfile(photo, 'photo', p)
 
     def sendAudio(self, chat_id, audio,
-                  duration=None, performer=None, title=None,
+                  caption=None, duration=None, performer=None, title=None,
                   disable_notification=None, reply_to_message_id=None, reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#sendaudio
@@ -491,7 +491,7 @@ class Bot(_BotBase):
         return self._sendfile(video, 'video', p)
 
     def sendVoice(self, chat_id, voice,
-                  duration=None,
+                  caption=None, duration=None,
                   disable_notification=None, reply_to_message_id=None, reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#sendvoice
@@ -520,6 +520,12 @@ class Bot(_BotBase):
         """ See: https://core.telegram.org/bots/api#sendcontact """
         p = _strip(locals())
         return self._api_request('sendContact', _rectify(p))
+
+    def sendGame(self, chat_id, game_short_name,
+                 disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """ See: https://core.telegram.org/bots/api#sendgame """
+        p = _strip(locals())
+        return self._api_request('sendGame', _rectify(p))
 
     def sendChatAction(self, chat_id, action):
         """ See: https://core.telegram.org/bots/api#sendchataction """
@@ -571,7 +577,7 @@ class Bot(_BotBase):
         p = _strip(locals())
         return self._api_request('getChatMember', _rectify(p))
 
-    def answerCallbackQuery(self, callback_query_id, text=None, show_alert=None):
+    def answerCallbackQuery(self, callback_query_id, text=None, show_alert=None, url=None):
         """ See: https://core.telegram.org/bots/api#answercallbackquery """
         p = _strip(locals())
         return self._api_request('answerCallbackQuery', _rectify(p))
@@ -632,6 +638,31 @@ class Bot(_BotBase):
             return self._api_request('setWebhook', _rectify(p), files)
         else:
             return self._api_request('setWebhook', _rectify(p))
+
+    def getWebhookInfo(self):
+        """ See: https://core.telegram.org/bots/api#getwebhookinfo """
+        return self._api_request('getWebhookInfo')
+
+    def setGameScore(self, user_id, score, game_message_identifier,
+                     edit_message=None):
+        """
+        See: https://core.telegram.org/bots/api#setgamescore
+
+        :param game_message_identifier: Same as ``msg_identifier`` in :meth:`telepot.Bot.editMessageText`
+        """
+        p = _strip(locals(), more=['game_message_identifier'])
+        p.update(_dismantle_message_identifier(game_message_identifier))
+        return self._api_request('setGameScore', _rectify(p))
+
+    def getGameHighScores(self, user_id, game_message_identifier):
+        """
+        See: https://core.telegram.org/bots/api#getgamehighscores
+
+        :param game_message_identifier: Same as ``msg_identifier`` in :meth:`telepot.Bot.editMessageText`
+        """
+        p = _strip(locals(), more=['game_message_identifier'])
+        p.update(_dismantle_message_identifier(game_message_identifier))
+        return self._api_request('getGameHighScores', _rectify(p))
 
     def download_file(self, file_id, dest):
         """

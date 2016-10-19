@@ -9,7 +9,9 @@ import traceback
 import random
 import telepot
 import telepot.aio
-from telepot.namedtuple import InlineQuery, ChosenInlineResult, InlineQueryResultArticle, InlineQueryResultPhoto, InputTextMessageContent
+from telepot.namedtuple import (
+    InlineQuery, ChosenInlineResult, InputTextMessageContent,
+    InlineQueryResultArticle, InlineQueryResultPhoto, InlineQueryResultGame)
 
 def equivalent(data, nt):
     if type(data) is dict:
@@ -58,7 +60,10 @@ def on_inline_query(msg):
                   {'type': 'photo',
                       'id': '345', 'photo_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'thumb_url': 'https://core.telegram.org/file/811140184/1/5YJxx-rostA/ad3f74094485fb97bd', 'caption': 'Caption', 'title': 'Title', 'input_message_content': {'message_text': 'Shenzhen'}}]
 
-        results = random.choice([articles, photos])
+        games = [InlineQueryResultGame(
+                    id='abc', game_short_name='sunchaser')]
+
+        results = random.choice([articles, photos, games])
         return results
 
     query_id, from_id, query = telepot.glance(msg, flavor='inline_query')

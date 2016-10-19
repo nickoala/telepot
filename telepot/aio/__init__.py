@@ -116,7 +116,7 @@ class Bot(_BotBase):
         return await self._sendfile(photo, 'photo', p)
 
     async def sendAudio(self, chat_id, audio,
-                        duration=None, performer=None, title=None,
+                        caption=None, duration=None, performer=None, title=None,
                         disable_notification=None, reply_to_message_id=None, reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#sendaudio
@@ -159,7 +159,7 @@ class Bot(_BotBase):
         return await self._sendfile(video, 'video', p)
 
     async def sendVoice(self, chat_id, voice,
-                        duration=None,
+                        caption=None, duration=None,
                         disable_notification=None, reply_to_message_id=None, reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#sendvoice
@@ -188,6 +188,12 @@ class Bot(_BotBase):
         """ See: https://core.telegram.org/bots/api#sendcontact """
         p = _strip(locals())
         return await self._api_request('sendContact', _rectify(p))
+
+    async def sendGame(self, chat_id, game_short_name,
+                       disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """ See: https://core.telegram.org/bots/api#sendgame """
+        p = _strip(locals())
+        return await self._api_request('sendGame', _rectify(p))
 
     async def sendChatAction(self, chat_id, action):
         """ See: https://core.telegram.org/bots/api#sendchataction """
@@ -239,7 +245,7 @@ class Bot(_BotBase):
         p = _strip(locals())
         return await self._api_request('getChatMember', _rectify(p))
 
-    async def answerCallbackQuery(self, callback_query_id, text=None, show_alert=None):
+    async def answerCallbackQuery(self, callback_query_id, text=None, show_alert=None, url=None):
         """ See: https://core.telegram.org/bots/api#answercallbackquery """
         p = _strip(locals())
         return await self._api_request('answerCallbackQuery', _rectify(p))
@@ -300,6 +306,23 @@ class Bot(_BotBase):
             return await self._api_request('setWebhook', _rectify(p), files)
         else:
             return await self._api_request('setWebhook', _rectify(p))
+
+    async def getWebhookInfo(self):
+        """ See: https://core.telegram.org/bots/api#getwebhookinfo """
+        return await self._api_request('getWebhookInfo')
+
+    async def setGameScore(self, user_id, score, game_message_identifier,
+                           edit_message=None):
+        """ See: https://core.telegram.org/bots/api#setgamescore """
+        p = _strip(locals(), more=['game_message_identifier'])
+        p.update(_dismantle_message_identifier(game_message_identifier))
+        return await self._api_request('setGameScore', _rectify(p))
+
+    async def getGameHighScores(self, user_id, game_message_identifier):
+        """ See: https://core.telegram.org/bots/api#getgamehighscores """
+        p = _strip(locals(), more=['game_message_identifier'])
+        p.update(_dismantle_message_identifier(game_message_identifier))
+        return await self._api_request('getGameHighScores', _rectify(p))
 
     async def download_file(self, file_id, dest):
         """

@@ -265,6 +265,18 @@ def send_everything_on_contact(msg):
     bot.sendLocation(chat_id, -37.82, 144.97, reply_markup=hide_keyboard)  # Melbourne
     time.sleep(0.5)
 
+    ##### sendGame
+
+    bot.sendGame(chat_id, 'sunchaser')
+    time.sleep(0.5)
+
+    game_keyboard = telepot.namedtuple.InlineKeyboardMarkup(inline_keyboard=[[
+                        telepot.namedtuple.InlineKeyboardButton(text='Play now', callback_game=True),
+                        telepot.namedtuple.InlineKeyboardButton(text='How to play?', url='https://mygame.com/howto'),
+                    ]])
+    bot.sendGame(chat_id, 'sunchaser', reply_markup=game_keyboard)
+    time.sleep(0.5)
+
     ##### Done sending messages
 
     bot.sendMessage(chat_id, 'I am done.')

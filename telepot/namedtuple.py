@@ -25,8 +25,9 @@ def _create_class(typename, fields):
         def __new__(cls, **kwargs):
             # Map keys.
             for oldkey, newkey in keymap:
-                kwargs[newkey] = kwargs[oldkey]
-                del kwargs[oldkey]
+                if oldkey in kwargs:
+                    kwargs[newkey] = kwargs[oldkey]
+                    del kwargs[oldkey]
 
             # Any unexpected arguments?
             unexpected = set(kwargs.keys()) - set(super(sub, cls)._fields)
@@ -93,7 +94,8 @@ Chat = _create_class('Chat', [
            'title',
            'username',
            'first_name',
-           'last_name'
+           'last_name',
+           'all_members_are_administrators',
        ])
 
 # incoming
@@ -238,6 +240,8 @@ InlineKeyboardButton = _create_class('InlineKeyboardButton', [
                            'url',
                            'callback_data',
                            'switch_inline_query',
+                           'switch_inline_query_current_chat',
+                           'callback_game',
                        ])
 
 # outgoing
@@ -259,6 +263,32 @@ def MessageEntityArray(data):
     return [MessageEntity(**p) for p in data]
 
 # incoming
+GameHighScore = _create_class('GameHighScore', [
+                    'position',
+                    ('user', User),
+                    'score',
+                ])
+
+# incoming
+Animation = _create_class('Animation', [
+                'file_id',
+                ('thumb', PhotoSize),
+                'file_name',
+                'mime_type',
+                'file_size',
+            ])
+
+# incoming
+Game = _create_class('Game', [
+           'title',
+           'description',
+           ('photo', PhotoSizeArray),
+           'text',
+           ('text_entities', MessageEntityArray),
+           ('animation', Animation),
+       ])
+
+# incoming
 Message = _create_class('Message', [
               'message_id',
               ('from_', User),
@@ -273,6 +303,7 @@ Message = _create_class('Message', [
               ('entities', MessageEntityArray),
               ('audio', Audio),
               ('document', Document),
+              ('game', Game),
               ('photo', PhotoSizeArray),
               ('sticker', Sticker),
               ('video', Video),
@@ -318,7 +349,9 @@ CallbackQuery = _create_class('CallbackQuery', [
                     ('from_', User),
                     ('message', Message),
                     'inline_message_id',
+                    'chat_instance',
                     'data',
+                    'game_short_name',
                 ])
 
 # incoming
@@ -334,6 +367,15 @@ Update = _create_class('Update', [
 # incoming
 def UpdateArray(data):
     return [Update(**u) for u in data]
+
+# incoming
+WebhookInfo = _create_class('WebhookInfo', [
+                  'url',
+                  'has_custom_certificate',
+                  'pending_update_count',
+                  'last_error_date',
+                  'last_error_message',
+              ])
 
 # outgoing
 InputTextMessageContent = _create_class('InputTextMessageContent', [
@@ -445,6 +487,7 @@ InlineQueryResultAudio = _create_class('InlineQueryResultAudio', [
                              'id',
                              'audio_url',
                              'title',
+                             'caption',
                              'performer',
                              'audio_duration',
                              'reply_markup',
@@ -457,6 +500,7 @@ InlineQueryResultVoice = _create_class('InlineQueryResultVoice', [
                              'id',
                              'voice_url',
                              'title',
+                             'caption',
                              'voice_duration',
                              'reply_markup',
                              'input_message_content',
@@ -521,6 +565,14 @@ InlineQueryResultContact = _create_class('InlineQueryResultContact', [
                                 'thumb_width',
                                 'thumb_height',
                            ])
+
+# outgoing
+InlineQueryResultGame = _create_class('InlineQueryResultGame', [
+                            ('type', None, 'game'),
+                            'id',
+                            'game_short_name',
+                            'reply_markup',
+                        ])
 
 # outgoing
 InlineQueryResultCachedPhoto = _create_class('InlineQueryResultCachedPhoto', [
@@ -595,6 +647,7 @@ InlineQueryResultCachedVoice = _create_class('InlineQueryResultCachedVoice', [
                                    'id',
                                    'voice_file_id',
                                    'title',
+                                   'caption',
                                    'reply_markup',
                                    'input_message_content',
                                ])
@@ -604,6 +657,7 @@ InlineQueryResultCachedAudio = _create_class('InlineQueryResultCachedAudio', [
                                    ('type', None, 'audio'),
                                    'id',
                                    'audio_file_id',
+                                   'caption',
                                    'reply_markup',
                                    'input_message_content',
                                ])

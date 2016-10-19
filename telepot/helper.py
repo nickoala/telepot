@@ -109,6 +109,7 @@ class Sender(object):
     - :meth:`.Bot.sendLocation`
     - :meth:`.Bot.sendVenue`
     - :meth:`.Bot.sendContact`
+    - :meth:`.Bot.sendGame`
     - :meth:`.Bot.sendChatAction`
     """
 
@@ -124,6 +125,7 @@ class Sender(object):
                        'sendLocation',
                        'sendVenue',
                        'sendContact',
+                       'sendGame',
                        'sendChatAction',]:
             setattr(self, method, partial(getattr(bot, method), chat_id))
             # Essentially doing:
@@ -597,11 +599,19 @@ class IdleEventCoordinator(object):
 
     def refresh(self):
         """ Refresh timeout timer """
-        if self._timeout_event:
-            self._scheduler.cancel(self._timeout_event)
+        try:
+            if self._timeout_event:
+                self._scheduler.cancel(self._timeout_event)
 
-        self._timeout_event = self._scheduler.event_later(self._timeout_seconds,
-                                                          ('_idle', {'seconds': self._timeout_seconds}))
+        # Timeout event has been popped from queue prematurely
+        except exception.EventNotFound:
+            pass
+
+        # Ensure a new event is scheduled always
+        finally:
+            self._timeout_event = self._scheduler.event_later(
+                                      self._timeout_seconds,
+                                      ('_idle', {'seconds': self._timeout_seconds}))
 
     def augment_on_message(self, handler):
         """
@@ -612,6 +622,11 @@ class IdleEventCoordinator(object):
         def augmented(msg):
             # Reset timer if this is an external message
             is_event(msg) or self.refresh()
+
+            # Ignore timeout event that have been popped from queue prematurely
+            if flavor(msg) == '_idle' and msg is not self._timeout_event.data:
+                return
+
             return handler(msg)
         return augmented
 
