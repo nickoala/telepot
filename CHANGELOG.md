@@ -1,5 +1,9 @@
 # telepot changelog
 
+## 10.1 (2016-10-25)
+
+- Used the presence of `chat_instance` to recognize the flavor `callback_query`
+
 ## 10.0 (2016-10-19)
 
 - Implemented Gaming Platform stuff

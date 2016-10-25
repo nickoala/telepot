@@ -36,7 +36,7 @@ def flavor(msg):
             return 'edited_chat'
         else:
             return 'chat'
-    elif 'id' in msg and 'data' in msg:
+    elif 'id' in msg and 'chat_instance' in msg:
         return 'callback_query'
     elif 'id' in msg and 'query' in msg:
         return 'inline_query'

@@ -1,5 +1,5 @@
-telepot 10.0 reference
-=====================
+telepot 10.1 reference
+======================
 
 Telepot has two versions:
 
