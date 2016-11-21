@@ -1,5 +1,7 @@
 # telepot - Python framework for Telegram Bot API
 
+Note: I am aware of the changes in the newest **[Bot API 2.3](https://core.telegram.org/bots/api#recent-changes)**. Expect an update on or before **Nov 30<sup>th</sup>, 2016**.
+
 ### [Introduction »](http://telepot.readthedocs.io/en/latest/)
 ### [Reference »](http://telepot.readthedocs.io/en/latest/reference.html)
 ### [Examples »](https://github.com/nickoala/telepot/tree/master/examples)
