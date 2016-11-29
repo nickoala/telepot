@@ -237,7 +237,6 @@ class Router(helper.Router):
 class DefaultRouterMixin(object):
     def __init__(self, *args, **kwargs):
         self._router = Router(flavor, {'chat': _delay_yell(self, 'on_chat_message'),
-                                       'edited_chat': _delay_yell(self, 'on_edited_chat_message'),
                                        'callback_query': _delay_yell(self, 'on_callback_query'),
                                        'inline_query': _delay_yell(self, 'on_inline_query'),
                                        'chosen_inline_result': _delay_yell(self, 'on_chosen_inline_result'),

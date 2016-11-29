@@ -42,7 +42,6 @@ class Bot(_BotBase):
         self._scheduler = self.Scheduler(self._loop)
 
         self._router = helper.Router(flavor, {'chat': helper._delay_yell(self, 'on_chat_message'),
-                                              'edited_chat': helper._delay_yell(self, 'on_edited_chat_message'),
                                               'callback_query': helper._delay_yell(self, 'on_callback_query'),
                                               'inline_query': helper._delay_yell(self, 'on_inline_query'),
                                               'chosen_inline_result': helper._delay_yell(self, 'on_chosen_inline_result')})
@@ -245,7 +244,8 @@ class Bot(_BotBase):
         p = _strip(locals())
         return await self._api_request('getChatMember', _rectify(p))
 
-    async def answerCallbackQuery(self, callback_query_id, text=None, show_alert=None, url=None):
+    async def answerCallbackQuery(self, callback_query_id,
+                                  text=None, show_alert=None, url=None, cache_time=None):
         """ See: https://core.telegram.org/bots/api#answercallbackquery """
         p = _strip(locals())
         return await self._api_request('answerCallbackQuery', _rectify(p))
@@ -312,7 +312,7 @@ class Bot(_BotBase):
         return await self._api_request('getWebhookInfo')
 
     async def setGameScore(self, user_id, score, game_message_identifier,
-                           edit_message=None):
+                           force=None, disable_edit_message=None):
         """ See: https://core.telegram.org/bots/api#setgamescore """
         p = _strip(locals(), more=['game_message_identifier'])
         p.update(_dismantle_message_identifier(game_message_identifier))
@@ -414,6 +414,8 @@ class Bot(_BotBase):
             try:
                 key = _find_first_key(update, ['message',
                                                'edited_message',
+                                               'channel_post',
+                                               'edited_channel_post',
                                                'callback_query',
                                                'inline_query',
                                                'chosen_inline_result'])

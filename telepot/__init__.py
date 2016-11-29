@@ -17,6 +17,11 @@ from . import hack
 
 from . import exception
 
+
+__version_info__ = (10, 2)
+__version__ = '.'.join(map(str, __version_info__))
+
+
 def flavor(msg):
     """
     Return flavor of message or event.
@@ -24,7 +29,6 @@ def flavor(msg):
     A message's flavor may be one of these:
 
     - ``chat``
-    - ``edited_chat``
     - ``callback_query``
     - ``inline_query``
     - ``chosen_inline_result``
@@ -32,10 +36,7 @@ def flavor(msg):
     An event's flavor is determined by the single top-level key.
     """
     if 'message_id' in msg:
-        if 'edit_date' in msg:
-            return 'edited_chat'
-        else:
-            return 'chat'
+        return 'chat'
     elif 'id' in msg and 'chat_instance' in msg:
         return 'callback_query'
     elif 'id' in msg and 'query' in msg:
@@ -50,7 +51,7 @@ def flavor(msg):
         raise exception.BadFlavor(msg)
 
 
-chat_flavors = ['chat', 'edited_chat']
+chat_flavors = ['chat']
 inline_flavors = ['inline_query', 'chosen_inline_result']
 
 
@@ -58,7 +59,7 @@ def _find_first_key(d, keys):
     for k in keys:
         if k in d:
             return k
-    raise KeyError(keys)
+    raise KeyError('No suggested keys %s in %s' % (str(keys), str(d)))
 
 
 all_content_types = [
@@ -73,7 +74,7 @@ def glance(msg, flavor='chat', long=False):
     Extract "headline" info about a message.
     Use parameter ``long`` to control whether a short or long tuple is returned.
 
-    When ``flavor`` is ``chat`` or ``edited_chat``
+    When ``flavor`` is ``chat``
     (``msg`` being a `Message <https://core.telegram.org/bots/api#message>`_ object):
 
     - short: (content_type, ``msg['chat']['type']``, ``msg['chat']['id']``)
@@ -122,7 +123,6 @@ def glance(msg, flavor='chat', long=False):
 
     try:
         fn = {'chat': gl_chat,
-              'edited_chat': gl_chat,
               'callback_query': gl_callback_query,
               'inline_query': gl_inline_query,
               'chosen_inline_result': gl_chosen_inline_result}[flavor]
@@ -376,7 +376,6 @@ class Bot(_BotBase):
         self._scheduler = self.Scheduler()
 
         self._router = helper.Router(flavor, {'chat': lambda msg: self.on_chat_message(msg),
-                                              'edited_chat': lambda msg: self.on_edited_chat_message(msg),
                                               'callback_query': lambda msg: self.on_callback_query(msg),
                                               'inline_query': lambda msg: self.on_inline_query(msg),
                                               'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg)})
@@ -577,7 +576,8 @@ class Bot(_BotBase):
         p = _strip(locals())
         return self._api_request('getChatMember', _rectify(p))
 
-    def answerCallbackQuery(self, callback_query_id, text=None, show_alert=None, url=None):
+    def answerCallbackQuery(self, callback_query_id,
+                            text=None, show_alert=None, url=None, cache_time=None):
         """ See: https://core.telegram.org/bots/api#answercallbackquery """
         p = _strip(locals())
         return self._api_request('answerCallbackQuery', _rectify(p))
@@ -644,7 +644,7 @@ class Bot(_BotBase):
         return self._api_request('getWebhookInfo')
 
     def setGameScore(self, user_id, score, game_message_identifier,
-                     edit_message=None):
+                     force=None, disable_edit_message=None):
         """
         See: https://core.telegram.org/bots/api#setgamescore
 
@@ -774,6 +774,8 @@ class Bot(_BotBase):
         def relay_to_collector(update):
             key = _find_first_key(update, ['message',
                                            'edited_message',
+                                           'channel_post',
+                                           'edited_channel_post',
                                            'callback_query',
                                            'inline_query',
                                            'chosen_inline_result'])

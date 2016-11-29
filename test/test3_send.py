@@ -96,17 +96,17 @@ def send_everything_on_contact(msg):
     time.sleep(0.5)
 
     show_keyboard = {'keyboard': [['Yes', 'No'], ['Maybe', 'Maybe not']]}
-    hide_keyboard = {'hide_keyboard': True}
+    remove_keyboard = {'remove_keyboard': True}
     force_reply = {'force_reply': True}
 
     nt_show_keyboard = telepot.namedtuple.ReplyKeyboardMarkup(**show_keyboard)
-    nt_hide_keyboard = telepot.namedtuple.ReplyKeyboardHide(**hide_keyboard)
+    nt_remove_keyboard = telepot.namedtuple.ReplyKeyboardRemove(**remove_keyboard)
     nt_force_reply = telepot.namedtuple.ForceReply(**force_reply)
 
     bot.sendMessage(chat_id, 'Here is a custom keyboard', reply_markup=show_keyboard)
     time.sleep(0.5)
 
-    bot.sendMessage(chat_id, 'Hiding it now.', reply_markup=nt_hide_keyboard)
+    bot.sendMessage(chat_id, 'Hiding it now.', reply_markup=nt_remove_keyboard)
     time.sleep(0.5)
 
     bot.sendMessage(chat_id, 'Force reply', reply_markup=nt_force_reply)
@@ -124,7 +124,7 @@ def send_everything_on_contact(msg):
     bot.sendPhoto(chat_id, file_id, caption='Show original message and keyboard', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
     time.sleep(0.5)
 
-    bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=hide_keyboard)
+    bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=remove_keyboard)
     time.sleep(0.5)
 
     furl = urllib.request.urlopen('http://i.imgur.com/35HSRQ6.png')
@@ -167,7 +167,7 @@ def send_everything_on_contact(msg):
     bot.sendAudio(chat_id, file_id, duration=6, performer='Ding Dong', title='Ringtone', reply_to_message_id=msg_id, reply_markup=show_keyboard)
     time.sleep(0.5)
 
-    bot.sendAudio(chat_id, file_id, performer='Ding Dong', reply_markup=nt_hide_keyboard)
+    bot.sendAudio(chat_id, file_id, performer='Ding Dong', reply_markup=nt_remove_keyboard)
     time.sleep(0.5)
 
     bot.sendAudio(chat_id, ('中文歌.mp3', open('dgdg.mp3', 'rb')), title='中文歌')
@@ -185,7 +185,7 @@ def send_everything_on_contact(msg):
     bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
     time.sleep(0.5)
 
-    bot.sendDocument(chat_id, file_id, reply_markup=hide_keyboard)
+    bot.sendDocument(chat_id, file_id, reply_markup=remove_keyboard)
     time.sleep(0.5)
 
     bot.sendDocument(chat_id, ('中文文件.txt', open('document.txt', 'rb')))
@@ -202,7 +202,7 @@ def send_everything_on_contact(msg):
     bot.sendSticker(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=show_keyboard)
     time.sleep(0.5)
 
-    bot.sendSticker(chat_id, file_id, reply_markup=nt_hide_keyboard)
+    bot.sendSticker(chat_id, file_id, reply_markup=nt_remove_keyboard)
     time.sleep(0.5)
 
     ##### sendVideo
@@ -217,7 +217,7 @@ def send_everything_on_contact(msg):
 
         bot.sendVideo(chat_id, file_id, duration=5, caption='Hong Kong traffic', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
         time.sleep(0.5)
-        bot.sendVideo(chat_id, file_id, reply_markup=hide_keyboard)
+        bot.sendVideo(chat_id, file_id, reply_markup=remove_keyboard)
         time.sleep(0.5)
 
     except KeyError:
@@ -228,7 +228,7 @@ def send_everything_on_contact(msg):
 
         bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
         time.sleep(0.5)
-        bot.sendDocument(chat_id, file_id, reply_markup=hide_keyboard)
+        bot.sendDocument(chat_id, file_id, reply_markup=remove_keyboard)
         time.sleep(0.5)
 
     ##### download_file, multiple chunks
@@ -247,7 +247,7 @@ def send_everything_on_contact(msg):
     bot.sendVoice(chat_id, file_id, duration=6, reply_to_message_id=msg_id, reply_markup=show_keyboard)
     time.sleep(0.5)
 
-    bot.sendVoice(chat_id, file_id, reply_markup=nt_hide_keyboard)
+    bot.sendVoice(chat_id, file_id, reply_markup=nt_remove_keyboard)
     time.sleep(0.5)
 
     ##### sendLocation
@@ -260,7 +260,7 @@ def send_everything_on_contact(msg):
     bot.sendLocation(chat_id, 49.25, -123.1, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)  # Vancouver
     time.sleep(0.5)
 
-    bot.sendLocation(chat_id, -37.82, 144.97, reply_markup=hide_keyboard)  # Melbourne
+    bot.sendLocation(chat_id, -37.82, 144.97, reply_markup=remove_keyboard)  # Melbourne
     time.sleep(0.5)
 
     ##### sendGame

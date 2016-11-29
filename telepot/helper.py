@@ -978,13 +978,13 @@ class DefaultRouterMixin(object):
     """
     def __init__(self, *args, **kwargs):
         self._router = Router(flavor, {'chat': lambda msg: self.on_chat_message(msg),
-                                       'edited_chat': lambda msg: self.on_edited_chat_message(msg),
                                        'callback_query': lambda msg: self.on_callback_query(msg),
                                        'inline_query': lambda msg: self.on_inline_query(msg),
                                        'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg),
                                        '_idle': lambda event: self.on__idle(event)})
                                        # use lambda to delay evaluation of self.on_ZZZ to runtime because
                                        # I don't want to require defining all methods right here.
+
         super(DefaultRouterMixin, self).__init__(*args, **kwargs)
 
     @property

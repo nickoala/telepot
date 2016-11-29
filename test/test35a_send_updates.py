@@ -76,18 +76,18 @@ async def send_everything(msg):
     await bot.sendMessage(chat_id, 'http://www.yahoo.com\nno web page preview', disable_web_page_preview=True)
 
     show_keyboard = {'keyboard': [['Yes', 'No'], ['Maybe', 'Maybe not']]}
-    hide_keyboard = {'hide_keyboard': True}
+    remove_keyboard = {'remove_keyboard': True}
     force_reply = {'force_reply': True}
 
     nt_show_keyboard = telepot.namedtuple.ReplyKeyboardMarkup(**show_keyboard)
-    nt_hide_keyboard = telepot.namedtuple.ReplyKeyboardHide(**hide_keyboard)
+    nt_remove_keyboard = telepot.namedtuple.ReplyKeyboardRemove(**remove_keyboard)
     nt_force_reply = telepot.namedtuple.ForceReply(**force_reply)
 
     await bot.sendMessage(chat_id, 'Here is a custom keyboard', reply_markup=show_keyboard)
 
     await asyncio.sleep(2)
 
-    await bot.sendMessage(chat_id, 'Hiding it now.', reply_markup=nt_hide_keyboard)
+    await bot.sendMessage(chat_id, 'Hiding it now.', reply_markup=nt_remove_keyboard)
 
     await bot.sendMessage(chat_id, 'Force reply', reply_markup=nt_force_reply)
 
@@ -101,7 +101,7 @@ async def send_everything(msg):
 
     await bot.sendPhoto(chat_id, file_id, caption='Show original message and keyboard', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
 
-    await bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=hide_keyboard)
+    await bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=remove_keyboard)
 
     r = await aiohttp.get('http://i.imgur.com/35HSRQ6.png')
     bbb = await r.read()
@@ -141,7 +141,7 @@ async def send_everything(msg):
 
     await bot.sendAudio(chat_id, file_id, duration=6, performer='Ding Dong', title='Ringtone', reply_to_message_id=msg_id, reply_markup=show_keyboard)
 
-    await bot.sendAudio(chat_id, file_id, performer='Ding Dong', reply_markup=nt_hide_keyboard)
+    await bot.sendAudio(chat_id, file_id, performer='Ding Dong', reply_markup=nt_remove_keyboard)
 
     await bot.sendAudio(chat_id, ('中文歌.mp3', open('dgdg.mp3', 'rb')), title='中文歌')
 
@@ -155,7 +155,7 @@ async def send_everything(msg):
 
     await bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
 
-    await bot.sendDocument(chat_id, file_id, reply_markup=hide_keyboard)
+    await bot.sendDocument(chat_id, file_id, reply_markup=remove_keyboard)
 
     await bot.sendDocument(chat_id, ('中文文件.txt', open('document.txt', 'rb')))
 
@@ -168,7 +168,7 @@ async def send_everything(msg):
 
     await bot.sendSticker(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=show_keyboard)
 
-    await bot.sendSticker(chat_id, file_id, reply_markup=nt_hide_keyboard)
+    await bot.sendSticker(chat_id, file_id, reply_markup=nt_remove_keyboard)
 
     ##### sendVideo
 
@@ -180,7 +180,7 @@ async def send_everything(msg):
         file_id = r['video']['file_id']
 
         await bot.sendVideo(chat_id, file_id, duration=5, caption='Hong Kong traffic', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
-        await bot.sendVideo(chat_id, file_id, reply_markup=hide_keyboard)
+        await bot.sendVideo(chat_id, file_id, reply_markup=remove_keyboard)
 
     except KeyError:
         # For some reason, Telegram servers may return a document.
@@ -189,7 +189,7 @@ async def send_everything(msg):
         file_id = r['document']['file_id']
 
         await bot.sendDocument(chat_id, file_id, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
-        await bot.sendDocument(chat_id, file_id, reply_markup=hide_keyboard)
+        await bot.sendDocument(chat_id, file_id, reply_markup=remove_keyboard)
 
     ##### download_file, multiple chunks
 
@@ -205,7 +205,7 @@ async def send_everything(msg):
 
     await bot.sendVoice(chat_id, file_id, duration=6, reply_to_message_id=msg_id, reply_markup=show_keyboard)
 
-    await bot.sendVoice(chat_id, file_id, reply_markup=nt_hide_keyboard)
+    await bot.sendVoice(chat_id, file_id, reply_markup=nt_remove_keyboard)
 
     ##### sendLocation
 
@@ -215,7 +215,7 @@ async def send_everything(msg):
 
     await bot.sendLocation(chat_id, 49.25, -123.1, reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)  # Vancouver
 
-    await bot.sendLocation(chat_id, -37.82, 144.97, reply_markup=hide_keyboard)  # Melbourne
+    await bot.sendLocation(chat_id, -37.82, 144.97, reply_markup=remove_keyboard)  # Melbourne
 
     ##### sendGame
 

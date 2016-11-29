@@ -212,7 +212,7 @@ ReplyKeyboardMarkup = _create_class('ReplyKeyboardMarkup', [
                           'keyboard',
                           'resize_keyboard',
                           'one_time_keyboard',
-                          'selective'
+                          'selective',
                       ])
 
 # outgoing
@@ -223,15 +223,15 @@ KeyboardButton = _create_class('KeyboardButton', [
                  ])
 
 # outgoing
-ReplyKeyboardHide = _create_class('ReplyKeyboardHide', [
-                        ('hide_keyboard', None, True),
-                        'selective'
-                    ])
+ReplyKeyboardRemove = _create_class('ReplyKeyboardRemove', [
+                          ('remove_keyboard', None, True),
+                          'selective',
+                      ])
 
 # outgoing
 ForceReply = _create_class('ForceReply', [
                  ('force_reply', None, True),
-                 'selective'
+                 'selective',
              ])
 
 # outgoing
@@ -296,6 +296,7 @@ Message = _create_class('Message', [
               ('chat', Chat),
               ('forward_from', User),
               ('forward_from_chat', Chat),
+              'forward_from_message_id',
               'forward_date',                     # get around the fact that `Message` is not yet defined
               ('reply_to_message', lambda **kwargs: getattr(sys.modules[__name__], 'Message')(**kwargs)),
               'edit_date',
@@ -359,6 +360,8 @@ Update = _create_class('Update', [
              'update_id',
              ('message', Message),
              ('edited_message', Message),
+             ('channel_post', Message),
+             ('edited_channel_post', Message),
              ('inline_query', InlineQuery),
              ('chosen_inline_result', ChosenInlineResult),
              ('callback_query', CallbackQuery),

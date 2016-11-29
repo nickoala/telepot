@@ -3,7 +3,7 @@ import time
 import threading
 import random
 import telepot
-from telepot.namedtuple import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardHide, ForceReply
+from telepot.namedtuple import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, ForceReply
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.namedtuple import InlineQueryResultArticle, InlineQueryResultPhoto, InputTextMessageContent
 
@@ -59,16 +59,11 @@ def on_chat_message(msg):
         global message_with_inline_keyboard
         message_with_inline_keyboard = bot.sendMessage(chat_id, 'Inline keyboard with various buttons', reply_markup=markup)
     elif command == 'h':
-        markup = ReplyKeyboardHide()
+        markup = ReplyKeyboardRemove()
         bot.sendMessage(chat_id, 'Hide custom keyboard', reply_markup=markup)
     elif command == 'f':
         markup = ForceReply()
         bot.sendMessage(chat_id, 'Force reply', reply_markup=markup)
-
-
-def on_edited_chat_message(msg):
-    content_type, chat_type, chat_id = telepot.glance(msg, flavor='edited_chat')
-    print('Edited chat:', content_type, chat_type, chat_id)
 
 
 def on_callback_query(msg):
@@ -133,7 +128,6 @@ bot = telepot.Bot(TOKEN)
 answerer = telepot.helper.Answerer(bot)
 
 bot.message_loop({'chat': on_chat_message,
-                  'edited_chat': on_edited_chat_message,
                   'callback_query': on_callback_query,
                   'inline_query': on_inline_query,
                   'chosen_inline_result': on_chosen_inline_result})

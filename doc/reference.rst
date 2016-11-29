@@ -1,4 +1,4 @@
-telepot 10.1 reference
+telepot 10.2 reference
 ======================
 
 Telepot has two versions:
@@ -11,7 +11,7 @@ Telepot has two versions:
   `aiohttp <http://aiohttp.readthedocs.io/en/stable/>`_ to make asynchronous
   HTTP requests, and uses asyncio tasks to achieve delegation.
 
-This page focuses on traditional version. Async version's usage is very similar,
+This page focuses on traditional version. Async version is very similar,
 the most significant differences being:
 
 - Blocking methods (mostly network operations) become coroutines, and should be
@@ -285,7 +285,7 @@ Outgoing objects include:
 
 - `ReplyKeyboardMarkup <https://core.telegram.org/bots/api#replykeyboardmarkup>`_
 - `KeyboardButton <https://core.telegram.org/bots/api#keyboardbutton>`_
-- `ReplyKeyboardHide <https://core.telegram.org/bots/api#replykeyboardhide>`_
+- `ReplyKeyboardRemove <https://core.telegram.org/bots/api#replykeyboardremove>`_
 - `InlineKeyboardMarkup <https://core.telegram.org/bots/api#inlinekeyboardmarkup>`_
 - `InlineKeyboardButton <https://core.telegram.org/bots/api#inlinekeyboardbutton>`_
 - `ForceReply <https://core.telegram.org/bots/api#forcereply>`_

@@ -169,8 +169,7 @@ Regardless of the type of objects received, telepot generically calls them
 "message" (with a lowercase "m"). A message's *flavor* depends on the
 underlying object:
 
-- a Message object gives the flavor ``chat`` or ``edited_chat`` (because the
-  sender may edit a previous message)
+- a Message object gives the flavor ``chat``
 - a CallbackQuery object gives the flavor ``callback_query``
 - there are two more flavors, which you will come to shortly.
 
