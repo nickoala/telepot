@@ -292,12 +292,12 @@ class Bot(_BotBase):
         p = _strip(locals())
         return await self._api_request('answerInlineQuery', _rectify(p))
 
-    async def getUpdates(self, offset=None, limit=None, timeout=None):
+    async def getUpdates(self, offset=None, limit=None, timeout=None, allowed_updates=None):
         """ See: https://core.telegram.org/bots/api#getupdates """
         p = _strip(locals())
         return await self._api_request('getUpdates', _rectify(p))
 
-    async def setWebhook(self, url=None, certificate=None):
+    async def setWebhook(self, url=None, certificate=None, max_connections=None, allowed_updates=None):
         """ See: https://core.telegram.org/bots/api#setwebhook """
         p = _strip(locals(), more=['certificate'])
 
@@ -306,6 +306,10 @@ class Bot(_BotBase):
             return await self._api_request('setWebhook', _rectify(p), files)
         else:
             return await self._api_request('setWebhook', _rectify(p))
+
+    async def deleteWebhook(self):
+        """ See: https://core.telegram.org/bots/api#deletewebhook """
+        return await self._api_request('deleteWebhook')
 
     async def getWebhookInfo(self):
         """ See: https://core.telegram.org/bots/api#getwebhookinfo """
@@ -346,7 +350,9 @@ class Bot(_BotBase):
             if not isinstance(dest, io.IOBase) and 'd' in locals():
                 d.close()
 
-    async def message_loop(self, handler=None, timeout=20, source=None, ordered=True, maxhold=3):
+    async def message_loop(self, handler=None, relax=0.1,
+                           timeout=20, allowed_updates=None,
+                           source=None, ordered=True, maxhold=3):
         """
         Return a task to constantly ``getUpdates`` or pull updates from a queue.
         Apply ``handler`` to every message received.
@@ -396,6 +402,11 @@ class Bot(_BotBase):
         :param timeout:
             ``timeout`` parameter supplied to :meth:`telepot.aio.Bot.getUpdates`,
             controlling how long to poll in seconds.
+
+        :type allowed_updates: array of string
+        :param allowed_updates:
+            ``allowed_updates`` parameter supplied to :meth:`telepot.aio.Bot.getUpdates`,
+            controlling which types of updates to receive.
         """
         if handler is None:
             handler = self.handle
@@ -429,9 +440,15 @@ class Bot(_BotBase):
 
         async def get_from_telegram_server():
             offset = None  # running offset
+            allowed_upd = allowed_updates
             while 1:
                 try:
-                    result = await self.getUpdates(offset=offset, timeout=timeout)
+                    result = await self.getUpdates(offset=offset,
+                                                   timeout=timeout,
+                                                   allowed_updates=allowed_upd)
+
+                    # Once passed, this parameter is no longer needed.
+                    allowed_upd = None
 
                     if len(result) > 0:
                         # No sort. Trust server to give messages in correct order.
@@ -441,9 +458,9 @@ class Bot(_BotBase):
                     raise
                 except:
                     traceback.print_exc()
-                    await asyncio.sleep(0.1)
+                    await asyncio.sleep(relax)
                 else:
-                    await asyncio.sleep(0.1)
+                    await asyncio.sleep(relax)
 
         def dictify(data):
             if type(data) is bytes:

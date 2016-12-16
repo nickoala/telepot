@@ -18,7 +18,7 @@ from . import hack
 from . import exception
 
 
-__version_info__ = (10, 2)
+__version_info__ = (10, 3)
 __version__ = '.'.join(map(str, __version_info__))
 
 
@@ -624,12 +624,12 @@ class Bot(_BotBase):
         p = _strip(locals())
         return self._api_request('answerInlineQuery', _rectify(p))
 
-    def getUpdates(self, offset=None, limit=None, timeout=None):
+    def getUpdates(self, offset=None, limit=None, timeout=None, allowed_updates=None):
         """ See: https://core.telegram.org/bots/api#getupdates """
         p = _strip(locals())
         return self._api_request('getUpdates', _rectify(p))
 
-    def setWebhook(self, url=None, certificate=None):
+    def setWebhook(self, url=None, certificate=None, max_connections=None, allowed_updates=None):
         """ See: https://core.telegram.org/bots/api#setwebhook """
         p = _strip(locals(), more=['certificate'])
 
@@ -638,6 +638,10 @@ class Bot(_BotBase):
             return self._api_request('setWebhook', _rectify(p), files)
         else:
             return self._api_request('setWebhook', _rectify(p))
+
+    def deleteWebhook(self):
+        """ See: https://core.telegram.org/bots/api#deletewebhook """
+        return self._api_request('deleteWebhook')
 
     def getWebhookInfo(self):
         """ See: https://core.telegram.org/bots/api#getwebhookinfo """
@@ -688,7 +692,10 @@ class Bot(_BotBase):
             if 'r' in locals():
                 r.release_conn()
 
-    def message_loop(self, callback=None, relax=0.1, timeout=20, source=None, ordered=True, maxhold=3, run_forever=False):
+    def message_loop(self, callback=None, relax=0.1,
+                     timeout=20, allowed_updates=None,
+                     source=None, ordered=True, maxhold=3,
+                     run_forever=False):
         """
         Spawn a thread to constantly ``getUpdates`` or pull updates from a queue.
         Apply ``callback`` to every message received. Also starts the scheduler thread
@@ -727,6 +734,11 @@ class Bot(_BotBase):
         :param timeout:
             ``timeout`` parameter supplied to :meth:`telepot.Bot.getUpdates`,
             controlling how long to poll.
+
+        :type allowed_updates: array of string
+        :param allowed_updates:
+            ``allowed_updates`` parameter supplied to :meth:`telepot.Bot.getUpdates`,
+            controlling which types of updates to receive.
 
         When ``source`` is a queue, these parameters are meaningful:
 
@@ -784,9 +796,15 @@ class Bot(_BotBase):
 
         def get_from_telegram_server():
             offset = None  # running offset
+            allowed_upd = allowed_updates
             while 1:
                 try:
-                    result = self.getUpdates(offset=offset, timeout=timeout)
+                    result = self.getUpdates(offset=offset,
+                                             timeout=timeout,
+                                             allowed_updates=allowed_upd)
+
+                    # Once passed, this parameter is no longer needed.
+                    allowed_upd = None
 
                     if len(result) > 0:
                         # No sort. Trust server to give messages in correct order.

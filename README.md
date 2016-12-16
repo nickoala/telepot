@@ -6,6 +6,12 @@
 
 ### Recent changes
 
+**10.3 (2016-12-16)**
+
+- Added parameter `max_connections` and `allowed_updates` to method `setWebhook()`
+- Added parameter `allowed_updates` to method `getUpdates()` and `message_loop()`
+- Added method `deleteWebhook()`
+
 **10.2 (2016-11-29)**
 
 - Recognized `channel_post` and `edited_channel_post` in Update object
