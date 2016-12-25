@@ -24,7 +24,10 @@ class Bot(_BotBase):
             self._callback = None
 
         def event_at(self, when, data):
-            return self._loop.call_at(when, self._callback, data)
+            delay = when - time.time()
+            return self._loop.call_later(delay, self._callback, data)
+            # call_at() uses event loop time, not unix time.
+            # May as well use call_later here.
 
         def event_later(self, delay, data):
             return self._loop.call_later(delay, self._callback, data)

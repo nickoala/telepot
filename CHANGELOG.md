@@ -1,5 +1,9 @@
 # telepot changelog
 
+## 10.4 (2016-12-25)
+
+- Async Bot's scheduler method `event_at()` was modified to use unix timestamp
+
 ## 10.3 (2016-12-16)
 
 - Added parameter `max_connections` and `allowed_updates` to method `setWebhook()`
