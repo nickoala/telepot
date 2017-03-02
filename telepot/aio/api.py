@@ -1,5 +1,6 @@
 import aiohttp
 import re
+import json
 from .. import exception
 from ..api import _methodurl, _which_pool, _fileurl, _guess_filename
 
@@ -78,7 +79,9 @@ def _transform(req, **user_kw):
 async def _parse(response):
     try:
         data = await response.json()
-    except ValueError:
+        if data is None:
+            raise ValueError()
+    except (ValueError, json.JSONDecodeError):
         text = await response.text()
         raise exception.BadHTTPResponse(response.status, text, response)
 
