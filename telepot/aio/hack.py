@@ -8,7 +8,7 @@ try:
     aiohttp.multipart.BodyPartWriter.serialize
 
     class NoEncodeFilenameBodyPartWriter(aiohttp.multipart.BodyPartWriter):
-        def set_content_disposition(self, disptype, **params):
+        def set_content_disposition(self, disptype, quote_fields=True, **params):
             if not disptype or not (aiohttp.multipart.TOKEN > set(disptype)):
                 raise ValueError('bad content disposition type {!r}'
                                  ''.format(disptype))
@@ -24,7 +24,7 @@ try:
                     if key == 'filename':
                         qval = val
                     else:
-                        qval = quote(val, '')
+                        qval = quote(val, '') if quote_fields else val
 
                     lparams.append((key, '"%s"' % qval))
 
