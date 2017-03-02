@@ -18,7 +18,7 @@ from . import hack
 from . import exception
 
 
-__version_info__ = (10, 4)
+__version_info__ = (10, 5)
 __version__ = '.'.join(map(str, __version_info__))
 
 
@@ -810,6 +810,13 @@ class Bot(_BotBase):
                         # No sort. Trust server to give messages in correct order.
                         # Update offset to max(update_id) + 1
                         offset = max([relay_to_collector(update) for update in result]) + 1
+
+                except exception.BadHTTPResponse as e:
+                    traceback.print_exc()
+
+                    # Servers probably down. Wait longer.
+                    if e.status == 502:
+                        time.sleep(30)
                 except:
                     traceback.print_exc()
                 finally:

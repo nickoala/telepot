@@ -11,6 +11,8 @@ from .. import _BotBase, flavor, _find_first_key, _isstring, _dismantle_message_
 # Patch aiohttp for sending unicode filename
 from . import hack
 
+from .. import exception
+
 
 def flavor_router(routing_table):
     router = helper.Router(flavor, routing_table)
@@ -459,6 +461,12 @@ class Bot(_BotBase):
                         offset = max([handle(update) for update in result]) + 1
                 except CancelledError:
                     raise
+                except exception.BadHTTPResponse as e:
+                    traceback.print_exc()
+
+                    # Servers probably down. Wait longer.
+                    if e.status == 502:
+                        await asyncio.sleep(30)
                 except:
                     traceback.print_exc()
                     await asyncio.sleep(relax)
