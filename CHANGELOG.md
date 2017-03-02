@@ -1,5 +1,12 @@
 # telepot changelog
 
+## 10.5 (2017-03-02)
+
+- In `message_loop()`, delay longer between HTTP 502 responses
+- Handled empty JSON responses (async version)
+- Added `quote_fields` parameter to aiohttp hack
+- Fixed dependency at `aiohttp==1.3`
+
 ## 10.4 (2016-12-25)
 
 - Async Bot's scheduler method `event_at()` was modified to use unix timestamp
