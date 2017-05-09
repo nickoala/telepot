@@ -31,28 +31,22 @@ Telegram servers very closely. Unless a bot absolutely doesn't care about update
 it will have to re-order them in some way.
 
 Telepot has a mechanism to interface with web applications, and it takes care of re-ordering
-for you. The mechanism is simple: you call `message_loop()` as usual, but supply an additional
-parameter `source`, which is a queue.
+for you. It is called `OrderedWebhook`.
 
 ```python
-# for Python 2 and 3
-try:
-    from Queue import Queue
-except ImportError:
-    from queue import Queue
+from telepot.loop import OrderedWebhook
 
 def handle(msg):
     # ......
 
 bot = telepot.Bot(TOKEN)
-update_queue = Queue()
+webhook = OrderedWebhook(bot, handle)
 
-# get updates from queue, not from Telegram servers
-bot.message_loop(handle, source=update_queue)
+webhook.run_as_thread()
 ```
 
-The web application, upon receiving a POST request, dumps data into the queue
-for the bot to retrieve at the other end. The bot will re-order the updates if necessary.
+The web application, upon receiving a POST request, feeds data into the webhook
+object. It will re-order the updates if necessary.
 Using [Flask](http://flask.pocoo.org/) as the web application framework:
 
 ```python
@@ -62,6 +56,6 @@ app = Flask(__name__)
 
 @app.route('/webhook_path', methods=['GET', 'POST'])
 def pass_update():
-    update_queue.put(request.data)  # dump data to queue
+    webhook.feed(request.data)
     return 'OK'
 ```

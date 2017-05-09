@@ -2,6 +2,7 @@ import time
 import random
 import datetime
 import telepot
+from telepot.loop import MessageLoop
 
 """
 After **inserting token** in the source code, run it:
@@ -30,7 +31,8 @@ def handle(msg):
         bot.sendMessage(chat_id, str(datetime.datetime.now()))
 
 bot = telepot.Bot('*** INSERT TOKEN ***')
-bot.message_loop(handle)
+
+MessageLoop(bot, handle).run_as_thread()
 print 'I am listening ...'
 
 while 1:

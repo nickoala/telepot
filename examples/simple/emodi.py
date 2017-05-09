@@ -2,6 +2,7 @@ import sys
 import time
 import telepot
 import telepot.namedtuple
+from telepot.loop import MessageLoop
 
 """
 $ python2.7 emodi.py <token>
@@ -42,7 +43,7 @@ def handle(msg):
 TOKEN = sys.argv[1]  # get token from command-line
 
 bot = telepot.Bot(TOKEN)
-bot.message_loop(handle)
+MessageLoop(bot, handle).run_as_thread()
 print 'Listening ...'
 
 # Keep the program running.

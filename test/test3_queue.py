@@ -1,14 +1,7 @@
 import time
 import queue
 import telepot
-
-def handle(msg):
-    print(msg)
-
-bot = telepot.Bot('abc')
-qu = queue.Queue();
-
-bot.message_loop(handle, source=qu, maxhold=8)
+from telepot.loop import OrderedWebhook
 
 def u(update_id):
     return { 'update_id': update_id, 'message': update_id }
@@ -74,9 +67,17 @@ sequence = [
     u(40),  # return
 ]
 
+def handle(msg):
+    print(msg)
+
+bot = telepot.Bot('abc')
+webhook = OrderedWebhook(bot, handle)
+
+webhook.run_as_thread(maxhold=8)
+
 for update in sequence:
     if type(update) is dict:
-        qu.put(update)
+        webhook.feed(update)
         time.sleep(1)
     else:
         time.sleep(update)

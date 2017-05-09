@@ -1,8 +1,10 @@
 import sys
+import time
 from datetime import datetime, timedelta
 from functools import reduce
 import telepot
 import telepot.helper
+from telepot.loop import MessageLoop
 from telepot.namedtuple import (
     InlineQueryResultArticle, InputTextMessageContent,
     InlineKeyboardMarkup, InlineKeyboardButton,
@@ -155,4 +157,8 @@ bot = telepot.DelegatorBot(TOKEN, [
         pave_event_space())(
             per_inline_from_id(), create_open, DateCalculator, timeout=10),
 ])
-bot.message_loop(run_forever='Listening ...')
+MessageLoop(bot).run_as_thread()
+print('Listening ...')
+
+while 1:
+    time.sleep(10)

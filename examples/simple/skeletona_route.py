@@ -3,6 +3,7 @@ import asyncio
 import random
 import telepot
 import telepot.aio
+from telepot.aio.loop import MessageLoop
 from telepot.namedtuple import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, ForceReply
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.namedtuple import InlineQueryResultArticle, InlineQueryResultPhoto, InputTextMessageContent
@@ -11,7 +12,7 @@ from telepot.namedtuple import InlineQueryResultArticle, InlineQueryResultPhoto,
 $ python3.5 skeletona_route.py <token>
 
 It demonstrates:
-- passing a routing table to `message_loop()` to filter flavors.
+- passing a routing table to `MessageLoop` to filter flavors.
 - the use of custom keyboard and inline keyboard, and their various buttons.
 
 Remember to `/setinline` and `/setinlinefeedback` to enable inline mode for your bot.
@@ -128,10 +129,10 @@ bot = telepot.aio.Bot(TOKEN)
 answerer = telepot.aio.helper.Answerer(bot)
 
 loop = asyncio.get_event_loop()
-loop.create_task(bot.message_loop({'chat': on_chat_message,
+loop.create_task(MessageLoop(bot, {'chat': on_chat_message,
                                    'callback_query': on_callback_query,
                                    'inline_query': on_inline_query,
-                                   'chosen_inline_result': on_chosen_inline_result}))
+                                   'chosen_inline_result': on_chosen_inline_result}).run_forever())
 print('Listening ...')
 
 loop.run_forever()

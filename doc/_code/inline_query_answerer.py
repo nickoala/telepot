@@ -1,5 +1,7 @@
 import sys
+import time
 import telepot
+from telepot.loop import MessageLoop
 from telepot.namedtuple import InlineQueryResultArticle, InputTextMessageContent
 
 def on_inline_query(msg):
@@ -28,6 +30,8 @@ TOKEN = sys.argv[1]  # get token from command-line
 bot = telepot.Bot(TOKEN)
 answerer = telepot.helper.Answerer(bot)
 
-bot.message_loop({'inline_query': on_inline_query,
-                  'chosen_inline_result': on_chosen_inline_result},
-                 run_forever='Listening ...')
+MessageLoop(bot, {'inline_query': on_inline_query,
+                  'chosen_inline_result': on_chosen_inline_result}).run_as_thread()
+
+while 1:
+    time.sleep(10)

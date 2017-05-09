@@ -3,6 +3,7 @@ import time
 import threading
 import random
 import telepot
+from telepot.loop import MessageLoop
 from telepot.namedtuple import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, ForceReply
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.namedtuple import InlineQueryResultArticle, InlineQueryResultPhoto, InputTextMessageContent
@@ -11,7 +12,7 @@ from telepot.namedtuple import InlineQueryResultArticle, InlineQueryResultPhoto,
 $ python3.5 skeleton_route.py <token>
 
 It demonstrates:
-- passing a routing table to `message_loop()` to filter flavors.
+- passing a routing table to `MessageLoop` to filter flavors.
 - the use of custom keyboard and inline keyboard, and their various buttons.
 
 Remember to `/setinline` and `/setinlinefeedback` to enable inline mode for your bot.
@@ -127,10 +128,10 @@ TOKEN = sys.argv[1]  # get token from command-line
 bot = telepot.Bot(TOKEN)
 answerer = telepot.helper.Answerer(bot)
 
-bot.message_loop({'chat': on_chat_message,
+MessageLoop(bot, {'chat': on_chat_message,
                   'callback_query': on_callback_query,
                   'inline_query': on_inline_query,
-                  'chosen_inline_result': on_chosen_inline_result})
+                  'chosen_inline_result': on_chosen_inline_result}).run_as_thread()
 print('Listening ...')
 
 # Keep the program running.

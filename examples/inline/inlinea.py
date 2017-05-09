@@ -1,6 +1,7 @@
 import sys
 import asyncio
 import telepot
+from telepot.aio.loop import MessageLoop
 from telepot.aio.helper import InlineUserHandler, AnswererMixin
 from telepot.aio.delegate import per_inline_from_id, create_open, pave_event_space
 
@@ -41,7 +42,7 @@ bot = telepot.aio.DelegatorBot(TOKEN, [
 ])
 loop = asyncio.get_event_loop()
 
-loop.create_task(bot.message_loop())
+loop.create_task(MessageLoop(bot).run_forever())
 print('Listening ...')
 
 loop.run_forever()

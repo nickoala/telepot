@@ -43,7 +43,7 @@ $ python3.5 skeletona_route.py <token>  # async
 
 It demonstrates:
 
-- passing a routing table to `message_loop()` to filter flavors.
+- passing a routing table to `MessageLoop` to filter flavors.
 - the use of custom keyboard and inline keyboard, and their various buttons.
 
 Remember to `/setinline` and `/setinlinefeedback` to enable inline mode for your bot.

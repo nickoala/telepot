@@ -1,7 +1,9 @@
 import sys
+import time
 import random
 import traceback
 import telepot
+from telepot.loop import MessageLoop
 from telepot.delegate import per_chat_id, create_open, pave_event_space
 
 """
@@ -64,4 +66,8 @@ bot = telepot.DelegatorBot(TOKEN, [
     pave_event_space()(
         per_chat_id(), create_open, Player, timeout=10),
 ])
-bot.message_loop(run_forever='Listening ...')
+MessageLoop(bot).run_as_thread()
+print('Listening ...')
+
+while 1:
+    time.sleep(10)

@@ -94,12 +94,13 @@ An easier way to receive messages
 It is troublesome to keep checking messages while managing ``offset``. Let telepot
 take care of the mundane stuff and notify you whenever new messages arrive::
 
+    >>> from telepot.loop import MessageLoop
     >>> def handle(msg):
     ...     pprint(msg)
     ...
-    >>> bot.message_loop(handle)
+    >>> MessageLoop(bot, handle).run_as_thread()
 
-After setting up this callback, send it a few messages. Sit back and monitor the
+After setting this up, send it a few messages. Sit back and monitor the
 messages arriving.
 
 Send a message
@@ -121,6 +122,7 @@ almost always have to extract them. Use :func:`telepot.glance` to extract
     import sys
     import time
     import telepot
+    from telepot.loop import MessageLoop
 
     def handle(msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
@@ -132,7 +134,7 @@ almost always have to extract them. Use :func:`telepot.glance` to extract
     TOKEN = sys.argv[1]  # get token from command-line
 
     bot = telepot.Bot(TOKEN)
-    bot.message_loop(handle)
+    MessageLoop(bot, handle).run_as_thread()
     print ('Listening ...')
 
     # Keep the program running.
@@ -189,10 +191,10 @@ Pay attention to these things in the code:
 - :func:`telepot.glance` works on any type of messages. Just give it the flavor.
 - Use :meth:`.Bot.answerCallbackQuery` to react to callback query
 - To *route* messages according to flavor, give a *routing table* to
-  :meth:`.Bot.message_loop`
+  :class:`.MessageLoop`
 
 .. literalinclude:: _code/inline_keyboard.py
-   :emphasize-lines: 9,10,11,16,19,24,25
+   :emphasize-lines: 10,11,12,17,20,25,26
 
 Inline Query
 ------------
@@ -235,7 +237,7 @@ In this code sample, pay attention to these things:
 - Use :meth:`.Bot.answerInlineQuery` to send back answers
 
 .. literalinclude:: _code/inline_query_simple.py
-   :emphasize-lines: 9-13,17
+   :emphasize-lines: 11-15,19
 
 However, this has a small problem. As you types and pauses,
 types and pauses, types and pauses ... closely bunched inline queries arrive.
@@ -257,7 +259,7 @@ You supply it with a *compute function*. It takes that function's returned value
 the compute function must be **thread-safe**.
 
 .. literalinclude:: _code/inline_query_answerer.py
-   :emphasize-lines: 20,29
+   :emphasize-lines: 22,31
 
 Maintain Threads of Conversation
 --------------------------------
@@ -278,7 +280,7 @@ by an individual user. If no message is received after 10 seconds, it starts ove
 The counting is done *per chat* - that's the important point.
 
 .. literalinclude:: _code/counter.py
-   :emphasize-lines: 16-19
+   :emphasize-lines: 18-21
 
 A :class:`.DelegatorBot` is able to spawn *delegates*. Above, it is spawning one ``MessageCounter``
 *per chat id*.
@@ -303,7 +305,7 @@ In the code sample below, pay attention to these things:
 - :func:`.per_inline_from_id` ensures one instance of :class:`QueryCounter` per originating user
 
 .. literalinclude:: _code/inline_per_user.py
-   :emphasize-lines: 6,29,39
+   :emphasize-lines: 8,31,41
 
 Async Version (Python 3.5+)
 ---------------------------
@@ -364,11 +366,12 @@ They will have to be driven by an event loop.
 Async version is under module :mod:`telepot.aio`. I duplicate the message counter example
 below in async style:
 
-- Substitute async version of selected classes and functions
-- Use ``async/await`` to do asynchronous operations
+- Substitute async version of relevant classes and functions
+- Use ``async/await`` to perform asynchronous operations
+- Use :meth:`.MessageLoop.run_forever` instead of :meth:`.run_as_thread`
 
 .. literalinclude:: _code/countera.py
-   :emphasize-lines: 4,6,11-13
+   :emphasize-lines: 4-5,7,12-14,24
 
 `More Examples » <https://github.com/nickoala/telepot/tree/master/examples>`_
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

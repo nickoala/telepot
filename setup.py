@@ -36,7 +36,7 @@ cmdclass = {}
 
 if PY_35:
     # one more dependency for Python 3.5 (async version)
-    install_requires += ['aiohttp==1.3']
+    install_requires += ['aiohttp>=2.0.0']
 else:
     # do not copy/compile async version for older Python
     cmdclass['build_py'] = nocopy_async

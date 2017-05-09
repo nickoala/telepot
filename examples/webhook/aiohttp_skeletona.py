@@ -3,13 +3,14 @@ import asyncio
 from aiohttp import web
 import telepot
 import telepot.aio
+from telepot.aio.loop import OrderedWebhook
 
 """
 $ python3.5 aiohttp_skeletona.py <token> <listening_port> <webhook_url>
 
-Webhook path is '/abc', therefore:
+Webhook path is '/webhook', therefore:
 
-<webhook_url>: https://<base>/abc
+<webhook_url>: https://<base>/webhook
 """
 
 def on_chat_message(msg):
@@ -21,8 +22,7 @@ def on_callback_query(msg):
     print('Callback query:', query_id, from_id, data)
 
 # need `/setinline`
-@asyncio.coroutine
-def on_inline_query(msg):
+async def on_inline_query(msg):
     query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
     print('Inline Query:', query_id, from_id, query_string)
 
@@ -30,50 +30,43 @@ def on_inline_query(msg):
     articles = [{'type': 'article',
                     'id': 'abc', 'title': 'ABC', 'message_text': 'Good morning'}]
 
-    yield from bot.answerInlineQuery(query_id, articles)
+    await bot.answerInlineQuery(query_id, articles)
 
 # need `/setinlinefeedback`
 def on_chosen_inline_result(msg):
     result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
     print('Chosen Inline Result:', result_id, from_id, query_string)
 
+async def feeder(request):
+    data = await request.text()
+    webhook.feed(data)
+    return web.Response(body='OK'.encode('utf-8'))
+
+async def init(app, bot):
+    app.router.add_route('GET', '/webhook', feeder)
+    app.router.add_route('POST', '/webhook', feeder)
+
+    await bot.setWebhook(URL)
+
 
 TOKEN = sys.argv[1]
 PORT = int(sys.argv[2])
 URL = sys.argv[3]
 
-bot = telepot.aio.Bot(TOKEN)
-update_queue = asyncio.Queue()  # channel between web app and bot
-
-@asyncio.coroutine
-def webhook(request):
-    data = yield from request.text()
-    yield from update_queue.put(data)  # pass update to bot
-    return web.Response(body='OK'.encode('utf-8'))
-
-@asyncio.coroutine
-def init(loop):
-    app = web.Application(loop=loop)
-    app.router.add_route('GET', '/abc', webhook)
-    app.router.add_route('POST', '/abc', webhook)
-
-    srv = yield from loop.create_server(app.make_handler(), '0.0.0.0', PORT)
-    print("Server started ...")
-
-    yield from bot.setWebhook(URL)
-
-    return srv
-
 loop = asyncio.get_event_loop()
-loop.run_until_complete(init(loop))
-loop.create_task(
-    bot.message_loop({
-        'chat': on_chat_message,
-        'callback_query': on_callback_query,
-        'inline_query': on_inline_query,
-        'chosen_inline_result': on_chosen_inline_result},
-        source=update_queue))  # take updates from queue
+
+app = web.Application(loop=loop)
+bot = telepot.aio.Bot(TOKEN, loop=loop)
+webhook = OrderedWebhook(bot, {'chat': on_chat_message,
+                               'callback_query': on_callback_query,
+                               'inline_query': on_inline_query,
+                               'chosen_inline_result': on_chosen_inline_result})
+
+loop.run_until_complete(init(app, bot))
+
+loop.create_task(webhook.run_forever())
+
 try:
-    loop.run_forever()
+    web.run_app(app, port=PORT)
 except KeyboardInterrupt:
     pass

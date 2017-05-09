@@ -1,7 +1,9 @@
 import sys
+import time
 import random
 import telepot
 import telepot.helper
+from telepot.loop import MessageLoop
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.delegate import (
     per_chat_id, per_callback_query_origin, create_open, pave_event_space)
@@ -80,4 +82,8 @@ bot = telepot.DelegatorBot(TOKEN, [
         per_callback_query_origin(), create_open, Quizzer, timeout=10),
 ])
 
-bot.message_loop(run_forever='Listening ...')
+MessageLoop(bot).run_as_thread()
+print('Listening ...')
+
+while 1:
+    time.sleep(10)

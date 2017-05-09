@@ -1,6 +1,7 @@
 import sys
 import asyncio
 import telepot
+from telepot.aio.loop import MessageLoop
 from telepot.aio.delegate import (
     per_chat_id_in, per_application, call, create_open, pave_event_space)
 
@@ -177,7 +178,7 @@ OWNER_ID = int(sys.argv[2])
 bot = ChatBox(TOKEN, OWNER_ID)
 loop = asyncio.get_event_loop()
 
-loop.create_task(bot.message_loop())
+loop.create_task(MessageLoop(bot).run_forever())
 print('Listening ...')
 
 loop.run_forever()

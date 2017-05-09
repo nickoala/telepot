@@ -1,5 +1,7 @@
 import sys
+import time
 import telepot
+from telepot.loop import MessageLoop
 from telepot.delegate import (
     per_chat_id_in, per_application, call, create_open, pave_event_space)
 
@@ -197,4 +199,8 @@ TOKEN = sys.argv[1]
 OWNER_ID = int(sys.argv[2])
 
 bot = ChatBox(TOKEN, OWNER_ID)
-bot.message_loop(run_forever='Listening ...')
+MessageLoop(bot).run_as_thread()
+print('Listening ...')
+
+while 1:
+    time.sleep(10)

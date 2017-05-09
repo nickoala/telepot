@@ -103,8 +103,9 @@ async def send_everything(msg):
 
     await bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=remove_keyboard)
 
-    r = await aiohttp.get('http://i.imgur.com/35HSRQ6.png')
-    bbb = await r.read()
+    async with aiohttp.ClientSession() as session:
+        async with session.get('http://i.imgur.com/35HSRQ6.png') as r:
+            bbb = await r.read()
 
     await bot.sendPhoto(chat_id, ('abc.jpg', bbb))
 

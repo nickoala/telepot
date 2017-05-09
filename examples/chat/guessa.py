@@ -2,6 +2,7 @@ import sys
 import asyncio
 import random
 import telepot
+from telepot.aio.loop import MessageLoop
 from telepot.aio.delegate import per_chat_id, create_open, pave_event_space
 
 """
@@ -66,7 +67,7 @@ bot = telepot.aio.DelegatorBot(TOKEN, [
 ])
 
 loop = asyncio.get_event_loop()
-loop.create_task(bot.message_loop())
+loop.create_task(MessageLoop(bot).run_forever())
 print('Listening ...')
 
 loop.run_forever()

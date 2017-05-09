@@ -27,6 +27,8 @@ under :mod:`telepot.aio`:
 +===================+=======================+
 | telepot           | telepot.aio           |
 +-------------------+-----------------------+
+| telepot.loop      | telepot.aio.loop      |
++-------------------+-----------------------+
 | telepot.delegate  | telepot.aio.delegate  |
 +-------------------+-----------------------+
 | telepot.helper    | telepot.aio.helper    |
@@ -52,6 +54,65 @@ I only give links below. No point to duplicate all the details.
 
 .. autoclass:: telepot.Bot
    :members:
+
+Message Loop and Webhook
+------------------------
+
+There are two ways to obtain updates from Telegram Bot API: make calls to
+:meth:`.Bot.getUpdates` continuously, or use webhook.
+
+In the former case, it is troublesome to have to program that manually.
+So :class:`.MessageLoop` is here to ease your burden. In the latter case,
+although the programming overhead is mainly on the web server, a structured way
+to funnel web requests into telepot is desirable. The result is :class:`.Webhook`
+and :class:`.OrderedWebhook`.
+
+The idea is similar. You supply a message-handling function to the object
+constructor, then use :meth:`.run_as_thread` to get it going. A :class:`.MessageLoop`
+makes calls to :meth:`.getUpdates` continuously, and apply the message-handling
+function to every message received. A :class:`.Webhook` or :class:`.OrderedWebhook`
+would not do anything by itself; you have to :meth:`.feed` it the new update
+every time the web server receives one.
+
+In place of the message-handling function, you can supply one of the following:
+
+- a function that takes one argument (the message)
+- if ``None``, the bot's ``handle`` method is used
+- a routing table
+
+A *routing table* is a dictionary of ``{flavor: function}``, mapping messages to
+appropriate handler functions according to their flavors. It allows you to
+define functions specifically to handle one flavor of messages. It usually looks
+like this: ``{'chat': fn1, 'callback_query': fn2, 'inline_query': fn3, ...}``.
+Each handler function should take one argument (the message).
+
+.. autoclass:: telepot.loop.MessageLoop
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+In practice, you should always use :class:`.OrderedWebhook` rather than :class:`.Webhook`.
+Updates are individual HTTP requests, and there is no guarantee of their arrival
+order. :class:`.OrderedWebhook` puts them in order (according to ``update_id``)
+before applying the message-handling function. In contrast, :class:`.Webhook`
+applies the message-handling function in the order you feed them. Unless you
+want to implement your own ordering logic, :class:`.Webhook` should not be used.
+
+In async version, a task of :meth:`.run_forever` should be created instead of
+:meth:`.run_as_thread`.
+
+Refer to `webhook examples <https://github.com/nickoala/telepot/tree/master/examples/webhook>`_
+for usage.
+
+.. autoclass:: telepot.loop.OrderedWebhook
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+.. autoclass:: telepot.loop.Webhook
+   :members:
+   :undoc-members:
+   :inherited-members:
 
 Functions
 ---------
@@ -101,7 +162,7 @@ A *delegator* is a function that:
       ``Thread(target=function, args=args, kwargs=kwargs)`` and started.
 
 The above logic is implemented in the ``handle`` method.
-You only have to call :meth:`.Bot.message_loop` with no ``callback``
+You only have to create a :class:`.MessageLoop` with no callback
 argument, the above logic will be executed for every message received.
 
 In the list of delegation patterns, all seeder functions are evaluated in order.

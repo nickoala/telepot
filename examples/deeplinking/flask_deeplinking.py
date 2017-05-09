@@ -1,16 +1,12 @@
 import sys
 from flask import Flask, request
 import telepot
-
-try:
-    from Queue import Queue
-except ImportError:
-    from queue import Queue
+from telepot.loop import OrderedWebhook
 
 """
-$ python2.7 flask_deeplinking.py <bot_username> <token> <listening_port> https://<domain>/abc
+$ python2.7 flask_deeplinking.py <bot_username> <token> <listening_port> https://<domain>/webhook
 
-Webhook path is '/abc'.
+Webhook path is '/webhook'.
 Initial webpage is '/link'.
 
 1. Open browser, visit: `https://<domain>/link`
@@ -52,20 +48,24 @@ URL = sys.argv[4]
 
 app = Flask(__name__)
 bot = telepot.Bot(TOKEN)
-update_queue = Queue()  # channel between `app` and `bot`
-
-bot.message_loop(handle, source=update_queue)  # take updates from queue
+webhook = OrderedWebhook(bot, handle)
 
 @app.route('/link', methods=['GET', 'POST'])
 def display_link():
     first_key_in_database = key_id_map.items()[0][0]
     return '<a href="https://telegram.me/%s?start=%s">Open conversation with bot</a>' % (BOT_USERNAME, first_key_in_database)
 
-@app.route('/abc', methods=['GET', 'POST'])
+@app.route('/webhook', methods=['GET', 'POST'])
 def pass_update():
-    update_queue.put(request.data)  # pass update to bot
+    webhook.feed(request.data)
     return 'OK'
 
 if __name__ == '__main__':
-    bot.setWebhook(URL)
+    try:
+        bot.setWebhook(URL)
+    # Sometimes it would raise this error, but webhook still set successfully.
+    except telepot.exception.TooManyRequestsError:
+        pass
+
+    webhook.run_as_thread()
     app.run(port=PORT, debug=True)

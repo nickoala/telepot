@@ -4,6 +4,7 @@ import random
 from telepot import glance
 import telepot.aio
 import telepot.aio.helper
+from telepot.aio.loop import MessageLoop
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.aio.delegate import (
     per_chat_id, per_callback_query_origin, create_open, pave_event_space)
@@ -83,7 +84,7 @@ bot = telepot.aio.DelegatorBot(TOKEN, [
 ])
 
 loop = asyncio.get_event_loop()
-loop.create_task(bot.message_loop())
+loop.create_task(MessageLoop(bot).run_forever())
 print('Listening ...')
 
 loop.run_forever()

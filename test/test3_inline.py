@@ -109,4 +109,4 @@ answerer = telepot.helper.Answerer(bot)
 bot.sendMessage(USER_ID, 'Please give me an inline query.')
 
 bot.message_loop({'inline_query': on_inline_query,
-                     'chosen_inline_result': on_chosen_inline_result}, run_forever=True)
+                  'chosen_inline_result': on_chosen_inline_result}, run_forever=True)

@@ -1,21 +1,26 @@
+import asyncio
 import aiohttp
+import async_timeout
 import re
 import json
 from .. import exception
 from ..api import _methodurl, _which_pool, _fileurl, _guess_filename
 
-_pools = {
-    'default': aiohttp.TCPConnector(limit=10)
-}
+_loop = asyncio.get_event_loop()
 
-_onetime_pool_spec = (aiohttp.TCPConnector, dict(force_close=True))
+_pools = {
+    'default': aiohttp.ClientSession(
+                   connector=aiohttp.TCPConnector(limit=10),
+                   loop=_loop)
+}
 
 _timeout = 30
 
 
 def _create_onetime_pool():
-    cls, kw = _onetime_pool_spec
-    return cls(**kw)
+    return aiohttp.ClientSession(
+               connector=aiohttp.TCPConnector(limit=1, force_close=True),
+               loop=_loop)
 
 def _default_timeout(req, **user_kw):
     return _timeout
@@ -37,7 +42,7 @@ def _compose_timeout(req, **user_kw):
 def _compose_data(req, **user_kw):
     token, method, params, files = req
 
-    data = aiohttp.helpers.FormData()
+    data = aiohttp.formdata.FormData()
 
     if params:
         for key,value in params.items():
@@ -67,14 +72,16 @@ def _transform(req, **user_kw):
     name = _which_pool(req, **user_kw)
 
     if name is None:
-        connector = _create_onetime_pool()
+        session = _create_onetime_pool()
+        cleanup = session.close  # one-time session: remember to close
     else:
-        connector = _pools[name]
+        session = _pools[name]
+        cleanup = None  # reuse: do not close
 
-    kwargs = {'data':data, 'connector':connector}
+    kwargs = {'data':data}
     kwargs.update(user_kw)
 
-    return aiohttp.post, (url,), kwargs, timeout
+    return session.post, (url,), kwargs, timeout, cleanup
 
 async def _parse(response):
     try:
@@ -100,16 +107,21 @@ async def _parse(response):
         raise exception.TelegramError(description, error_code, data)
 
 async def request(req, **user_kw):
-    fn, args, kwargs, timeout = _transform(req, **user_kw)
+    fn, args, kwargs, timeout, cleanup = _transform(req, **user_kw)
 
-    if timeout is None:
-        async with fn(*args, **kwargs) as r:
-            return await _parse(r)
-    else:
-        with aiohttp.Timeout(timeout):
+    try:
+        if timeout is None:
             async with fn(*args, **kwargs) as r:
                 return await _parse(r)
+        else:
+            with async_timeout.timeout(timeout):
+                async with fn(*args, **kwargs) as r:
+                    return await _parse(r)
+    finally:
+        if cleanup:
+            cleanup()  # e.g. closing one-time session
 
 def download(req):
-    with aiohttp.Timeout(_timeout):
-        return aiohttp.get(_fileurl(req))
+    session = _create_onetime_pool()
+    return session, session.get(_fileurl(req), timeout=_timeout)
+    # Caller should close session after download is complete

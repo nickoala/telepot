@@ -1,12 +1,7 @@
 import time
 import asyncio
 import telepot.aio
-
-def handle(msg):
-    print(msg)
-
-bot = telepot.aio.Bot('abc')
-qu = asyncio.Queue();
+from telepot.aio.loop import OrderedWebhook
 
 def u(update_id):
     return { 'update_id': update_id, 'message': update_id }
@@ -72,16 +67,21 @@ sequence = [
     u(40),  # return
 ]
 
-async def queue_put():
+async def feed():
     for update in sequence:
         if type(update) is dict:
-            await qu.put(update)
+            webhook.feed(update)
             await asyncio.sleep(1)
         else:
             await asyncio.sleep(update)
 
+def handle(msg):
+    print(msg)
+
+bot = telepot.aio.Bot('abc')
+webhook = OrderedWebhook(bot, handle)
 
 loop = asyncio.get_event_loop()
-loop.create_task(bot.message_loop(handle, source=qu, maxhold=8))
-loop.create_task(queue_put())
+loop.create_task(webhook.run_forever(maxhold=8))
+loop.create_task(feed())
 loop.run_forever()

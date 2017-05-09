@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from functools import reduce
 from telepot import glance, peel
 import telepot.aio
+from telepot.aio.loop import MessageLoop
 from telepot.aio.helper import (
     InlineUserHandler, AnswererMixin, InterceptCallbackQueryMixin, Editor)
 from telepot.namedtuple import (
@@ -160,7 +161,7 @@ bot = telepot.aio.DelegatorBot(TOKEN, [
 ])
 
 loop = asyncio.get_event_loop()
-loop.create_task(bot.message_loop())
+loop.create_task(MessageLoop(bot).run_forever())
 print('Listening ...')
 
 loop.run_forever()

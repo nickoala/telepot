@@ -18,7 +18,7 @@ from . import hack
 from . import exception
 
 
-__version_info__ = (10, 5)
+__version_info__ = (11, 0)
 __version__ = '.'.join(map(str, __version_info__))
 
 
@@ -273,7 +273,7 @@ class Bot(_BotBase):
             super(Bot.Scheduler, self).__init__()
             self._eventq = []
             self._lock = threading.RLock()  # reentrant lock to allow locked method calling locked method
-            self._output_queue = None
+            self._event_handler = None
 
         def _locked(fn):
             def k(self, *args, **kwargs):
@@ -361,14 +361,21 @@ class Bot(_BotBase):
                 e = self._pop_expired_event()
                 while e:
                     if callable(e.data):
-                        d = e.data()
+                        d = e.data()  # call the data-producing function
                         if d is not None:
-                            self._output_queue.put(d)
+                            self._event_handler(d)
                     else:
-                        self._output_queue.put(e.data)
+                        self._event_handler(e.data)
 
                     e = self._pop_expired_event()
                 time.sleep(0.1)
+
+        def run_as_thread(self):
+            self.daemon = True
+            self.start()
+
+        def on_event(self, fn):
+            self._event_handler = fn
 
     def __init__(self, token):
         super(Bot, self).__init__(token)
@@ -697,6 +704,8 @@ class Bot(_BotBase):
                      source=None, ordered=True, maxhold=3,
                      run_forever=False):
         """
+        :deprecated: will be removed in future. Use :class:`.MessageLoop` instead.
+
         Spawn a thread to constantly ``getUpdates`` or pull updates from a queue.
         Apply ``callback`` to every message received. Also starts the scheduler thread
         for internal events.
@@ -951,9 +960,8 @@ class Bot(_BotBase):
         message_thread.daemon = True  # need this for main thread to be killable by Ctrl-C
         message_thread.start()
 
-        self._scheduler._output_queue = collect_queue
-        self._scheduler.daemon = True
-        self._scheduler.start()
+        self._scheduler.on_event(collect_queue.put)
+        self._scheduler.run_as_thread()
 
         if run_forever:
             if _isstring(run_forever):

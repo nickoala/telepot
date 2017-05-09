@@ -25,6 +25,9 @@ class Bot(_BotBase):
             self._loop = loop
             self._callback = None
 
+        def on_event(self, callback):
+            self._callback = callback
+
         def event_at(self, when, data):
             delay = when - time.time()
             return self._loop.call_later(delay, self._callback, data)
@@ -42,7 +45,9 @@ class Bot(_BotBase):
 
     def __init__(self, token, loop=None):
         super(Bot, self).__init__(token)
-        self._loop = loop if loop is not None else asyncio.get_event_loop()
+
+        self._loop = loop or asyncio.get_event_loop()
+        api._loop = self._loop  # sync loop with api module
 
         self._scheduler = self.Scheduler(self._loop)
 
@@ -344,13 +349,16 @@ class Bot(_BotBase):
         try:
             d = dest if isinstance(dest, io.IOBase) else open(dest, 'wb')
 
-            async with api.download((self._token, f['file_path'])) as r:
-                while 1:
-                    chunk = await r.content.read(self._file_chunk_size)
-                    if not chunk:
-                        break
-                    d.write(chunk)
-                    d.flush()
+            session, request = api.download((self._token, f['file_path']))
+
+            async with session:
+                async with request as r:
+                    while 1:
+                        chunk = await r.content.read(self._file_chunk_size)
+                        if not chunk:
+                            break
+                        d.write(chunk)
+                        d.flush()
         finally:
             if not isinstance(dest, io.IOBase) and 'd' in locals():
                 d.close()

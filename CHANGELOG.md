@@ -1,5 +1,11 @@
 # telepot changelog
 
+## 11.0 (2017-05-09)
+
+- Async version compliant with aiohttp2
+- Added `telepot.loop` and `telepot.aio.loop` module. Method `message_loop()` deprecated.
+  Use class `MessageLoop`, `OrderedWebhook`, or `Webhook` instead.
+
 ## 10.5 (2017-03-02)
 
 - In `message_loop()`, delay longer between HTTP 502 responses

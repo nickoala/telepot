@@ -1,18 +1,14 @@
 import sys
 from flask import Flask, request
 import telepot
-
-try:
-    from Queue import Queue
-except ImportError:
-    from queue import Queue
+from telepot.loop import OrderedWebhook
 
 """
 $ python2.7 flask_skeleton.py <token> <listening_port> <webhook_url>
 
-Webhook path is '/abc', therefore:
+Webhook path is '/webhook', therefore:
 
-<webhook_url>: https://<base>/abc
+<webhook_url>: https://<base>/webhook
 """
 
 def on_chat_message(msg):
@@ -46,18 +42,22 @@ URL = sys.argv[3]
 
 app = Flask(__name__)
 bot = telepot.Bot(TOKEN)
-update_queue = Queue()  # channel between `app` and `bot`
+webhook = OrderedWebhook(bot, {'chat': on_chat_message,
+                               'callback_query': on_callback_query,
+                               'inline_query': on_inline_query,
+                               'chosen_inline_result': on_chosen_inline_result})
 
-bot.message_loop({'chat': on_chat_message,
-                  'callback_query': on_callback_query,
-                  'inline_query': on_inline_query,
-                  'chosen_inline_result': on_chosen_inline_result}, source=update_queue)  # take updates from queue
-
-@app.route('/abc', methods=['GET', 'POST'])
+@app.route('/webhook', methods=['GET', 'POST'])
 def pass_update():
-    update_queue.put(request.data)  # pass update to bot
+    webhook.feed(request.data)
     return 'OK'
 
 if __name__ == '__main__':
-    bot.setWebhook(URL)
+    try:
+        bot.setWebhook(URL)
+    # Sometimes it would raise this error, but webhook still set successfully.
+    except telepot.exception.TooManyRequestsError:
+        pass
+
+    webhook.run_as_thread()
     app.run(port=PORT, debug=True)
