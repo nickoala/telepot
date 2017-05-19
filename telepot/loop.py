@@ -121,7 +121,7 @@ class MessageLoop(RunForeverAsThread):
     def run_forever(self, *args, **kwargs):
         """
         :type relax: float
-        :param relax: seconds between each :meth:``.getUpdates``
+        :param relax: seconds between each :meth:`.getUpdates`
 
         :type timeout: int
         :param timeout:

@@ -42,7 +42,7 @@ def _compose_timeout(req, **user_kw):
 def _compose_data(req, **user_kw):
     token, method, params, files = req
 
-    data = aiohttp.formdata.FormData()
+    data = aiohttp.FormData()
 
     if params:
         for key,value in params.items():
