@@ -157,6 +157,16 @@ class CallbackQueryCoordinator(helper.CallbackQueryCoordinator):
             return edited
         return augmented
 
+    def augment_delete(self, delete_func):
+        async def augmented(msg_identifier, *aa, **kw):
+            deleted = await delete_func(msg_identifier, *aa, **kw)
+
+            if deleted is True:
+                self.uncapture_origin(msg_identifier)
+
+            return deleted
+        return augmented
+
     def augment_on_message(self, handler):
         async def augmented(msg):
             if (self._enable_inline
@@ -240,6 +250,8 @@ class DefaultRouterMixin(object):
                                        'callback_query': _delay_yell(self, 'on_callback_query'),
                                        'inline_query': _delay_yell(self, 'on_inline_query'),
                                        'chosen_inline_result': _delay_yell(self, 'on_chosen_inline_result'),
+                                       'shipping_query': _delay_yell(self, 'on_shipping_query'),
+                                       'pre_checkout_query': _delay_yell(self, 'on_pre_checkout_query'),
                                        '_idle': _delay_yell(self, 'on__idle')})
 
         super(DefaultRouterMixin, self).__init__(*args, **kwargs)
@@ -342,3 +354,19 @@ class CallbackQueryOriginHandler(helper.CallbackQueryOriginContext,
             lambda msg:
                 flavor(msg) == 'callback_query' and origin_identifier(msg) == self.origin
         ])
+
+
+@openable
+class InvoiceHandler(helper.InvoiceContext,
+                     DefaultRouterMixin,
+                     StandardEventMixin,
+                     IdleTerminateMixin):
+    def __init__(self, seed_tuple, **kwargs):
+        """
+        A delegate to handle messages related to an invoice.
+        """
+        bot, initial_msg, seed = seed_tuple
+        super(InvoiceHandler, self).__init__(bot, seed, **kwargs)
+
+        self.listener.capture([{'invoice_payload': self.payload}])
+        self.listener.capture([{'successful_payment': {'invoice_payload': self.payload}}])

@@ -208,6 +208,10 @@ async def send_everything(msg):
 
     await bot.sendVoice(chat_id, file_id, reply_markup=nt_remove_keyboard)
 
+    ##### sendVideoNote
+
+    await bot.sendVideoNote(chat_id, open('hktraffic.mp4', 'rb'), length=2)
+
     ##### sendLocation
 
     await bot.sendChatAction(chat_id, 'find_location')

@@ -208,6 +208,19 @@ def per_callback_query_origin(origins='all'):
             return None
     return f
 
+def per_invoice_payload():
+    """
+    :return:
+        a seeder function that returns the invoice payload.
+    """
+    def f(msg):
+        if 'successful_payment' in msg:
+            return msg['successful_payment']['invoice_payload']
+        else:
+            return msg['invoice_payload']
+
+    return _wrap_none(f)
+
 def call(func, *args, **kwargs):
     """
     :return:

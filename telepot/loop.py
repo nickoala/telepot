@@ -101,7 +101,9 @@ def _extract_message(update):
                                    'edited_channel_post',
                                    'callback_query',
                                    'inline_query',
-                                   'chosen_inline_result'])
+                                   'chosen_inline_result',
+                                   'shipping_query',
+                                   'pre_checkout_query'])
     return key, update[key]
 
 def _infer_handler_function(bot, h):

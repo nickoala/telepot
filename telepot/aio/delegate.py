@@ -16,6 +16,7 @@ and delegator factories.
 .. autofunction:: per_event_source_id
 .. autofunction:: per_callback_query_chat_id
 .. autofunction:: per_callback_query_origin
+.. autofunction:: per_invoice_payload
 .. autofunction:: until
 .. autofunction:: chain
 .. autofunction:: pair
@@ -35,7 +36,7 @@ from ..delegate import (
     per_from_id, per_from_id_in, per_from_id_except,
     per_inline_from_id, per_inline_from_id_in, per_inline_from_id_except,
     per_application, per_message, per_event_source_id,
-    per_callback_query_chat_id, per_callback_query_origin,
+    per_callback_query_chat_id, per_callback_query_origin, per_invoice_payload,
     until, chain, pair, pave_event_space,
     include_callback_query_chat_id, intercept_callback_query_origin
 )

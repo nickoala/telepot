@@ -84,8 +84,12 @@ User = _create_class('User', [
            'id',
            'first_name',
            'last_name',
-           'username'
+           'username',
+           'language_code'
        ])
+
+def UserArray(data):
+    return [User(**p) for p in data]
 
 # incoming
 Chat = _create_class('Chat', [
@@ -156,6 +160,15 @@ Voice = _create_class('Voice', [
             'mime_type',
             'file_size'
         ])
+
+# incoming
+VideoNote = _create_class('VideoNote', [
+                'file_id',
+                'length',
+                'duration',
+                ('thumb', PhotoSize),
+                'file_size'
+            ])
 
 # incoming
 Contact = _create_class('Contact', [
@@ -242,6 +255,7 @@ InlineKeyboardButton = _create_class('InlineKeyboardButton', [
                            'switch_inline_query',
                            'switch_inline_query_current_chat',
                            'callback_game',
+                           'pay',
                        ])
 
 # outgoing
@@ -289,6 +303,76 @@ Game = _create_class('Game', [
        ])
 
 # incoming
+Invoice = _create_class('Invoice', [
+              'title',
+              'description',
+              'start_parameter',
+              'currency',
+              'total_amount',
+          ])
+
+# outgoing
+LabeledPrice = _create_class('LabeledPrice', [
+                   'label',
+                   'amount',
+               ])
+
+# outgoing
+ShippingOption = _create_class('ShippingOption', [
+                     'id',
+                     'title',
+                     'prices',
+                 ])
+
+# incoming
+ShippingAddress = _create_class('ShippingAddress', [
+                      'country_code',
+                      'state',
+                      'city',
+                      'street_line1',
+                      'street_line2',
+                      'post_code',
+                  ])
+
+# incoming
+OrderInfo = _create_class('OrderInfo', [
+                'name',
+                'phone_number',
+                'email',
+                ('shipping_address', ShippingAddress),
+            ])
+
+# incoming
+ShippingQuery = _create_class('ShippingQuery', [
+                    'id',
+                    ('from_', User),
+                    'invoice_payload',
+                    ('shipping_address', ShippingAddress),
+                ])
+
+# incoming
+PreCheckoutQuery = _create_class('PreCheckoutQuery', [
+                       'id',
+                       ('from_', User),
+                       'currency',
+                       'total_amount',
+                       'invoice_payload',
+                       'shipping_option_id',
+                       ('order_info', OrderInfo),
+                   ])
+
+# incoming
+SuccessfulPayment = _create_class('SuccessfulPayment', [
+                        'currency',
+                        'total_amount',
+                        'invoice_payload',
+                        'shipping_option_id',
+                        ('order_info', OrderInfo),
+                        'telegram_payment_charge_id',
+                        'provider_payment_charge_id',
+                    ])
+
+# incoming
 Message = _create_class('Message', [
               'message_id',
               ('from_', User),
@@ -309,6 +393,8 @@ Message = _create_class('Message', [
               ('sticker', Sticker),
               ('video', Video),
               ('voice', Voice),
+              ('video_note', VideoNote),
+              ('new_chat_members', UserArray),
               'caption',
               ('contact', Contact),
               ('location', Location),
@@ -324,6 +410,8 @@ Message = _create_class('Message', [
               'migrate_to_chat_id',
               'migrate_from_chat_id',
               ('pinned_message', lambda **kwargs: getattr(sys.modules[__name__], 'Message')(**kwargs)),
+              ('invoice', Invoice),
+              ('successful_payment', SuccessfulPayment),
           ])
 
 # incoming
@@ -446,6 +534,7 @@ InlineQueryResultGif = _create_class('InlineQueryResultGif', [
                            'gif_url',
                            'gif_width',
                            'gif_height',
+                           'gif_duration',
                            'thumb_url',
                            'title',
                            'caption',
@@ -460,6 +549,7 @@ InlineQueryResultMpeg4Gif = _create_class('InlineQueryResultMpeg4Gif', [
                                 'mpeg4_url',
                                 'mpeg4_width',
                                 'mpeg4_height',
+                                'mpeg4_duration',
                                 'thumb_url',
                                 'title',
                                 'caption',

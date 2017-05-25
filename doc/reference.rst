@@ -208,6 +208,10 @@ Handlers
    :show-inheritance:
    :members:
 
+.. autoclass:: telepot.helper.InvoiceHandler
+   :show-inheritance:
+   :members:
+
 Contexts
 ++++++++
 
@@ -226,6 +230,11 @@ Contexts
    :undoc-members:
 
 .. autoclass:: telepot.helper.CallbackQueryOriginContext
+   :show-inheritance:
+   :members:
+   :undoc-members:
+
+.. autoclass:: telepot.helper.InvoiceContext
    :show-inheritance:
    :members:
    :undoc-members:
@@ -332,6 +341,7 @@ Incoming objects include:
 - `Sticker <https://core.telegram.org/bots/api#sticker>`_
 - `Video <https://core.telegram.org/bots/api#video>`_
 - `Voice <https://core.telegram.org/bots/api#voice>`_
+- `VideoNote <https://core.telegram.org/bots/api#videonote>`_
 - `Contact <https://core.telegram.org/bots/api#contact>`_
 - `Location <https://core.telegram.org/bots/api#location>`_
 - `Venue <https://core.telegram.org/bots/api#venue>`_
@@ -341,6 +351,12 @@ Incoming objects include:
 - `CallbackQuery <https://core.telegram.org/bots/api#callbackquery>`_
 - `InlineQuery <https://core.telegram.org/bots/api#inlinequery>`_
 - `ChosenInlineResult <https://core.telegram.org/bots/api#choseninlineresult>`_
+- `Invoice <https://core.telegram.org/bots/api#invoice>`_
+- `ShippingAddress <https://core.telegram.org/bots/api#shippingaddress>`_
+- `OrderInfo <https://core.telegram.org/bots/api#orderinfo>`_
+- `ShippingQuery <https://core.telegram.org/bots/api#shippingquery>`_
+- `PreCheckoutQuery <https://core.telegram.org/bots/api#precheckoutquery>`_
+- `SuccessfulPayment <https://core.telegram.org/bots/api#successfulpayment>`_
 
 Outgoing objects include:
 
@@ -352,6 +368,8 @@ Outgoing objects include:
 - `ForceReply <https://core.telegram.org/bots/api#forcereply>`_
 - Various types of `InlineQueryResult <https://core.telegram.org/bots/api#inlinequeryresult>`_
 - Various types of `InputMessageContent <https://core.telegram.org/bots/api#inputmessagecontent>`_
+- `LabeledPrice <https://core.telegram.org/bots/api#labeledprice>`_
+- `ShippingOption <https://core.telegram.org/bots/api#shippingoption>`_
 
 ``telepot.routing``
 -------------------

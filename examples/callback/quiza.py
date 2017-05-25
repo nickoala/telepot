@@ -70,7 +70,12 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
 
     async def on__idle(self, event):
         text = '%d out of %d' % (self._score[True], self._score[True]+self._score[False])
-        await self.editor.editMessageText(text, reply_markup=None)
+        await self.editor.editMessageText(
+            text + '\n\nThis message will disappear in 5 seconds to test deleteMessage',
+            reply_markup=None)
+
+        await asyncio.sleep(5)
+        await self.editor.deleteMessage()
         self.close()
 
 

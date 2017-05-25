@@ -91,12 +91,13 @@ class Bot(_BotBase):
         return await self._api_request('forwardMessage', _rectify(p))
 
     async def _sendfile(self, inputfile, filetype, params):
-        method = {'photo':    'sendPhoto',
-                  'audio':    'sendAudio',
-                  'document': 'sendDocument',
-                  'sticker':  'sendSticker',
-                  'video':    'sendVideo',
-                  'voice':    'sendVoice',}[filetype]
+        method = {'photo':      'sendPhoto',
+                  'audio':      'sendAudio',
+                  'document':   'sendDocument',
+                  'sticker':    'sendSticker',
+                  'video':      'sendVideo',
+                  'voice':      'sendVoice',
+                  'video_note': 'sendVideoNote'}[filetype]
 
         if _isstring(inputfile):
             params[filetype] = inputfile
@@ -178,6 +179,22 @@ class Bot(_BotBase):
         p = _strip(locals(), more=['voice'])
         return await self._sendfile(voice, 'voice', p)
 
+    async def sendVideoNote(self, chat_id, video_note,
+                            duration=None, length=None,
+                            disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """
+        See: https://core.telegram.org/bots/api#sendvideonote
+
+        :param voice: Same as ``photo`` in :meth:`telepot.aio.Bot.sendPhoto`
+
+        :param length:
+            Although marked as optional, this method does not seem to work without
+            it being specified. Supply any integer you want. It seems to have no effect
+            on the video note's display size.
+        """
+        p = _strip(locals(), more=['video_note'])
+        return await self._sendfile(video_note, 'video_note', p)
+
     async def sendLocation(self, chat_id, latitude, longitude,
                            disable_notification=None, reply_to_message_id=None, reply_markup=None):
         """ See: https://core.telegram.org/bots/api#sendlocation """
@@ -203,6 +220,16 @@ class Bot(_BotBase):
         """ See: https://core.telegram.org/bots/api#sendgame """
         p = _strip(locals())
         return await self._api_request('sendGame', _rectify(p))
+
+    async def sendInvoice(self, chat_id, title, description, payload,
+                          provider_token, start_parameter, currency, prices,
+                          photo_url=None, photo_size=None, photo_width=None, photo_height=None,
+                          need_name=None, need_phone_number=None, need_email=None,
+                          need_shipping_address=None, is_flexible=None,
+                          disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """ See: https://core.telegram.org/bots/api#sendinvoice """
+        p = _strip(locals())
+        return await self._api_request('sendInvoice', _rectify(p))
 
     async def sendChatAction(self, chat_id, action):
         """ See: https://core.telegram.org/bots/api#sendchataction """
@@ -260,6 +287,18 @@ class Bot(_BotBase):
         p = _strip(locals())
         return await self._api_request('answerCallbackQuery', _rectify(p))
 
+    async def answerShippingQuery(self, shipping_query_id, ok,
+                                  shipping_options=None, error_message=None):
+        """ See: https://core.telegram.org/bots/api#answershippingquery """
+        p = _strip(locals())
+        return await self._api_request('answerShippingQuery', _rectify(p))
+
+    async def answerPreCheckoutQuery(self, pre_checkout_query_id, ok,
+                                     error_message=None):
+        """ See: https://core.telegram.org/bots/api#answerprecheckoutquery """
+        p = _strip(locals())
+        return await self._api_request('answerPreCheckoutQuery', _rectify(p))
+
     async def editMessageText(self, msg_identifier, text,
                               parse_mode=None, disable_web_page_preview=None, reply_markup=None):
         """
@@ -294,6 +333,18 @@ class Bot(_BotBase):
         p = _strip(locals(), more=['msg_identifier'])
         p.update(_dismantle_message_identifier(msg_identifier))
         return await self._api_request('editMessageReplyMarkup', _rectify(p))
+
+    async def deleteMessage(self, msg_identifier):
+        """
+        See: https://core.telegram.org/bots/api#deletemessage
+
+        :param msg_identifier:
+            Same as ``msg_identifier`` in :meth:`telepot.aio.Bot.editMessageText`,
+            except this method does not work on inline messages.
+        """
+        p = _strip(locals(), more=['msg_identifier'])
+        p.update(_dismantle_message_identifier(msg_identifier))
+        return await self._api_request('deleteMessage', _rectify(p))
 
     async def answerInlineQuery(self, inline_query_id, results,
                                 cache_time=None, is_personal=None, next_offset=None,
@@ -442,7 +493,9 @@ class Bot(_BotBase):
                                                'edited_channel_post',
                                                'callback_query',
                                                'inline_query',
-                                               'chosen_inline_result'])
+                                               'chosen_inline_result',
+                                               'shipping_query',
+                                               'pre_checkout_query'])
 
                 callback(update[key])
             except:

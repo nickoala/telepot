@@ -18,7 +18,7 @@ from . import hack
 from . import exception
 
 
-__version_info__ = (11, 0)
+__version_info__ = (12, 0)
 __version__ = '.'.join(map(str, __version_info__))
 
 
@@ -32,6 +32,8 @@ def flavor(msg):
     - ``callback_query``
     - ``inline_query``
     - ``chosen_inline_result``
+    - ``shipping_query``
+    - ``pre_checkout_query``
 
     An event's flavor is determined by the single top-level key.
     """
@@ -43,6 +45,10 @@ def flavor(msg):
         return 'inline_query'
     elif 'result_id' in msg:
         return 'chosen_inline_result'
+    elif 'id' in msg and 'shipping_address' in msg:
+        return 'shipping_query'
+    elif 'id' in msg and 'total_amount' in msg:
+        return 'pre_checkout_query'
     else:
         top_keys = list(msg.keys())
         if len(top_keys) == 1:
@@ -63,10 +69,11 @@ def _find_first_key(d, keys):
 
 
 all_content_types = [
-    'text', 'audio', 'document', 'game', 'photo', 'sticker', 'video', 'voice',
-    'contact', 'location', 'venue', 'new_chat_member', 'left_chat_member',  'new_chat_title',
+    'text', 'audio', 'document', 'game', 'photo', 'sticker', 'video', 'voice', 'video_note',
+    'contact', 'location', 'venue', 'new_chat_member', 'left_chat_member', 'new_chat_title',
     'new_chat_photo',  'delete_chat_photo', 'group_chat_created', 'supergroup_chat_created',
     'channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id', 'pinned_message',
+    'new_chat_members', 'invoice', 'successful_payment'
 ]
 
 def glance(msg, flavor='chat', long=False):
@@ -81,9 +88,10 @@ def glance(msg, flavor='chat', long=False):
     - long: (content_type, ``msg['chat']['type']``, ``msg['chat']['id']``, ``msg['date']``, ``msg['message_id']``)
 
     *content_type* can be: ``text``, ``audio``, ``document``, ``game``, ``photo``, ``sticker``, ``video``, ``voice``,
-    ``contact``, ``location``, ``venue``, ``new_chat_member``, ``left_chat_member``, ``new_chat_title``,
+    ``video_note``, ``contact``, ``location``, ``venue``, ``new_chat_member``, ``left_chat_member``, ``new_chat_title``,
     ``new_chat_photo``, ``delete_chat_photo``, ``group_chat_created``, ``supergroup_chat_created``,
-    ``channel_chat_created``, ``migrate_to_chat_id``, ``migrate_from_chat_id``, ``pinned_message``.
+    ``channel_chat_created``, ``migrate_to_chat_id``, ``migrate_from_chat_id``, ``pinned_message``,
+    ``new_chat_members``, ``invoice``, ``successful_payment``.
 
     When ``flavor`` is ``callback_query``
     (``msg`` being a `CallbackQuery <https://core.telegram.org/bots/api#callbackquery>`_ object):
@@ -100,6 +108,17 @@ def glance(msg, flavor='chat', long=False):
     (``msg`` being a `ChosenInlineResult <https://core.telegram.org/bots/api#choseninlineresult>`_ object):
 
     - regardless: (``msg['result_id']``, ``msg['from']['id']``, ``msg['query']``)
+
+    When ``flavor`` is ``shipping_query``
+    (``msg`` being a `ShippingQuery <https://core.telegram.org/bots/api#shippingquery>`_ object):
+
+    - regardless: (``msg['id']``, ``msg['from']['id']``, ``msg['invoice_payload']``)
+
+    When ``flavor`` is ``pre_checkout_query``
+    (``msg`` being a `PreCheckoutQuery <https://core.telegram.org/bots/api#precheckoutquery>`_ object):
+
+    - short: (``msg['id']``, ``msg['from']['id']``, ``msg['invoice_payload']``)
+    - long: (``msg['id']``, ``msg['from']['id']``, ``msg['invoice_payload']``, ``msg['currency']``, ``msg['total_amount']``)
     """
     def gl_chat():
         content_type = _find_first_key(msg, all_content_types)
@@ -121,11 +140,22 @@ def glance(msg, flavor='chat', long=False):
     def gl_chosen_inline_result():
         return msg['result_id'], msg['from']['id'], msg['query']
 
+    def gl_shipping_query():
+        return msg['id'], msg['from']['id'], msg['invoice_payload']
+
+    def gl_pre_checkout_query():
+        if long:
+            return msg['id'], msg['from']['id'], msg['invoice_payload'], msg['currency'], msg['total_amount']
+        else:
+            return msg['id'], msg['from']['id'], msg['invoice_payload']
+
     try:
         fn = {'chat': gl_chat,
               'callback_query': gl_callback_query,
               'inline_query': gl_inline_query,
-              'chosen_inline_result': gl_chosen_inline_result}[flavor]
+              'chosen_inline_result': gl_chosen_inline_result,
+              'shipping_query': gl_shipping_query,
+              'pre_checkout_query': gl_pre_checkout_query}[flavor]
     except KeyError:
         raise exception.BadFlavor(flavor)
 
@@ -420,12 +450,13 @@ class Bot(_BotBase):
         return self._api_request('forwardMessage', _rectify(p))
 
     def _sendfile(self, inputfile, filetype, params):
-        method = {'photo':    'sendPhoto',
-                  'audio':    'sendAudio',
-                  'document': 'sendDocument',
-                  'sticker':  'sendSticker',
-                  'video':    'sendVideo',
-                  'voice':    'sendVoice',}[filetype]
+        method = {'photo':      'sendPhoto',
+                  'audio':      'sendAudio',
+                  'document':   'sendDocument',
+                  'sticker':    'sendSticker',
+                  'video':      'sendVideo',
+                  'voice':      'sendVoice',
+                  'video_note': 'sendVideoNote'}[filetype]
 
         if _isstring(inputfile):
             params[filetype] = inputfile
@@ -507,6 +538,22 @@ class Bot(_BotBase):
         p = _strip(locals(), more=['voice'])
         return self._sendfile(voice, 'voice', p)
 
+    def sendVideoNote(self, chat_id, video_note,
+                      duration=None, length=None,
+                      disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """
+        See: https://core.telegram.org/bots/api#sendvideonote
+
+        :param video_note: Same as ``photo`` in :meth:`telepot.Bot.sendPhoto`
+
+        :param length:
+            Although marked as optional, this method does not seem to work without
+            it being specified. Supply any integer you want. It seems to have no effect
+            on the video note's display size.
+        """
+        p = _strip(locals(), more=['video_note'])
+        return self._sendfile(video_note, 'video_note', p)
+
     def sendLocation(self, chat_id, latitude, longitude,
                      disable_notification=None, reply_to_message_id=None, reply_markup=None):
         """ See: https://core.telegram.org/bots/api#sendlocation """
@@ -532,6 +579,16 @@ class Bot(_BotBase):
         """ See: https://core.telegram.org/bots/api#sendgame """
         p = _strip(locals())
         return self._api_request('sendGame', _rectify(p))
+
+    def sendInvoice(self, chat_id, title, description, payload,
+                    provider_token, start_parameter, currency, prices,
+                    photo_url=None, photo_size=None, photo_width=None, photo_height=None,
+                    need_name=None, need_phone_number=None, need_email=None,
+                    need_shipping_address=None, is_flexible=None,
+                    disable_notification=None, reply_to_message_id=None, reply_markup=None):
+        """ See: https://core.telegram.org/bots/api#sendinvoice """
+        p = _strip(locals())
+        return self._api_request('sendInvoice', _rectify(p))
 
     def sendChatAction(self, chat_id, action):
         """ See: https://core.telegram.org/bots/api#sendchataction """
@@ -589,6 +646,18 @@ class Bot(_BotBase):
         p = _strip(locals())
         return self._api_request('answerCallbackQuery', _rectify(p))
 
+    def answerShippingQuery(self, shipping_query_id, ok,
+                            shipping_options=None, error_message=None):
+        """ See: https://core.telegram.org/bots/api#answershippingquery """
+        p = _strip(locals())
+        return self._api_request('answerShippingQuery', _rectify(p))
+
+    def answerPreCheckoutQuery(self, pre_checkout_query_id, ok,
+                               error_message=None):
+        """ See: https://core.telegram.org/bots/api#answerprecheckoutquery """
+        p = _strip(locals())
+        return self._api_request('answerPreCheckoutQuery', _rectify(p))
+
     def editMessageText(self, msg_identifier, text,
                         parse_mode=None, disable_web_page_preview=None, reply_markup=None):
         """
@@ -623,6 +692,18 @@ class Bot(_BotBase):
         p = _strip(locals(), more=['msg_identifier'])
         p.update(_dismantle_message_identifier(msg_identifier))
         return self._api_request('editMessageReplyMarkup', _rectify(p))
+
+    def deleteMessage(self, msg_identifier):
+        """
+        See: https://core.telegram.org/bots/api#deletemessage
+
+        :param msg_identifier:
+            Same as ``msg_identifier`` in :meth:`telepot.Bot.editMessageText`,
+            except this method does not work on inline messages.
+        """
+        p = _strip(locals(), more=['msg_identifier'])
+        p.update(_dismantle_message_identifier(msg_identifier))
+        return self._api_request('deleteMessage', _rectify(p))
 
     def answerInlineQuery(self, inline_query_id, results,
                           cache_time=None, is_personal=None, next_offset=None,
@@ -799,7 +880,9 @@ class Bot(_BotBase):
                                            'edited_channel_post',
                                            'callback_query',
                                            'inline_query',
-                                           'chosen_inline_result'])
+                                           'chosen_inline_result',
+                                           'shipping_query',
+                                           'pre_checkout_query'])
             collect_queue.put(update[key])
             return update['update_id']
 

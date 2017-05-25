@@ -252,6 +252,10 @@ def send_everything_on_contact(msg):
     bot.sendVoice(chat_id, file_id, reply_markup=nt_remove_keyboard)
     time.sleep(0.5)
 
+    ##### sendVideoNote
+
+    bot.sendVideoNote(chat_id, open('hktraffic.mp4', 'rb'), length=2)
+
     ##### sendLocation
 
     bot.sendChatAction(chat_id, 'find_location')

@@ -69,7 +69,12 @@ class Quizzer(telepot.helper.CallbackQueryOriginHandler):
 
     def on__idle(self, event):
         text = '%d out of %d' % (self._score[True], self._score[True]+self._score[False])
-        self.editor.editMessageText(text, reply_markup=None)
+        self.editor.editMessageText(
+            text + '\n\nThis message will disappear in 5 seconds to test deleteMessage',
+            reply_markup=None)
+
+        time.sleep(5)
+        self.editor.deleteMessage()
         self.close()
 
 

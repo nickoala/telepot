@@ -1,5 +1,17 @@
 # telepot changelog
 
+## 12.0 (2017-05-26)
+
+- Bot API 3.0
+- Can receive updates containing ShippingQuery and PreCheckoutQuery
+- Added flavors `shipping_option` and `pre_checkout_query`
+- Added nametuples `Invoice`, `LabeledPrice`, `ShippingOption`, `ShippingAddress`,
+  `OrderInfo`, `ShippingQuery`, `PreCheckoutQuery`, `SuccessfulPayment`
+- Added method `sendInvoice()`, `answerShippingQuery()`, and `answerPreCheckoutQuery()`
+- Added method `deleteMessage()` and `sendVideoNote()`. Added namedtuple `VideoNote`.
+- Added new fields to various namedtuples
+- Added function `per_invoice_payload` and class `InvoiceHandler`
+
 ## 11.0 (2017-05-09)
 
 - Async version compliant with aiohttp2

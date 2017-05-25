@@ -106,6 +106,7 @@ class Sender(object):
     - :meth:`.Bot.sendSticker`
     - :meth:`.Bot.sendVideo`
     - :meth:`.Bot.sendVoice`
+    - :meth:`.Bot.sendVideoNote`
     - :meth:`.Bot.sendLocation`
     - :meth:`.Bot.sendVenue`
     - :meth:`.Bot.sendContact`
@@ -122,6 +123,7 @@ class Sender(object):
                        'sendSticker',
                        'sendVideo',
                        'sendVoice',
+                       'sendVideoNote',
                        'sendLocation',
                        'sendVenue',
                        'sendContact',
@@ -176,6 +178,7 @@ class Editor(object):
     - :meth:`.Bot.editMessageText`
     - :meth:`.Bot.editMessageCaption`
     - :meth:`.Bot.editMessageReplyMarkup`
+    - :meth:`.Bot.deleteMessage`
 
     A message's identifier can be easily extracted with :func:`telepot.message_identifier`.
     """
@@ -192,7 +195,8 @@ class Editor(object):
 
         for method in ['editMessageText',
                        'editMessageCaption',
-                       'editMessageReplyMarkup',]:
+                       'editMessageReplyMarkup',
+                       'deleteMessage']:
             setattr(self, method, partial(getattr(bot, method), msg_identifier))
 
 
@@ -394,7 +398,7 @@ class CallbackQueryCoordinator(object):
     def augment_send(self, send_func):
         """
         :param send_func:
-            functions that send messages, such as :meth:`.Bot.send\*`
+            a function that sends messages, such as :meth:`.Bot.send\*`
 
         :return:
             a function that wraps around ``send_func`` and examines whether the
@@ -413,7 +417,7 @@ class CallbackQueryCoordinator(object):
     def augment_edit(self, edit_func):
         """
         :param edit_func:
-            functions that edit messages, such as :meth:`.Bot.edit*`
+            a function that edits messages, such as :meth:`.Bot.edit*`
 
         :return:
             a function that wraps around ``edit_func`` and examines whether the
@@ -431,6 +435,24 @@ class CallbackQueryCoordinator(object):
                     self.uncapture_origin(msg_identifier)
 
             return edited
+        return augmented
+
+    def augment_delete(self, delete_func):
+        """
+        :param delete_func:
+            a function that deletes messages, such as :meth:`.Bot.deleteMessage`
+
+        :return:
+            a function that wraps around ``delete_func`` and stops capturing
+            callback query originating from that deleted message.
+        """
+        def augmented(msg_identifier, *aa, **kw):
+            deleted = delete_func(msg_identifier, *aa, **kw)
+
+            if deleted is True:
+                self.uncapture_origin(msg_identifier)
+
+            return deleted
         return augmented
 
     def augment_on_message(self, handler):
@@ -461,6 +483,7 @@ class CallbackQueryCoordinator(object):
 
             - all ``send*`` methods augmented by :meth:`augment_send`
             - all ``edit*`` methods augmented by :meth:`augment_edit`
+            - ``deleteMessage()`` augmented by :meth:`augment_delete`
             - all other public methods, including properties, copied unchanged
         """
         # Because a plain object cannot be set attributes, we need a class.
@@ -477,9 +500,12 @@ class CallbackQueryCoordinator(object):
                         'sendSticker',
                         'sendVideo',
                         'sendVoice',
+                        'sendVideoNote',
                         'sendLocation',
                         'sendVenue',
                         'sendContact',
+                        'sendGame',
+                        'sendInvoice',
                         'sendChatAction',]
 
         for method in send_methods:
@@ -492,10 +518,15 @@ class CallbackQueryCoordinator(object):
         for method in edit_methods:
             setattr(proxy, method, self.augment_edit(getattr(bot, method)))
 
+        delete_methods = ['deleteMessage']
+
+        for method in delete_methods:
+            setattr(proxy, method, self.augment_delete(getattr(bot, method)))
+
         def public_untouched(nv):
             name, value = nv
             return (not name.startswith('_')
-                    and name not in send_methods + edit_methods)
+                    and name not in send_methods + edit_methods + delete_methods)
 
         for name, value in filter(public_untouched, inspect.getmembers(bot)):
             setattr(proxy, name, value)
@@ -853,6 +884,16 @@ class CallbackQueryOriginContext(ListenerContext):
         return self._editor
 
 
+class InvoiceContext(ListenerContext):
+    def __init__(self, bot, context_id, *args, **kwargs):
+        super(InvoiceContext, self).__init__(bot, context_id, *args, **kwargs)
+        self._payload = context_id
+
+    @property
+    def payload(self):
+        return self._payload
+
+
 def openable(cls):
     """
     A class decorator to fill in certain methods and properties to ensure
@@ -981,6 +1022,8 @@ class DefaultRouterMixin(object):
                                        'callback_query': lambda msg: self.on_callback_query(msg),
                                        'inline_query': lambda msg: self.on_inline_query(msg),
                                        'chosen_inline_result': lambda msg: self.on_chosen_inline_result(msg),
+                                       'shipping_query': lambda msg: self.on_shipping_query(msg),
+                                       'pre_checkout_query': lambda msg: self.on_pre_checkout_query(msg),
                                        '_idle': lambda event: self.on__idle(event)})
                                        # use lambda to delay evaluation of self.on_ZZZ to runtime because
                                        # I don't want to require defining all methods right here.
@@ -1081,3 +1124,19 @@ class CallbackQueryOriginHandler(CallbackQueryOriginContext,
             lambda msg:
                 flavor(msg) == 'callback_query' and origin_identifier(msg) == self.origin
         ])
+
+
+@openable
+class InvoiceHandler(InvoiceContext,
+                     DefaultRouterMixin,
+                     StandardEventMixin,
+                     IdleTerminateMixin):
+    def __init__(self, seed_tuple, **kwargs):
+        """
+        A delegate to handle messages related to an invoice.
+        """
+        bot, initial_msg, seed = seed_tuple
+        super(InvoiceHandler, self).__init__(bot, seed, **kwargs)
+
+        self.listener.capture([{'invoice_payload': self.payload}])
+        self.listener.capture([{'successful_payment': {'invoice_payload': self.payload}}])
