@@ -25,3 +25,7 @@ How to integrate telepot with webhook.
 ## Deep Linking
 
 Demonstration of deep linking.
+
+## Payment
+
+How to handle payments.
