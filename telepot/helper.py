@@ -146,8 +146,17 @@ class Administrator(object):
     to supply the aforementioned** ``chat_id``:
 
     - :meth:`.Bot.kickChatMember`
-    - :meth:`.Bot.leaveChat`
     - :meth:`.Bot.unbanChatMember`
+    - :meth:`.Bot.restrictChatMember`
+    - :meth:`.Bot.promoteChatMember`
+    - :meth:`.Bot.exportChatInviteLink`
+    - :meth:`.Bot.setChatPhoto`
+    - :meth:`.Bot.deleteChatPhoto`
+    - :meth:`.Bot.setChatTitle`
+    - :meth:`.Bot.setChatDescription`
+    - :meth:`.Bot.pinChatMessage`
+    - :meth:`.Bot.unpinChatMessage`
+    - :meth:`.Bot.leaveChat`
     - :meth:`.Bot.getChat`
     - :meth:`.Bot.getChatAdministrators`
     - :meth:`.Bot.getChatMembersCount`
@@ -156,8 +165,17 @@ class Administrator(object):
 
     def __init__(self, bot, chat_id):
         for method in ['kickChatMember',
-                       'leaveChat',
                        'unbanChatMember',
+                       'restrictChatMember',
+                       'promoteChatMember',
+                       'exportChatInviteLink',
+                       'setChatPhoto',
+                       'deleteChatPhoto',
+                       'setChatTitle',
+                       'setChatDescription',
+                       'pinChatMessage',
+                       'unpinChatMessage',
+                       'leaveChat',
                        'getChat',
                        'getChatAdministrators',
                        'getChatMembersCount',

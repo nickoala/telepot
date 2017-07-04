@@ -11,17 +11,17 @@ from ..helper import (
     StandardEventScheduler, StandardEventMixin)
 
 
-async def _yell(fn, *args, **kwargs):
+async def _invoke(fn, *args, **kwargs):
     if asyncio.iscoroutinefunction(fn):
         return await fn(*args, **kwargs)
     else:
         return fn(*args, **kwargs)
 
 
-def _delay_yell(obj, method_name):
+def _create_invoker(obj, method_name):
     async def d(*a, **kw):
         method = getattr(obj, method_name)
-        return await _yell(method, *a, **kw)
+        return await _invoke(method, *a, **kw)
     return d
 
 
@@ -101,7 +101,7 @@ class Answerer(object):
             try:
                 query_id = inline_query['id']
 
-                ans = await _yell(compute_fn, *compute_args, **compute_kwargs)
+                ans = await _invoke(compute_fn, *compute_args, **compute_kwargs)
 
                 if isinstance(ans, list):
                     await self._bot.answerInlineQuery(query_id, ans)
@@ -175,7 +175,7 @@ class CallbackQueryCoordinator(helper.CallbackQueryCoordinator):
                 inline_message_id = msg['inline_message_id']
                 self.capture_origin(inline_message_id)
 
-            return await _yell(handler, msg)
+            return await _invoke(handler, msg)
         return augmented
 
 
@@ -188,7 +188,7 @@ class IdleEventCoordinator(helper.IdleEventCoordinator):
         async def augmented(msg):
             # Reset timer if this is an external message
             is_event(msg) or self.refresh()
-            return await _yell(handler, msg)
+            return await _invoke(handler, msg)
         return augmented
 
     def augment_on_close(self, handler):
@@ -201,7 +201,7 @@ class IdleEventCoordinator(helper.IdleEventCoordinator):
             # the timeout event can no longer be found in the scheduler.
             except exception.EventNotFound:
                 self._timeout_event = None
-            return await _yell(handler, ex)
+            return await _invoke(handler, ex)
         return augmented
 
 
@@ -241,18 +241,18 @@ class Router(helper.Router):
             else:
                 raise RuntimeError('No handler for key: %s, and default handler not defined' % str(e.args))
 
-        return await _yell(fn, msg, *args, **kwargs)
+        return await _invoke(fn, msg, *args, **kwargs)
 
 
 class DefaultRouterMixin(object):
     def __init__(self, *args, **kwargs):
-        self._router = Router(flavor, {'chat': _delay_yell(self, 'on_chat_message'),
-                                       'callback_query': _delay_yell(self, 'on_callback_query'),
-                                       'inline_query': _delay_yell(self, 'on_inline_query'),
-                                       'chosen_inline_result': _delay_yell(self, 'on_chosen_inline_result'),
-                                       'shipping_query': _delay_yell(self, 'on_shipping_query'),
-                                       'pre_checkout_query': _delay_yell(self, 'on_pre_checkout_query'),
-                                       '_idle': _delay_yell(self, 'on__idle')})
+        self._router = Router(flavor, {'chat': _create_invoker(self, 'on_chat_message'),
+                                       'callback_query': _create_invoker(self, 'on_callback_query'),
+                                       'inline_query': _create_invoker(self, 'on_inline_query'),
+                                       'chosen_inline_result': _create_invoker(self, 'on_chosen_inline_result'),
+                                       'shipping_query': _create_invoker(self, 'on_shipping_query'),
+                                       'pre_checkout_query': _create_invoker(self, 'on_pre_checkout_query'),
+                                       '_idle': _create_invoker(self, 'on__idle')})
 
         super(DefaultRouterMixin, self).__init__(*args, **kwargs)
 

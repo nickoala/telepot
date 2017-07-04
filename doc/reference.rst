@@ -347,6 +347,7 @@ Incoming objects include:
 - `Venue <https://core.telegram.org/bots/api#venue>`_
 - `UserProfilePhotos <https://core.telegram.org/bots/api#userprofilephotos>`_
 - `File <https://core.telegram.org/bots/api#file>`_
+- `ChatPhoto <https://core.telegram.org/bots/api#chatphoto>`_
 - `ChatMember <https://core.telegram.org/bots/api#chatmember>`_
 - `CallbackQuery <https://core.telegram.org/bots/api#callbackquery>`_
 - `InlineQuery <https://core.telegram.org/bots/api#inlinequery>`_

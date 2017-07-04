@@ -1,4 +1,4 @@
-from .helper import _delay_yell
+from .helper import _create_invoker
 from .. import all_content_types
 
 # Mirror traditional version to avoid having to import one more module
@@ -24,11 +24,11 @@ def make_routing_table(obj, keys, prefix='on_'):
             if len(k) == 2:
                 return k
             elif len(k) == 1:
-                return k[0], _delay_yell(obj, prefix+k[0])
+                return k[0], _create_invoker(obj, prefix+k[0])
             else:
                 raise ValueError()
         else:
-            return k, _delay_yell(obj, prefix+k)
+            return k, _create_invoker(obj, prefix+k)
 
     return dict([maptuple(k) for k in keys])
 

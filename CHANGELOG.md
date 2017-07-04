@@ -1,5 +1,26 @@
 # telepot changelog
 
+## 12.1 (2017-07-04)
+
+- Added methods:
+    - `restrictChatMember()`
+    - `promoteChatMember()`
+    - `exportChatInviteLink()`
+    - `setChatPhoto()`
+    - `deleteChatPhoto()`
+    - `setChatTitle()`
+    - `setChatDescription()`
+    - `pinChatMessage()`
+    - `unpinChatMessage()`
+- Added parameter `until_date` to method `kickChatMember()`
+- Added fields to namedtuple `Chat` and `ChatMember`
+- Added namedtuple `ChatPhoto`
+- Added exception `NotEnoughRightsError` to capture situations where the bot does
+  not have enough rights to perform operations on channels, groups, or supergroups.
+- Changed some internal function names to be more descriptive, e.g. `_yell()`
+  becomes `_invoke()`, `_delay_yell()` becomes `_create_invoker()`.
+- Tested on Python 3.6.1
+
 ## 12.0 (2017-05-26)
 
 - Bot API 3.0

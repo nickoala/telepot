@@ -115,3 +115,6 @@ class TooManyRequestsError(TelegramError):
 
 class MigratedToSupergroupChatError(TelegramError):
     DESCRIPTION_PATTERNS = ['migrated.*supergroup *chat']
+
+class NotEnoughRightsError(TelegramError):
+    DESCRIPTION_PATTERNS = ['not *enough *rights']

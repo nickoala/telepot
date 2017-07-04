@@ -83,24 +83,24 @@ def create_open(cls, *args, **kwargs):
         async def wait_loop():
             bot, msg, seed = seed_tuple
             try:
-                handled = await helper._yell(j.open, msg, seed)
+                handled = await helper._invoke(j.open, msg, seed)
                 if not handled:
-                    await helper._yell(j.on_message, msg)
+                    await helper._invoke(j.on_message, msg)
 
                 while 1:
                     msg = await j.listener.wait()
-                    await helper._yell(j.on_message, msg)
+                    await helper._invoke(j.on_message, msg)
 
             # These exceptions are "normal" exits.
             except (exception.IdleTerminate, exception.StopListening) as e:
-                await helper._yell(j.on_close, e)
+                await helper._invoke(j.on_close, e)
 
             # Any other exceptions are accidents. **Print it out.**
             # This is to prevent swallowing exceptions in the case that on_close()
             # gets overridden but fails to account for unexpected exceptions.
             except Exception as e:
                 traceback.print_exc()
-                await helper._yell(j.on_close, e)
+                await helper._invoke(j.on_close, e)
 
         return wait_loop()
     return f

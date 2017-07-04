@@ -3,6 +3,7 @@ import time
 import telepot
 import telepot.namedtuple
 from telepot.routing import by_content_type, make_content_type_routing_table
+from telepot.exception import NotEnoughRightsError
 
 class AdminBot(telepot.Bot):
     def on_chat_message(self, msg):
@@ -28,6 +29,36 @@ class AdminBot(telepot.Bot):
 
         r = self.getChatMembersCount(chat_id)
         print r
+
+        while 1:
+            try:
+                self.setChatTitle(chat_id, 'AdminBot Title')
+                print 'Set title successfully.'
+                break
+            except NotEnoughRightsError:
+                print 'No right to set title. Try again in 10 seconds ...'
+                time.sleep(10)
+
+        while 1:
+            try:
+                self.setChatPhoto(chat_id, open('gandhi.png', 'rb'))
+                print 'Set photo successfully.'
+                time.sleep(2)  # let tester see photo briefly
+                break
+            except NotEnoughRightsError:
+                print 'No right to set photo. Try again in 10 seconds ...'
+                time.sleep(10)
+
+        while 1:
+            try:
+                self.deleteChatPhoto(chat_id)
+                print 'Delete photo successfully.'
+                break
+            except NotEnoughRightsError:
+                print 'No right to delete photo. Try again in 10 seconds ...'
+                time.sleep(10)
+
+        print 'I am done. You may remove me from the group.'
 
 
 TOKEN = sys.argv[1]

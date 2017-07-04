@@ -2,20 +2,26 @@ import collections
 import warnings
 import sys
 
+class _Field(object):
+    def __init__(self, name, constructor=None, default=None):
+        self.name = name
+        self.constructor = constructor
+        self.default = default
+
 # Function to produce namedtuple classes.
 def _create_class(typename, fields):
     # extract field names
-    field_names = [e[0] if type(e) is tuple else e for e in fields]
+    field_names = [e.name if type(e) is _Field else e for e in fields]
 
     # Some dictionary keys are Python keywords and cannot be used as field names, e.g. `from`.
     # Get around by appending a '_', e.g. dict['from'] => namedtuple.from_
     keymap = [(k.rstrip('_'), k) for k in filter(lambda e: e in ['from_'], field_names)]
 
     # extract (non-simple) fields that need conversions
-    conversions = [e[0:2] for e in fields if type(e) is tuple and e[1] is not None]
+    conversions = [(e.name, e.constructor) for e in fields if type(e) is _Field and e.constructor is not None]
 
     # extract default values
-    defaults = [e[2] if type(e) is tuple and len(e) >= 3 else None for e in fields]
+    defaults = [e.default if type(e) is _Field else None for e in fields]
 
     # Create the base tuple class, with defaults.
     base = collections.namedtuple(typename, field_names)
@@ -92,6 +98,12 @@ def UserArray(data):
     return [User(**p) for p in data]
 
 # incoming
+ChatPhoto = _create_class('ChatPhoto', [
+                'small_file_id',
+                'big_file_id',
+            ])
+
+# incoming
 Chat = _create_class('Chat', [
            'id',
            'type',
@@ -100,6 +112,9 @@ Chat = _create_class('Chat', [
            'first_name',
            'last_name',
            'all_members_are_administrators',
+           _Field('photo', constructor=ChatPhoto),
+           'description',
+           'invite_link',
        ])
 
 # incoming
@@ -124,7 +139,7 @@ Audio = _create_class('Audio', [
 # incoming
 Document = _create_class('Document', [
                'file_id',
-               ('thumb', PhotoSize),
+               _Field('thumb', constructor=PhotoSize),
                'file_name',
                'mime_type',
                'file_size',
@@ -136,7 +151,7 @@ Sticker = _create_class('Sticker', [
               'file_id',
               'width',
               'height',
-              ('thumb', PhotoSize),
+              _Field('thumb', constructor=PhotoSize),
               'emoji',
               'file_size',
           ])
@@ -147,7 +162,7 @@ Video = _create_class('Video', [
             'width',
             'height',
             'duration',
-            ('thumb', PhotoSize),
+            _Field('thumb', constructor=PhotoSize),
             'mime_type',
             'file_size',
             'file_path',  # undocumented
@@ -166,7 +181,7 @@ VideoNote = _create_class('VideoNote', [
                 'file_id',
                 'length',
                 'duration',
-                ('thumb', PhotoSize),
+                _Field('thumb', constructor=PhotoSize),
                 'file_size'
             ])
 
@@ -186,7 +201,7 @@ Location = _create_class('Location', [
 
 # incoming
 Venue = _create_class('Venue', [
-            ('location', Location),
+            _Field('location', constructor=Location),
             'title',
             'address',
             'foursquare_id',
@@ -208,13 +223,27 @@ def PhotoSizeArrayArray(data):
 # incoming
 UserProfilePhotos = _create_class('UserProfilePhotos', [
                         'total_count',
-                        ('photos', PhotoSizeArrayArray)
+                        _Field('photos', constructor=PhotoSizeArrayArray)
                     ])
 
 # incoming
 ChatMember = _create_class('ChatMember', [
-                 ('user', User),
+                 _Field('user', constructor=User),
                  'status',
+                 'until_date',
+                 'can_be_edited',
+                 'can_change_info',
+                 'can_post_messages',
+                 'can_edit_messages',
+                 'can_delete_messages',
+                 'can_invite_users',
+                 'can_restrict_members',
+                 'can_pin_messages',
+                 'can_promote_members',
+                 'can_send_messages',
+                 'can_send_media_messages',
+                 'can_send_other_messages',
+                 'can_add_web_page_previews',
              ])
 
 def ChatMemberArray(data):
@@ -237,13 +266,13 @@ KeyboardButton = _create_class('KeyboardButton', [
 
 # outgoing
 ReplyKeyboardRemove = _create_class('ReplyKeyboardRemove', [
-                          ('remove_keyboard', None, True),
+                          _Field('remove_keyboard', default=True),
                           'selective',
                       ])
 
 # outgoing
 ForceReply = _create_class('ForceReply', [
-                 ('force_reply', None, True),
+                 _Field('force_reply', default=True),
                  'selective',
              ])
 
@@ -269,7 +298,7 @@ MessageEntity = _create_class('MessageEntity', [
                     'offset',
                     'length',
                     'url',
-                    ('user', User),
+                    _Field('user', constructor=User),
                 ])
 
 # incoming
@@ -279,14 +308,14 @@ def MessageEntityArray(data):
 # incoming
 GameHighScore = _create_class('GameHighScore', [
                     'position',
-                    ('user', User),
+                    _Field('user', constructor=User),
                     'score',
                 ])
 
 # incoming
 Animation = _create_class('Animation', [
                 'file_id',
-                ('thumb', PhotoSize),
+                _Field('thumb', constructor=PhotoSize),
                 'file_name',
                 'mime_type',
                 'file_size',
@@ -296,10 +325,10 @@ Animation = _create_class('Animation', [
 Game = _create_class('Game', [
            'title',
            'description',
-           ('photo', PhotoSizeArray),
+           _Field('photo', constructor=PhotoSizeArray),
            'text',
-           ('text_entities', MessageEntityArray),
-           ('animation', Animation),
+           _Field('text_entities', constructor=MessageEntityArray),
+           _Field('animation', constructor=Animation),
        ])
 
 # incoming
@@ -339,26 +368,26 @@ OrderInfo = _create_class('OrderInfo', [
                 'name',
                 'phone_number',
                 'email',
-                ('shipping_address', ShippingAddress),
+                _Field('shipping_address', constructor=ShippingAddress),
             ])
 
 # incoming
 ShippingQuery = _create_class('ShippingQuery', [
                     'id',
-                    ('from_', User),
+                    _Field('from_', constructor=User),
                     'invoice_payload',
-                    ('shipping_address', ShippingAddress),
+                    _Field('shipping_address', constructor=ShippingAddress),
                 ])
 
 # incoming
 PreCheckoutQuery = _create_class('PreCheckoutQuery', [
                        'id',
-                       ('from_', User),
+                       _Field('from_', constructor=User),
                        'currency',
                        'total_amount',
                        'invoice_payload',
                        'shipping_option_id',
-                       ('order_info', OrderInfo),
+                       _Field('order_info', constructor=OrderInfo),
                    ])
 
 # incoming
@@ -367,7 +396,7 @@ SuccessfulPayment = _create_class('SuccessfulPayment', [
                         'total_amount',
                         'invoice_payload',
                         'shipping_option_id',
-                        ('order_info', OrderInfo),
+                        _Field('order_info', constructor=OrderInfo),
                         'telegram_payment_charge_id',
                         'provider_payment_charge_id',
                     ])
@@ -375,50 +404,50 @@ SuccessfulPayment = _create_class('SuccessfulPayment', [
 # incoming
 Message = _create_class('Message', [
               'message_id',
-              ('from_', User),
+              _Field('from_', constructor=User),
               'date',
-              ('chat', Chat),
-              ('forward_from', User),
-              ('forward_from_chat', Chat),
+              _Field('chat', constructor=Chat),
+              _Field('forward_from', constructor=User),
+              _Field('forward_from_chat', constructor=Chat),
               'forward_from_message_id',
-              'forward_date',                     # get around the fact that `Message` is not yet defined
-              ('reply_to_message', lambda **kwargs: getattr(sys.modules[__name__], 'Message')(**kwargs)),
+              'forward_date',                        # get around the fact that `Message` is not yet defined
+              _Field('reply_to_message', constructor=lambda **kwargs: getattr(sys.modules[__name__], 'Message')(**kwargs)),
               'edit_date',
               'text',
-              ('entities', MessageEntityArray),
-              ('audio', Audio),
-              ('document', Document),
-              ('game', Game),
-              ('photo', PhotoSizeArray),
-              ('sticker', Sticker),
-              ('video', Video),
-              ('voice', Voice),
-              ('video_note', VideoNote),
-              ('new_chat_members', UserArray),
+              _Field('entities', constructor=MessageEntityArray),
+              _Field('audio', constructor=Audio),
+              _Field('document', constructor=Document),
+              _Field('game', constructor=Game),
+              _Field('photo', constructor=PhotoSizeArray),
+              _Field('sticker', constructor=Sticker),
+              _Field('video', constructor=Video),
+              _Field('voice', constructor=Voice),
+              _Field('video_note', constructor=VideoNote),
+              _Field('new_chat_members', constructor=UserArray),
               'caption',
-              ('contact', Contact),
-              ('location', Location),
-              ('venue', Venue),
-              ('new_chat_member', User),
-              ('left_chat_member', User),
+              _Field('contact', constructor=Contact),
+              _Field('location', constructor=Location),
+              _Field('venue', constructor=Venue),
+              _Field('new_chat_member', constructor=User),
+              _Field('left_chat_member', constructor=User),
               'new_chat_title',
-              ('new_chat_photo', PhotoSizeArray),
+              _Field('new_chat_photo', constructor=PhotoSizeArray),
               'delete_chat_photo',
               'group_chat_created',
               'supergroup_chat_created',
               'channel_chat_created',
               'migrate_to_chat_id',
               'migrate_from_chat_id',
-              ('pinned_message', lambda **kwargs: getattr(sys.modules[__name__], 'Message')(**kwargs)),
-              ('invoice', Invoice),
-              ('successful_payment', SuccessfulPayment),
+              _Field('pinned_message', constructor=lambda **kwargs: getattr(sys.modules[__name__], 'Message')(**kwargs)),
+              _Field('invoice', constructor=Invoice),
+              _Field('successful_payment', constructor=SuccessfulPayment),
           ])
 
 # incoming
 InlineQuery = _create_class('InlineQuery', [
                   'id',
-                  ('from_', User),
-                  ('location', Location),
+                  _Field('from_', constructor=User),
+                  _Field('location', constructor=Location),
                   'query',
                   'offset',
               ])
@@ -426,8 +455,8 @@ InlineQuery = _create_class('InlineQuery', [
 # incoming
 ChosenInlineResult = _create_class('ChosenInlineResult', [
                          'result_id',
-                         ('from_', User),
-                         ('location', Location),
+                         _Field('from_', constructor=User),
+                         _Field('location', constructor=Location),
                          'inline_message_id',
                          'query',
                      ])
@@ -435,8 +464,8 @@ ChosenInlineResult = _create_class('ChosenInlineResult', [
 # incoming
 CallbackQuery = _create_class('CallbackQuery', [
                     'id',
-                    ('from_', User),
-                    ('message', Message),
+                    _Field('from_', constructor=User),
+                    _Field('message', constructor=Message),
                     'inline_message_id',
                     'chat_instance',
                     'data',
@@ -446,13 +475,13 @@ CallbackQuery = _create_class('CallbackQuery', [
 # incoming
 Update = _create_class('Update', [
              'update_id',
-             ('message', Message),
-             ('edited_message', Message),
-             ('channel_post', Message),
-             ('edited_channel_post', Message),
-             ('inline_query', InlineQuery),
-             ('chosen_inline_result', ChosenInlineResult),
-             ('callback_query', CallbackQuery),
+             _Field('message', constructor=Message),
+             _Field('edited_message', constructor=Message),
+             _Field('channel_post', constructor=Message),
+             _Field('edited_channel_post', constructor=Message),
+             _Field('inline_query', constructor=InlineQuery),
+             _Field('chosen_inline_result', constructor=ChosenInlineResult),
+             _Field('callback_query', constructor=CallbackQuery),
          ])
 
 # incoming
@@ -499,7 +528,7 @@ InputContactMessageContent = _create_class('InputContactMessageContent', [
 
 # outgoing
 InlineQueryResultArticle = _create_class('InlineQueryResultArticle', [
-                               ('type', None, 'article'),
+                               _Field('type', default='article'),
                                'id',
                                'title',
                                'input_message_content',
@@ -514,7 +543,7 @@ InlineQueryResultArticle = _create_class('InlineQueryResultArticle', [
 
 # outgoing
 InlineQueryResultPhoto = _create_class('InlineQueryResultPhoto', [
-                             ('type', None, 'photo'),
+                             _Field('type', default='photo'),
                              'id',
                              'photo_url',
                              'thumb_url',
@@ -529,7 +558,7 @@ InlineQueryResultPhoto = _create_class('InlineQueryResultPhoto', [
 
 # outgoing
 InlineQueryResultGif = _create_class('InlineQueryResultGif', [
-                           ('type', None, 'gif'),
+                           _Field('type', default='gif'),
                            'id',
                            'gif_url',
                            'gif_width',
@@ -544,7 +573,7 @@ InlineQueryResultGif = _create_class('InlineQueryResultGif', [
 
 # outgoing
 InlineQueryResultMpeg4Gif = _create_class('InlineQueryResultMpeg4Gif', [
-                                ('type', None, 'mpeg4_gif'),
+                                _Field('type', default='mpeg4_gif'),
                                 'id',
                                 'mpeg4_url',
                                 'mpeg4_width',
@@ -559,7 +588,7 @@ InlineQueryResultMpeg4Gif = _create_class('InlineQueryResultMpeg4Gif', [
 
 # outgoing
 InlineQueryResultVideo = _create_class('InlineQueryResultVideo', [
-                             ('type', None, 'video'),
+                             _Field('type', default='video'),
                              'id',
                              'video_url',
                              'mime_type',
@@ -576,7 +605,7 @@ InlineQueryResultVideo = _create_class('InlineQueryResultVideo', [
 
 # outgoing
 InlineQueryResultAudio = _create_class('InlineQueryResultAudio', [
-                             ('type', None, 'audio'),
+                             _Field('type', default='audio'),
                              'id',
                              'audio_url',
                              'title',
@@ -589,7 +618,7 @@ InlineQueryResultAudio = _create_class('InlineQueryResultAudio', [
 
 # outgoing
 InlineQueryResultVoice = _create_class('InlineQueryResultVoice', [
-                             ('type', None, 'voice'),
+                             _Field('type', default='voice'),
                              'id',
                              'voice_url',
                              'title',
@@ -601,7 +630,7 @@ InlineQueryResultVoice = _create_class('InlineQueryResultVoice', [
 
 # outgoing
 InlineQueryResultDocument = _create_class('InlineQueryResultDocument', [
-                                ('type', None, 'document'),
+                                _Field('type', default='document'),
                                 'id',
                                 'title',
                                 'caption',
@@ -617,7 +646,7 @@ InlineQueryResultDocument = _create_class('InlineQueryResultDocument', [
 
 # outgoing
 InlineQueryResultLocation = _create_class('InlineQueryResultLocation', [
-                                ('type', None, 'location'),
+                                _Field('type', default='location'),
                                 'id',
                                 'latitude',
                                 'longitude',
@@ -631,7 +660,7 @@ InlineQueryResultLocation = _create_class('InlineQueryResultLocation', [
 
 # outgoing
 InlineQueryResultVenue = _create_class('InlineQueryResultVenue', [
-                                ('type', None, 'venue'),
+                                _Field('type', default='venue'),
                                 'id',
                                 'latitude',
                                 'longitude',
@@ -647,7 +676,7 @@ InlineQueryResultVenue = _create_class('InlineQueryResultVenue', [
 
 # outgoing
 InlineQueryResultContact = _create_class('InlineQueryResultContact', [
-                                ('type', None, 'contact'),
+                                _Field('type', default='contact'),
                                 'id',
                                 'phone_number',
                                 'first_name',
@@ -661,7 +690,7 @@ InlineQueryResultContact = _create_class('InlineQueryResultContact', [
 
 # outgoing
 InlineQueryResultGame = _create_class('InlineQueryResultGame', [
-                            ('type', None, 'game'),
+                            _Field('type', default='game'),
                             'id',
                             'game_short_name',
                             'reply_markup',
@@ -669,7 +698,7 @@ InlineQueryResultGame = _create_class('InlineQueryResultGame', [
 
 # outgoing
 InlineQueryResultCachedPhoto = _create_class('InlineQueryResultCachedPhoto', [
-                                   ('type', None, 'photo'),
+                                   _Field('type', default='photo'),
                                    'id',
                                    'photo_file_id',
                                    'title',
@@ -681,7 +710,7 @@ InlineQueryResultCachedPhoto = _create_class('InlineQueryResultCachedPhoto', [
 
 # outgoing
 InlineQueryResultCachedGif = _create_class('InlineQueryResultCachedGif', [
-                                 ('type', None, 'gif'),
+                                 _Field('type', default='gif'),
                                  'id',
                                  'gif_file_id',
                                  'title',
@@ -692,7 +721,7 @@ InlineQueryResultCachedGif = _create_class('InlineQueryResultCachedGif', [
 
 # outgoing
 InlineQueryResultCachedMpeg4Gif = _create_class('InlineQueryResultCachedMpeg4Gif', [
-                                      ('type', None, 'mpeg4_gif'),
+                                      _Field('type', default='mpeg4_gif'),
                                       'id',
                                       'mpeg4_file_id',
                                       'title',
@@ -703,7 +732,7 @@ InlineQueryResultCachedMpeg4Gif = _create_class('InlineQueryResultCachedMpeg4Gif
 
 # outgoing
 InlineQueryResultCachedSticker = _create_class('InlineQueryResultCachedSticker', [
-                                     ('type', None, 'sticker'),
+                                     _Field('type', default='sticker'),
                                      'id',
                                      'sticker_file_id',
                                      'reply_markup',
@@ -712,7 +741,7 @@ InlineQueryResultCachedSticker = _create_class('InlineQueryResultCachedSticker',
 
 # outgoing
 InlineQueryResultCachedDocument = _create_class('InlineQueryResultCachedDocument', [
-                                      ('type', None, 'document'),
+                                      _Field('type', default='document'),
                                       'id',
                                       'title',
                                       'document_file_id',
@@ -724,7 +753,7 @@ InlineQueryResultCachedDocument = _create_class('InlineQueryResultCachedDocument
 
 # outgoing
 InlineQueryResultCachedVideo = _create_class('InlineQueryResultCachedVideo', [
-                                   ('type', None, 'video'),
+                                   _Field('type', default='video'),
                                    'id',
                                    'video_file_id',
                                    'title',
@@ -736,7 +765,7 @@ InlineQueryResultCachedVideo = _create_class('InlineQueryResultCachedVideo', [
 
 # outgoing
 InlineQueryResultCachedVoice = _create_class('InlineQueryResultCachedVoice', [
-                                   ('type', None, 'voice'),
+                                   _Field('type', default='voice'),
                                    'id',
                                    'voice_file_id',
                                    'title',
@@ -747,7 +776,7 @@ InlineQueryResultCachedVoice = _create_class('InlineQueryResultCachedVoice', [
 
 # outgoing
 InlineQueryResultCachedAudio = _create_class('InlineQueryResultCachedAudio', [
-                                   ('type', None, 'audio'),
+                                   _Field('type', default='audio'),
                                    'id',
                                    'audio_file_id',
                                    'caption',

@@ -8,12 +8,12 @@ Introduction
    reference
 
 Telepot helps you build applications for `Telegram Bot API <https://core.telegram.org/bots>`_.
-It works on Python 2.7 and Python 3. It also has an `async version <#async-version-python-3-5>`_
-based on `asyncio <https://docs.python.org/3/library/asyncio.html>`_ and Python 3.5+.
+It works on Python 2.7 and Python 3. For Python 3.5+, it also has an `async version <#async-version-python-3-5>`_
+based on `asyncio <https://docs.python.org/3/library/asyncio.html>`_.
 
 For a time, I tried to list the features here like many projects do. Eventually, I gave up.
 
-For common and straight-forward features, I find them too trivial to worth listing.
+Common and straight-forward features are too trivial to worth listing.
 For more unique and novel features, I cannot find standard terms to describe them.
 The best way to experience telepot is by reading this page and going through the
 `examples <https://github.com/nickoala/telepot/tree/master/examples>`_. Let's go.
@@ -314,25 +314,24 @@ Everything discussed so far assumes traditional Python. That is, network operati
 if you want to serve many users at the same time, some kind of threads are usually needed.
 Another option is to use an asynchronous or event-driven framework, such as `Twisted <http://twistedmatrix.com/>`_.
 
-Python 3.5 has its own ``asyncio`` module. Telepot supports that, too. If your bot is to serve many people,
-I strongly recommend doing it asynchronously.
+Python 3.5+ has its own ``asyncio`` module. Telepot supports that, too.
 
-If your O/S does not have Python 3.5 built in, you have to compile it yourself::
+Here is how to compile and install Python 3.6, if your O/S does not have it built in::
 
     $ sudo apt-get update
     $ sudo apt-get upgrade
     $ sudo apt-get install libssl-dev openssl libreadline-dev
     $ cd ~
-    $ wget https://www.python.org/ftp/python/3.5.2/Python-3.5.2.tgz
-    $ tar zxf Python-3.5.2.tgz
-    $ cd Python-3.5.2
+    $ wget https://www.python.org/ftp/python/3.6.1/Python-3.6.1.tgz
+    $ tar zxf Python-3.6.1.tgz
+    $ cd Python-3.6.1
     $ ./configure
     $ make
     $ sudo make install
 
 Finally::
 
-    $ pip3.5 install telepot
+    $ pip3.6 install telepot
 
 In case you are not familiar with asynchronous programming, let's start by learning about generators and coroutines:
 

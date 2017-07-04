@@ -51,10 +51,10 @@ class Bot(_BotBase):
 
         self._scheduler = self.Scheduler(self._loop)
 
-        self._router = helper.Router(flavor, {'chat': helper._delay_yell(self, 'on_chat_message'),
-                                              'callback_query': helper._delay_yell(self, 'on_callback_query'),
-                                              'inline_query': helper._delay_yell(self, 'on_inline_query'),
-                                              'chosen_inline_result': helper._delay_yell(self, 'on_chosen_inline_result')})
+        self._router = helper.Router(flavor, {'chat': helper._create_invoker(self, 'on_chat_message'),
+                                              'callback_query': helper._create_invoker(self, 'on_callback_query'),
+                                              'inline_query': helper._create_invoker(self, 'on_inline_query'),
+                                              'chosen_inline_result': helper._create_invoker(self, 'on_chosen_inline_result')})
 
     @property
     def loop(self):
@@ -74,41 +74,39 @@ class Bot(_BotBase):
     async def _api_request(self, method, params=None, files=None, **kwargs):
         return await api.request((self._token, method, params, files), **kwargs)
 
+    async def _api_request_with_file(self, method, params, file_key, file_value, **kwargs):
+        if _isstring(file_value):
+            params[file_key] = file_value
+            return await self._api_request(method, _rectify(params), **kwargs)
+        else:
+            files = {file_key: file_value}
+            return await self._api_request(method, _rectify(params), files, **kwargs)
+
     async def getMe(self):
         """ See: https://core.telegram.org/bots/api#getme """
         return await self._api_request('getMe')
 
     async def sendMessage(self, chat_id, text,
-                          parse_mode=None, disable_web_page_preview=None,
-                          disable_notification=None, reply_to_message_id=None, reply_markup=None):
+                          parse_mode=None,
+                          disable_web_page_preview=None,
+                          disable_notification=None,
+                          reply_to_message_id=None,
+                          reply_markup=None):
         """ See: https://core.telegram.org/bots/api#sendmessage """
         p = _strip(locals())
         return await self._api_request('sendMessage', _rectify(p))
 
-    async def forwardMessage(self, chat_id, from_chat_id, message_id, disable_notification=None):
+    async def forwardMessage(self, chat_id, from_chat_id, message_id,
+                             disable_notification=None):
         """ See: https://core.telegram.org/bots/api#forwardmessage """
         p = _strip(locals())
         return await self._api_request('forwardMessage', _rectify(p))
 
-    async def _sendfile(self, inputfile, filetype, params):
-        method = {'photo':      'sendPhoto',
-                  'audio':      'sendAudio',
-                  'document':   'sendDocument',
-                  'sticker':    'sendSticker',
-                  'video':      'sendVideo',
-                  'voice':      'sendVoice',
-                  'video_note': 'sendVideoNote'}[filetype]
-
-        if _isstring(inputfile):
-            params[filetype] = inputfile
-            return await self._api_request(method, _rectify(params))
-        else:
-            files = {filetype: inputfile}
-            return await self._api_request(method, _rectify(params), files)
-
     async def sendPhoto(self, chat_id, photo,
                         caption=None,
-                        disable_notification=None, reply_to_message_id=None, reply_markup=None):
+                        disable_notification=None,
+                        reply_to_message_id=None,
+                        reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#sendphoto
 
@@ -123,65 +121,85 @@ class Bot(_BotBase):
             make sure the filename is a unicode string.
         """
         p = _strip(locals(), more=['photo'])
-        return await self._sendfile(photo, 'photo', p)
+        return await self._api_request_with_file('sendPhoto', _rectify(p), 'photo', photo)
 
     async def sendAudio(self, chat_id, audio,
-                        caption=None, duration=None, performer=None, title=None,
-                        disable_notification=None, reply_to_message_id=None, reply_markup=None):
+                        caption=None,
+                        duration=None,
+                        performer=None,
+                        title=None,
+                        disable_notification=None,
+                        reply_to_message_id=None,
+                        reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#sendaudio
 
         :param audio: Same as ``photo`` in :meth:`telepot.aio.Bot.sendPhoto`
         """
         p = _strip(locals(), more=['audio'])
-        return await self._sendfile(audio, 'audio', p)
+        return await self._api_request_with_file('sendAudio', _rectify(p), 'audio', audio)
 
     async def sendDocument(self, chat_id, document,
                            caption=None,
-                           disable_notification=None, reply_to_message_id=None, reply_markup=None):
+                           disable_notification=None,
+                           reply_to_message_id=None,
+                           reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#senddocument
 
         :param document: Same as ``photo`` in :meth:`telepot.aio.Bot.sendPhoto`
         """
         p = _strip(locals(), more=['document'])
-        return await self._sendfile(document, 'document', p)
+        return await self._api_request_with_file('sendDocument', _rectify(p), 'document', document)
 
     async def sendSticker(self, chat_id, sticker,
-                          disable_notification=None, reply_to_message_id=None, reply_markup=None):
+                          disable_notification=None,
+                          reply_to_message_id=None,
+                          reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#sendsticker
 
         :param sticker: Same as ``photo`` in :meth:`telepot.aio.Bot.sendPhoto`
         """
         p = _strip(locals(), more=['sticker'])
-        return await self._sendfile(sticker, 'sticker', p)
+        return await self._api_request_with_file('sendSticker', _rectify(p), 'sticker', sticker)
 
     async def sendVideo(self, chat_id, video,
-                        duration=None, width=None, height=None, caption=None,
-                        disable_notification=None, reply_to_message_id=None, reply_markup=None):
+                        duration=None,
+                        width=None,
+                        height=None,
+                        caption=None,
+                        disable_notification=None,
+                        reply_to_message_id=None,
+                        reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#sendvideo
 
         :param video: Same as ``photo`` in :meth:`telepot.aio.Bot.sendPhoto`
         """
         p = _strip(locals(), more=['video'])
-        return await self._sendfile(video, 'video', p)
+        return await self._api_request_with_file('sendVideo', _rectify(p), 'video', video)
 
     async def sendVoice(self, chat_id, voice,
-                        caption=None, duration=None,
-                        disable_notification=None, reply_to_message_id=None, reply_markup=None):
+                        caption=None,
+                        duration=None,
+                        disable_notification=None,
+                        reply_to_message_id=None,
+                        reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#sendvoice
 
         :param voice: Same as ``photo`` in :meth:`telepot.aio.Bot.sendPhoto`
         """
         p = _strip(locals(), more=['voice'])
-        return await self._sendfile(voice, 'voice', p)
+        return await self._api_request_with_file('sendVoice', _rectify(p), 'voice', voice)
 
     async def sendVideoNote(self, chat_id, video_note,
-                            duration=None, length=None,
-                            disable_notification=None, reply_to_message_id=None, reply_markup=None):
+                            duration=None,
+                            length=None,
+                            disable_notification=None,
+                            reply_to_message_id=None,
+                            reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#sendvideonote
 
@@ -193,40 +211,56 @@ class Bot(_BotBase):
             on the video note's display size.
         """
         p = _strip(locals(), more=['video_note'])
-        return await self._sendfile(video_note, 'video_note', p)
+        return await self._api_request_with_file('sendVideoNote', _rectify(p), 'video_note', video_note)
 
     async def sendLocation(self, chat_id, latitude, longitude,
-                           disable_notification=None, reply_to_message_id=None, reply_markup=None):
+                           disable_notification=None,
+                           reply_to_message_id=None,
+                           reply_markup=None):
         """ See: https://core.telegram.org/bots/api#sendlocation """
         p = _strip(locals())
         return await self._api_request('sendLocation', _rectify(p))
 
     async def sendVenue(self, chat_id, latitude, longitude, title, address,
                         foursquare_id=None,
-                        disable_notification=None, reply_to_message_id=None, reply_markup=None):
+                        disable_notification=None,
+                        reply_to_message_id=None,
+                        reply_markup=None):
         """ See: https://core.telegram.org/bots/api#sendvenue """
         p = _strip(locals())
         return await self._api_request('sendVenue', _rectify(p))
 
     async def sendContact(self, chat_id, phone_number, first_name,
                           last_name=None,
-                          disable_notification=None, reply_to_message_id=None, reply_markup=None):
+                          disable_notification=None,
+                          reply_to_message_id=None,
+                          reply_markup=None):
         """ See: https://core.telegram.org/bots/api#sendcontact """
         p = _strip(locals())
         return await self._api_request('sendContact', _rectify(p))
 
     async def sendGame(self, chat_id, game_short_name,
-                       disable_notification=None, reply_to_message_id=None, reply_markup=None):
+                       disable_notification=None,
+                       reply_to_message_id=None,
+                       reply_markup=None):
         """ See: https://core.telegram.org/bots/api#sendgame """
         p = _strip(locals())
         return await self._api_request('sendGame', _rectify(p))
 
     async def sendInvoice(self, chat_id, title, description, payload,
                           provider_token, start_parameter, currency, prices,
-                          photo_url=None, photo_size=None, photo_width=None, photo_height=None,
-                          need_name=None, need_phone_number=None, need_email=None,
-                          need_shipping_address=None, is_flexible=None,
-                          disable_notification=None, reply_to_message_id=None, reply_markup=None):
+                          photo_url=None,
+                          photo_size=None,
+                          photo_width=None,
+                          photo_height=None,
+                          need_name=None,
+                          need_phone_number=None,
+                          need_email=None,
+                          need_shipping_address=None,
+                          is_flexible=None,
+                          disable_notification=None,
+                          reply_to_message_id=None,
+                          reply_markup=None):
         """ See: https://core.telegram.org/bots/api#sendinvoice """
         p = _strip(locals())
         return await self._api_request('sendInvoice', _rectify(p))
@@ -236,7 +270,9 @@ class Bot(_BotBase):
         p = _strip(locals())
         return await self._api_request('sendChatAction', _rectify(p))
 
-    async def getUserProfilePhotos(self, user_id, offset=None, limit=None):
+    async def getUserProfilePhotos(self, user_id,
+                                   offset=None,
+                                   limit=None):
         """ See: https://core.telegram.org/bots/api#getuserprofilephotos """
         p = _strip(locals())
         return await self._api_request('getUserProfilePhotos', _rectify(p))
@@ -246,20 +282,81 @@ class Bot(_BotBase):
         p = _strip(locals())
         return await self._api_request('getFile', _rectify(p))
 
-    async def kickChatMember(self, chat_id, user_id):
+    async def kickChatMember(self, chat_id, user_id,
+                             until_date=None):
         """ See: https://core.telegram.org/bots/api#kickchatmember """
         p = _strip(locals())
         return await self._api_request('kickChatMember', _rectify(p))
-
-    async def leaveChat(self, chat_id):
-        """ See: https://core.telegram.org/bots/api#leavechat """
-        p = _strip(locals())
-        return await self._api_request('leaveChat', _rectify(p))
 
     async def unbanChatMember(self, chat_id, user_id):
         """ See: https://core.telegram.org/bots/api#unbanchatmember """
         p = _strip(locals())
         return await self._api_request('unbanChatMember', _rectify(p))
+
+    async def restrictChatMember(self, chat_id, user_id,
+                                 until_date=None,
+                                 can_send_messages=None,
+                                 can_send_media_messages=None,
+                                 can_send_other_messages=None,
+                                 can_add_web_page_previews=None):
+        """ See: https://core.telegram.org/bots/api#restrictchatmember """
+        p = _strip(locals())
+        return await self._api_request('restrictChatMember', _rectify(p))
+
+    async def promoteChatMember(self, chat_id, user_id,
+                                can_change_info=None,
+                                can_post_messages=None,
+                                can_edit_messages=None,
+                                can_delete_messages=None,
+                                can_invite_users=None,
+                                can_restrict_members=None,
+                                can_pin_messages=None,
+                                can_promote_members=None):
+        """ See: https://core.telegram.org/bots/api#promotechatmember """
+        p = _strip(locals())
+        return await self._api_request('promoteChatMember', _rectify(p))
+
+    async def exportChatInviteLink(self, chat_id):
+        """ See: https://core.telegram.org/bots/api#exportchatinvitelink """
+        p = _strip(locals())
+        return await self._api_request('exportChatInviteLink', _rectify(p))
+
+    async def setChatPhoto(self, chat_id, photo):
+        """ See: https://core.telegram.org/bots/api#setchatphoto """
+        p = _strip(locals(), more=['photo'])
+        return await self._api_request_with_file('setChatPhoto', _rectify(p), 'photo', photo)
+
+    async def deleteChatPhoto(self, chat_id):
+        """ See: https://core.telegram.org/bots/api#deletechatphoto """
+        p = _strip(locals())
+        return await self._api_request('deleteChatPhoto', _rectify(p))
+
+    async def setChatTitle(self, chat_id, title):
+        """ See: https://core.telegram.org/bots/api#setchattitle """
+        p = _strip(locals())
+        return await self._api_request('setChatTitle', _rectify(p))
+
+    async def setChatDescription(self, chat_id,
+                                 description=None):
+        """ See: https://core.telegram.org/bots/api#setchatdescription """
+        p = _strip(locals())
+        return await self._api_request('setChatDescription', _rectify(p))
+
+    async def pinChatMessage(self, chat_id, message_id,
+                             disable_notification=None):
+        """ See: https://core.telegram.org/bots/api#pinchatmessage """
+        p = _strip(locals())
+        return await self._api_request('pinChatMessage', _rectify(p))
+
+    async def unpinChatMessage(self, chat_id):
+        """ See: https://core.telegram.org/bots/api#unpinchatmessage """
+        p = _strip(locals())
+        return await self._api_request('unpinChatMessage', _rectify(p))
+
+    async def leaveChat(self, chat_id):
+        """ See: https://core.telegram.org/bots/api#leavechat """
+        p = _strip(locals())
+        return await self._api_request('leaveChat', _rectify(p))
 
     async def getChat(self, chat_id):
         """ See: https://core.telegram.org/bots/api#getchat """
@@ -282,13 +379,17 @@ class Bot(_BotBase):
         return await self._api_request('getChatMember', _rectify(p))
 
     async def answerCallbackQuery(self, callback_query_id,
-                                  text=None, show_alert=None, url=None, cache_time=None):
+                                  text=None,
+                                  show_alert=None,
+                                  url=None,
+                                  cache_time=None):
         """ See: https://core.telegram.org/bots/api#answercallbackquery """
         p = _strip(locals())
         return await self._api_request('answerCallbackQuery', _rectify(p))
 
     async def answerShippingQuery(self, shipping_query_id, ok,
-                                  shipping_options=None, error_message=None):
+                                  shipping_options=None,
+                                  error_message=None):
         """ See: https://core.telegram.org/bots/api#answershippingquery """
         p = _strip(locals())
         return await self._api_request('answerShippingQuery', _rectify(p))
@@ -300,7 +401,9 @@ class Bot(_BotBase):
         return await self._api_request('answerPreCheckoutQuery', _rectify(p))
 
     async def editMessageText(self, msg_identifier, text,
-                              parse_mode=None, disable_web_page_preview=None, reply_markup=None):
+                              parse_mode=None,
+                              disable_web_page_preview=None,
+                              reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#editmessagetext
 
@@ -314,7 +417,9 @@ class Bot(_BotBase):
         p.update(_dismantle_message_identifier(msg_identifier))
         return await self._api_request('editMessageText', _rectify(p))
 
-    async def editMessageCaption(self, msg_identifier, caption=None, reply_markup=None):
+    async def editMessageCaption(self, msg_identifier,
+                                 caption=None,
+                                 reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#editmessagecaption
 
@@ -324,7 +429,8 @@ class Bot(_BotBase):
         p.update(_dismantle_message_identifier(msg_identifier))
         return await self._api_request('editMessageCaption', _rectify(p))
 
-    async def editMessageReplyMarkup(self, msg_identifier, reply_markup=None):
+    async def editMessageReplyMarkup(self, msg_identifier,
+                                     reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#editmessagereplymarkup
 
@@ -347,18 +453,29 @@ class Bot(_BotBase):
         return await self._api_request('deleteMessage', _rectify(p))
 
     async def answerInlineQuery(self, inline_query_id, results,
-                                cache_time=None, is_personal=None, next_offset=None,
-                                switch_pm_text=None, switch_pm_parameter=None):
+                                cache_time=None,
+                                is_personal=None,
+                                next_offset=None,
+                                switch_pm_text=None,
+                                switch_pm_parameter=None):
         """ See: https://core.telegram.org/bots/api#answerinlinequery """
         p = _strip(locals())
         return await self._api_request('answerInlineQuery', _rectify(p))
 
-    async def getUpdates(self, offset=None, limit=None, timeout=None, allowed_updates=None):
+    async def getUpdates(self,
+                         offset=None,
+                         limit=None,
+                         timeout=None,
+                         allowed_updates=None):
         """ See: https://core.telegram.org/bots/api#getupdates """
         p = _strip(locals())
         return await self._api_request('getUpdates', _rectify(p))
 
-    async def setWebhook(self, url=None, certificate=None, max_connections=None, allowed_updates=None):
+    async def setWebhook(self,
+                         url=None,
+                         certificate=None,
+                         max_connections=None,
+                         allowed_updates=None):
         """ See: https://core.telegram.org/bots/api#setwebhook """
         p = _strip(locals(), more=['certificate'])
 
@@ -377,7 +494,8 @@ class Bot(_BotBase):
         return await self._api_request('getWebhookInfo')
 
     async def setGameScore(self, user_id, score, game_message_identifier,
-                           force=None, disable_edit_message=None):
+                           force=None,
+                           disable_edit_message=None):
         """ See: https://core.telegram.org/bots/api#setgamescore """
         p = _strip(locals(), more=['game_message_identifier'])
         p.update(_dismantle_message_identifier(game_message_identifier))
