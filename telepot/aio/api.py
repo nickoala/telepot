@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 import async_timeout
+import atexit
 import re
 import json
 from .. import exception
@@ -13,6 +14,8 @@ _pools = {
                    connector=aiohttp.TCPConnector(limit=10),
                    loop=_loop)
 }
+
+atexit.register(_pools['default'].close)
 
 _timeout = 30
 
