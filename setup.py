@@ -42,15 +42,6 @@ else:
     cmdclass['build_py'] = nocopy_async
     cmdclass['install_lib'] = nocompile_async
 
-
-try:
-    # read pypi.rst for long_description
-    with open(path.join(here, 'pypi.rst')) as f:
-        long_description = f.read()
-except:
-    long_description = ''
-
-
 # Parse version
 with open(path.join(here, 'telepot', '__init__.py')) as f:
     m = re.search('^__version_info__ *= *\(([0-9]+), *([0-9]+)\)', f.read(), re.MULTILINE)
@@ -70,7 +61,7 @@ setup(
 
     description='Python framework for Telegram Bot API',
 
-    long_description=long_description,
+    long_description='',
 
     url='https://github.com/nickoala/telepot',
 
@@ -96,6 +87,7 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
 
     keywords='telegram bot api python wrapper',
