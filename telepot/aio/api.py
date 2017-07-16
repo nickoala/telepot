@@ -19,7 +19,7 @@ _timeout = 30
 
 
 def _close_pools():
-    global _pools;
+    global _pools
     for s in _pools.values():
         s.close()
 
