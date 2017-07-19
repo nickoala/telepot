@@ -34,7 +34,7 @@ class GetUpdatesLoop(object):
                         offset = update['update_id'] + 1
 
             except CancelledError:
-                raise
+                break
             except exception.BadHTTPResponse as e:
                 traceback.print_exc()
 
@@ -69,15 +69,19 @@ class MessageLoop(object):
     def __init__(self, bot, handle=None):
         self._bot = bot
         self._handle = _infer_handler_function(bot, handle)
+        self._task = None
 
     async def run_forever(self, *args, **kwargs):
         updatesloop = GetUpdatesLoop(self._bot,
                                      lambda update:
                                          self._handle(_extract_message(update)[1]))
 
-        self._bot.loop.create_task(updatesloop.run_forever(*args, **kwargs))
+        self._task = self._bot.loop.create_task(updatesloop.run_forever(*args, **kwargs))
 
         self._bot.scheduler.on_event(self._handle)
+
+    def cancel(self):
+        self._task.cancel()
 
 
 class Webhook(object):
