@@ -146,6 +146,14 @@ Document = _create_class('Document', [
                'file_path',  # undocumented
            ])
 
+# incoming and outgoing
+MaskPosition = _create_class('MaskPosition', [
+                   'point',
+                   'x_shift',
+                   'y_shift',
+                   'scale',
+               ])
+
 # incoming
 Sticker = _create_class('Sticker', [
               'file_id',
@@ -153,8 +161,21 @@ Sticker = _create_class('Sticker', [
               'height',
               _Field('thumb', constructor=PhotoSize),
               'emoji',
+              'set_name',
+              _Field('mask_position', constructor=MaskPosition),
               'file_size',
           ])
+
+def StickerArray(data):
+    return [Sticker(**p) for p in data]
+
+# incoming
+StickerSet = _create_class('StickerSet', [
+                 'name',
+                 'title',
+                 'contains_masks',
+                 _Field('stickers', constructor=StickerArray),
+             ])
 
 # incoming
 Video = _create_class('Video', [

@@ -1,7 +1,22 @@
 # telepot changelog
 
+## 12.2 (2017-08-01)
+
+- Bot API 3.2
+- Added methods:
+    - `getStickerSet()`
+    - `uploadStickerFile()`
+    - `createNewStickerSet()`
+    - `addStickerToSet()`
+    - `setStickerPositionInSet()`
+    - `deleteStickerFromSet()`
+- Added namedtuple `StickerSet`, `MaskPosition`
+- Added new fields to `Sticker`
+- Added `cancel()` to async `MessageLoop` (no change to traditional counterpart)
+
 ## 12.1 (2017-07-04)
 
+- Bot API 3.1
 - Added methods:
     - `restrictChatMember()`
     - `promoteChatMember()`
