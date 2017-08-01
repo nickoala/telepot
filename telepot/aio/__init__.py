@@ -111,7 +111,7 @@ class Bot(_BotBase):
         See: https://core.telegram.org/bots/api#sendphoto
 
         :param photo:
-            a string indicating a ``file_id`` on server,
+            a string indicating a ``file_id`` on server or HTTP URL of a photo from the Internet,
             a file-like object as obtained by ``open()`` or ``urlopen()``,
             or a (filename, file-like object) tuple.
             If the file-like object is obtained by ``urlopen()``, you most likely
