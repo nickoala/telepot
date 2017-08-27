@@ -97,7 +97,7 @@ async def _parse(response):
         data = await response.json()
         if data is None:
             raise ValueError()
-    except (ValueError, json.JSONDecodeError):
+    except (ValueError, json.JSONDecodeError, aiohttp.ClientResponseError):
         text = await response.text()
         raise exception.BadHTTPResponse(response.status, text, response)
 
