@@ -173,6 +173,10 @@ and delegator factories, which greatly ease the use of DelegatorBot. The module
 :mod:`telepot.helper` also has a number of ``*Handler`` classes which provide
 a connection-like interface to deal with individual chats or users.
 
+I have given an `answer <https://stackoverflow.com/questions/45387797/how-does-the-delegatorbot-work-exactly-in-telepot/45397368#45397368>`_
+on Stack Overflow which elaborates on the inner workings of DelegatorBot in
+greater details. Interested readers are encouraged to read that.
+
 In the rest of discussions, *seed tuple* means a (bot, message, seed) tuple,
 referring to the single argument taken by delegator functions.
 
@@ -376,4 +380,10 @@ Outgoing objects include:
 -------------------
 
 .. automodule:: telepot.routing
+   :members:
+
+``telepot.text``
+----------------
+
+.. automodule:: telepot.text
    :members:

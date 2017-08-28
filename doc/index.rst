@@ -18,6 +18,9 @@ For more unique and novel features, I cannot find standard terms to describe the
 The best way to experience telepot is by reading this page and going through the
 `examples <https://github.com/nickoala/telepot/tree/master/examples>`_. Let's go.
 
+.. contents::
+    :local:
+
 Installation
 ------------
 
@@ -107,7 +110,7 @@ Send a message
 --------------
 
 Sooner or later, your bot will want to send *you* messages. You should have
-discovered your own user id from above interactions. I will keeping using my
+discovered your own user id from above interactions. I will keep using my
 fake id of ``999999999``. Remember to substitute your own (real) id::
 
     >>> bot.sendMessage(999999999, 'Hey!')
@@ -373,4 +376,4 @@ below in async style:
    :emphasize-lines: 4-5,7,12-14,24
 
 `More Examples » <https://github.com/nickoala/telepot/tree/master/examples>`_
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-----------------------------------------------------------------------------
