@@ -1,3 +1,4 @@
+import os
 import asyncio
 import aiohttp
 import async_timeout
@@ -117,7 +118,10 @@ async def _parse(response):
 
 async def request(req, **user_kw):
     fn, args, kwargs, timeout, cleanup = _transform(req, **user_kw)
-
+    
+    # If http_proxy is set in the environment we should take care of
+    kwargs['proxy'] = os.environ.get('http_proxy')
+    
     try:
         if timeout is None:
             async with fn(*args, **kwargs) as r:
