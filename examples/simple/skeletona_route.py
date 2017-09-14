@@ -111,7 +111,7 @@ def on_inline_query(msg):
         else:
             results = articles if random.randint(0,1) else photos
             if result_type == 'b':
-                return dict(results=results, switch_pm_text='Back to Bot', switch_pm_parameter='Optional start parameter')
+                return dict(results=results, switch_pm_text='Back to Bot', switch_pm_parameter='Optional_start_parameter')
             else:
                 return dict(results=results)
 
