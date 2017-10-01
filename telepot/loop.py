@@ -45,22 +45,27 @@ class GetUpdatesLoop(RunForeverAsThread):
         self._update_handler = on_update
 
     def run_forever(self, relax=0.1, timeout=20, allowed_updates=None, offset=None):
-        offset = offset  # running offset
-        allowed_upd = allowed_updates
+        """
+        Process new updates in infinity loop
+        
+        :param relax: int or float
+        :param timeout: int
+        :param allowed_updates: bool
+        :param offset: int
+        """
         while 1:
             try:
                 result = self._bot.getUpdates(offset=offset,
                                               timeout=timeout,
-                                              allowed_updates=allowed_upd)
+                                              allowed_updates=allowed_updates)
 
                 # Once passed, this parameter is no longer needed.
-                allowed_upd = None
+                allowed_updates = None
 
-                if len(result) > 0:
-                    # No sort. Trust server to give messages in correct order.
-                    for update in result:
-                        self._update_handler(update)
-                        offset = update['update_id'] + 1
+                # No sort. Trust server to give messages in correct order.
+                for update in result:
+                    self._update_handler(update)
+                    offset = update['update_id'] + 1
 
             except exception.BadHTTPResponse as e:
                 traceback.print_exc()
