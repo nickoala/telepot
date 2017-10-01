@@ -44,8 +44,8 @@ class GetUpdatesLoop(RunForeverAsThread):
         self._bot = bot
         self._update_handler = on_update
 
-    def run_forever(self, relax=0.1, timeout=20, allowed_updates=None):
-        offset = None  # running offset
+    def run_forever(self, relax=0.1, timeout=20, allowed_updates=None, offset=None):
+        offset = offset  # running offset
         allowed_upd = allowed_updates
         while 1:
             try:
