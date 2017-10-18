@@ -1,19 +1,39 @@
 import urllib3
+import logging
 import json
 import re
 import os
+import urllib.request
+
 from . import exception, _isstring
 
 # Suppress InsecurePlatformWarning
 urllib3.disable_warnings()
 
+_POOL_KWARGS_DEFAULT = dict(num_pools=3, maxsize=10, retries=3, timeout=30)
+_POOL_KWARGS_ONETIME = dict(num_pools=1, maxsize=1, retries=3, timeout=30)
+_PROXY = urllib.request.getproxies().get('http')
+_pools = {}
+if _PROXY:
+    try:
+        _pools['default'] = urllib3.ProxyManager(_PROXY, **_POOL_KWARGS_DEFAULT)
+    except urllib3.exceptions.ProxySchemeUnknown:
+        # invalid proxy provided in environment
+        logging.getLogger(__name__).critical('Invalid `HTTP_PROXY` set: %s',
+                                             repr(_PROXY))
+    else:
+        _onetime_pool_spec = (urllib3.ProxyManager,
+                              dict(proxy_url=_PROXY, **_POOL_KWARGS_ONETIME))
 
-_pools = {
-    'default': urllib3.PoolManager(num_pools=3, maxsize=10, retries=3, timeout=30),
-}
+if not _pools:
+    # no proxy set or proxy invalid - use the default route
+    _pools['default'] = urllib3.PoolManager(**_POOL_KWARGS_DEFAULT)
+    _onetime_pool_spec = (urllib3.PoolManager, _POOL_KWARGS_ONETIME)
 
-_onetime_pool_spec = (urllib3.PoolManager, dict(num_pools=1, maxsize=1, retries=3, timeout=30))
-
+# cleanup
+del _PROXY
+del _POOL_KWARGS_DEFAULT
+del _POOL_KWARGS_ONETIME
 
 def _create_onetime_pool():
     cls, kw = _onetime_pool_spec
