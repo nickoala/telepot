@@ -1,4 +1,3 @@
-import os
 import asyncio
 import aiohttp
 import async_timeout
@@ -17,7 +16,14 @@ _pools = {
 }
 
 _timeout = 30
+_proxy = None  # (url, (username, password))
 
+def set_proxy(url, basic_auth=None):
+    global _proxy
+    if not url:
+        _proxy = None
+    else:
+        _proxy = (url, basic_auth) if basic_auth else (url,)
 
 def _close_pools():
     global _pools
@@ -25,14 +31,6 @@ def _close_pools():
         s.close()
 
 atexit.register(_close_pools)
-
-def _get_env_http_proxy():
-    """
-    Get HTTP_PROXY variable if available, otherwise get http_proxy
-    If no proxy is defined return None
-    """
-    env_proxy = os.environ.get('HTTP_PROXY')
-    return env_proxy if env_proxy else os.environ.get('http_proxy')
 
 def _create_onetime_pool():
     return aiohttp.ClientSession(
@@ -125,10 +123,12 @@ async def _parse(response):
 
 async def request(req, **user_kw):
     fn, args, kwargs, timeout, cleanup = _transform(req, **user_kw)
-    
-    # If http_proxy is set in the environment we should take care of
-    kwargs['proxy'] = _get_env_http_proxy()
-    
+
+    if _proxy:
+        kwargs['proxy'] = _proxy[0]
+        if len(_proxy) > 1:
+            kwargs['proxy_auth'] = aiohttp.BasicAuth(*_proxy[1])
+
     try:
         if timeout is None:
             async with fn(*args, **kwargs) as r:

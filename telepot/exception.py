@@ -40,15 +40,6 @@ class BadHTTPResponse(TelepotException):
     def response(self):
         return self.args[2]
 
-    def __unicode__(self):
-        return 'Status %d - First 500 characters are shown below:\n%s' % (self.status, self.text[:500])
-
-    def __str__(self):
-        if PY_3:
-            return str(self).encode('utf-8')
-        else:
-            return unicode(self).encode('utf-8')
-
 class EventNotFound(TelepotException):
     def __init__(self, event):
         super(EventNotFound, self).__init__(event)

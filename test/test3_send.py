@@ -267,6 +267,18 @@ def send_everything_on_contact(msg):
     bot.sendLocation(chat_id, -37.82, 144.97, reply_markup=remove_keyboard)  # Melbourne
     time.sleep(0.5)
 
+    r = bot.sendLocation(chat_id, -37.82, 144.97, live_period=60)  # Melbourne
+    time.sleep(3)
+
+    mif = telepot.message_identifier(r)
+    bot.editMessageLiveLocation(mif, -37.819, 144.97)
+    time.sleep(1)
+
+    bot.editMessageLiveLocation(mif, -37.818, 144.97)
+    time.sleep(1)
+
+    bot.stopMessageLiveLocation(mif)
+
     ##### sendGame
 
     bot.sendGame(chat_id, 'sunchaser')

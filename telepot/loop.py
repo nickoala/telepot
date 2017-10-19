@@ -44,14 +44,14 @@ class GetUpdatesLoop(RunForeverAsThread):
         self._bot = bot
         self._update_handler = on_update
 
-    def run_forever(self, relax=0.1, timeout=20, allowed_updates=None, offset=None):
+    def run_forever(self, relax=0.1, offset=None, timeout=20, allowed_updates=None):
         """
         Process new updates in infinity loop
-        
-        :param relax: int or float
+
+        :param relax: float
+        :param offset: int
         :param timeout: int
         :param allowed_updates: bool
-        :param offset: int
         """
         while 1:
             try:
@@ -129,6 +129,10 @@ class MessageLoop(RunForeverAsThread):
         """
         :type relax: float
         :param relax: seconds between each :meth:`.getUpdates`
+
+        :type offset: int
+        :param offset:
+            initial ``offset`` parameter supplied to :meth:`.getUpdates`
 
         :type timeout: int
         :param timeout:

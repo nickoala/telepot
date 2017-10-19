@@ -126,6 +126,8 @@ Chat = _create_class('Chat', [
            'description',
            'invite_link',
            _Field('pinned_message', constructor=_Message),
+           'sticker_set_name',
+           'can_set_sticker_set',
        ])
 
 # incoming
@@ -449,6 +451,7 @@ Message = _create_class('Message', [
               'author_signature',
               'text',
               _Field('entities', constructor=MessageEntityArray),
+              _Field('caption_entities', constructor=MessageEntityArray),
               _Field('audio', constructor=Audio),
               _Field('document', constructor=Document),
               _Field('game', constructor=Game),
@@ -542,6 +545,7 @@ InputTextMessageContent = _create_class('InputTextMessageContent', [
 InputLocationMessageContent = _create_class('InputLocationMessageContent', [
                                   'latitude',
                                   'longitude',
+                                  'live_period',
                               ])
 
 # outgoing
@@ -685,6 +689,7 @@ InlineQueryResultLocation = _create_class('InlineQueryResultLocation', [
                                 'latitude',
                                 'longitude',
                                 'title',
+                                'live_period',
                                 'reply_markup',
                                 'input_message_content',
                                 'thumb_url',

@@ -15,14 +15,14 @@ class GetUpdatesLoop(object):
         self._bot = bot
         self._update_handler = on_update
 
-    async def run_forever(self, relax=0.1, timeout=20, allowed_updates=None, offset=None):
+    async def run_forever(self, relax=0.1, offset=None, timeout=20, allowed_updates=None):
         """
         Process new updates in infinity loop
-        
-        :param relax: int or float
+
+        :param relax: float
+        :param offset: int
         :param timeout: int
         :param allowed_updates: bool
-        :param offset: int
         """
         while 1:
             try:

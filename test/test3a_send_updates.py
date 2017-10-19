@@ -222,6 +222,18 @@ async def send_everything(msg):
 
     await bot.sendLocation(chat_id, -37.82, 144.97, reply_markup=remove_keyboard)  # Melbourne
 
+    r = await bot.sendLocation(chat_id, -37.82, 144.97, live_period=60)  # Melbourne
+    await asyncio.sleep(3)
+
+    mif = telepot.message_identifier(r)
+    await bot.editMessageLiveLocation(mif, -37.819, 144.97)
+    await asyncio.sleep(1)
+
+    await bot.editMessageLiveLocation(mif, -37.818, 144.97)
+    await asyncio.sleep(1)
+
+    await bot.stopMessageLiveLocation(mif)
+
     ##### sendGame
 
     await bot.sendGame(chat_id, 'sunchaser')

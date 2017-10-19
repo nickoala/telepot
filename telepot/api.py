@@ -3,37 +3,41 @@ import logging
 import json
 import re
 import os
-import urllib.request
 
 from . import exception, _isstring
 
 # Suppress InsecurePlatformWarning
 urllib3.disable_warnings()
 
-_POOL_KWARGS_DEFAULT = dict(num_pools=3, maxsize=10, retries=3, timeout=30)
-_POOL_KWARGS_ONETIME = dict(num_pools=1, maxsize=1, retries=3, timeout=30)
-_PROXY = urllib.request.getproxies().get('http')
-_pools = {}
-if _PROXY:
-    try:
-        _pools['default'] = urllib3.ProxyManager(_PROXY, **_POOL_KWARGS_DEFAULT)
-    except urllib3.exceptions.ProxySchemeUnknown:
-        # invalid proxy provided in environment
-        logging.getLogger(__name__).critical('Invalid `HTTP_PROXY` set: %s',
-                                             repr(_PROXY))
+
+_default_pool_params = dict(num_pools=3, maxsize=10, retries=3, timeout=30)
+_onetime_pool_params = dict(num_pools=1, maxsize=1, retries=3, timeout=30)
+
+_pools = {
+    'default': urllib3.PoolManager(**_default_pool_params),
+}
+
+_onetime_pool_spec = (urllib3.PoolManager, _onetime_pool_params)
+
+
+def set_proxy(url, basic_auth=None):
+    """
+    Access Bot API through a proxy.
+    
+    :param url: proxy URL
+    :param basic_auth: 2-tuple ``('username', 'password')``
+    """
+    global _pools, _onetime_pool_spec
+    if not url:
+        _pools['default'] = urllib3.PoolManager(**_default_pool_params)
+        _onetime_pool_spec = (urllib3.PoolManager, _onetime_pool_params)
+    elif basic_auth:
+        h = urllib3.make_headers(proxy_basic_auth=':'.join(basic_auth))
+        _pools['default'] = urllib3.ProxyManager(url, headers=h, **_default_pool_params)
+        _onetime_pool_spec = (urllib3.ProxyManager, dict(proxy_url=url, headers=h, **_onetime_pool_params))
     else:
-        _onetime_pool_spec = (urllib3.ProxyManager,
-                              dict(proxy_url=_PROXY, **_POOL_KWARGS_ONETIME))
-
-if not _pools:
-    # no proxy set or proxy invalid - use the default route
-    _pools['default'] = urllib3.PoolManager(**_POOL_KWARGS_DEFAULT)
-    _onetime_pool_spec = (urllib3.PoolManager, _POOL_KWARGS_ONETIME)
-
-# cleanup
-del _PROXY
-del _POOL_KWARGS_DEFAULT
-del _POOL_KWARGS_ONETIME
+        _pools['default'] = urllib3.ProxyManager(url, **_default_pool_params)
+        _onetime_pool_spec = (urllib3.ProxyManager, dict(proxy_url=url, **_onetime_pool_params))
 
 def _create_onetime_pool():
     cls, kw = _onetime_pool_spec

@@ -387,3 +387,9 @@ Outgoing objects include:
 
 .. automodule:: telepot.text
    :members:
+
+``telepot.api``
+----------------
+
+.. automodule:: telepot.api
+   :members:

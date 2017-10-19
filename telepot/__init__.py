@@ -18,7 +18,7 @@ from . import hack
 from . import exception
 
 
-__version_info__ = (12, 3)
+__version_info__ = (12, 4)
 __version__ = '.'.join(map(str, __version_info__))
 
 
@@ -561,12 +561,35 @@ class Bot(_BotBase):
         return self._api_request_with_file('sendVideoNote', _rectify(p), 'video_note', video_note)
 
     def sendLocation(self, chat_id, latitude, longitude,
+                     live_period=None,
                      disable_notification=None,
                      reply_to_message_id=None,
                      reply_markup=None):
         """ See: https://core.telegram.org/bots/api#sendlocation """
         p = _strip(locals())
         return self._api_request('sendLocation', _rectify(p))
+
+    def editMessageLiveLocation(self, msg_identifier, latitude, longitude,
+                                reply_markup=None):
+        """
+        See: https://core.telegram.org/bots/api#editmessagelivelocation
+
+        :param msg_identifier: Same as in :meth:`.Bot.editMessageText`
+        """
+        p = _strip(locals(), more=['msg_identifier'])
+        p.update(_dismantle_message_identifier(msg_identifier))
+        return self._api_request('editMessageLiveLocation', _rectify(p))
+
+    def stopMessageLiveLocation(self, msg_identifier,
+                                reply_markup=None):
+        """
+        See: https://core.telegram.org/bots/api#stopmessagelivelocation
+
+        :param msg_identifier: Same as in :meth:`.Bot.editMessageText`
+        """
+        p = _strip(locals(), more=['msg_identifier'])
+        p.update(_dismantle_message_identifier(msg_identifier))
+        return self._api_request('stopMessageLiveLocation', _rectify(p))
 
     def sendVenue(self, chat_id, latitude, longitude, title, address,
                   foursquare_id=None,
@@ -724,6 +747,16 @@ class Bot(_BotBase):
         """ See: https://core.telegram.org/bots/api#getchatmember """
         p = _strip(locals())
         return self._api_request('getChatMember', _rectify(p))
+
+    def setChatStickerSet(self, chat_id, sticker_set_name):
+        """ See: https://core.telegram.org/bots/api#setchatstickerset """
+        p = _strip(locals())
+        return self._api_request('setChatStickerSet', _rectify(p))
+
+    def deleteChatStickerSet(self, chat_id):
+        """ See: https://core.telegram.org/bots/api#deletechatstickerset """
+        p = _strip(locals())
+        return self._api_request('deleteChatStickerSet', _rectify(p))
 
     def answerCallbackQuery(self, callback_query_id,
                             text=None,
