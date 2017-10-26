@@ -137,6 +137,9 @@ async def request(req, **user_kw):
             with async_timeout.timeout(timeout):
                 async with fn(*args, **kwargs) as r:
                     return await _parse(r)
+
+    except aiohttp.ClientConnectionError:
+        raise exception.TelegramError('Connection Error', 400, {})
     finally:
         if cleanup:
             cleanup()  # e.g. closing one-time session
