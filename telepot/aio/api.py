@@ -133,13 +133,17 @@ async def request(req, **user_kw):
         if timeout is None:
             async with fn(*args, **kwargs) as r:
                 return await _parse(r)
+        else:
+            try:
+                with async_timeout.timeout(timeout):
+                    async with fn(*args, **kwargs) as r:
+                        return await _parse(r)
 
-        try:
-            with async_timeout.timeout(timeout):
-                async with fn(*args, **kwargs) as r:
-                    return await _parse(r)
-        except asyncio.TimeoutError:
-            raise exception.TelegramError('Response timeout', 504, {}) from None
+            except asyncio.TimeoutError:
+                raise exception.TelegramError('Response timeout', 504, {})
+
+    except aiohttp.ClientConnectionError:
+        raise exception.TelegramError('Connection Error', 400, {})
 
     finally:
         if cleanup:
