@@ -133,10 +133,14 @@ async def request(req, **user_kw):
         if timeout is None:
             async with fn(*args, **kwargs) as r:
                 return await _parse(r)
-        else:
+
+        try:
             with async_timeout.timeout(timeout):
                 async with fn(*args, **kwargs) as r:
                     return await _parse(r)
+        except asyncio.TimeoutError:
+            raise exception.TelegramError('Response timeout', 504, {}) from None
+
     finally:
         if cleanup:
             cleanup()  # e.g. closing one-time session
