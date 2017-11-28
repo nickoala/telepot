@@ -256,6 +256,18 @@ def send_everything_on_contact(msg):
 
     bot.sendVideoNote(chat_id, open('hktraffic.mp4', 'rb'), length=2)
 
+    ##### sendMediaGroup
+
+    with open('lighthouse.jpg', 'rb') as f1, open('gandhi.png', 'rb') as f2, open('bookshelf.jpg', 'rb') as f3, open('saturn.jpg', 'rb') as f4:
+        ms = [
+            telepot.namedtuple.InputMediaPhoto(media=f1),
+            telepot.namedtuple.InputMediaPhoto(media=('media2', f2)),
+            telepot.namedtuple.InputMediaPhoto(media='https://telegram.org/file/811140935/175c/FSf2aidnuaY.21715.gif/31dc2dbb6902dcef78'),
+            {'type': 'photo', 'media': ('media3', ('books.jpg', f3))},
+            {'type': 'photo', 'media': f4},
+        ]
+        bot.sendMediaGroup(chat_id, ms)
+
     ##### sendLocation
 
     bot.sendChatAction(chat_id, 'find_location')

@@ -822,3 +822,26 @@ InlineQueryResultCachedAudio = _create_class('InlineQueryResultCachedAudio', [
                                    'reply_markup',
                                    'input_message_content',
                                ])
+
+# outgoing
+InputMediaPhoto = _create_class('InputMediaPhoto', [
+                      _Field('type', default='photo'),
+                      'media',
+                      'caption',
+                  ])
+
+# outgoing
+InputMediaVideo = _create_class('InputMediaVideo', [
+                      _Field('type', default='video'),
+                      'media',
+                      'caption',
+                      'width',
+                      'height',
+                      'duration',
+                  ])
+
+# incoming
+ResponseParameters = _create_class('ResponseParameters', [
+                         'migrate_to_chat_id',
+                         'retry_after',
+                     ])

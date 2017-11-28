@@ -107,6 +107,7 @@ class Sender(object):
     - :meth:`.Bot.sendVideo`
     - :meth:`.Bot.sendVoice`
     - :meth:`.Bot.sendVideoNote`
+    - :meth:`.Bot.sendMediaGroup`
     - :meth:`.Bot.sendLocation`
     - :meth:`.Bot.sendVenue`
     - :meth:`.Bot.sendContact`
@@ -124,6 +125,7 @@ class Sender(object):
                        'sendVideo',
                        'sendVoice',
                        'sendVideoNote',
+                       'sendMediaGroup',
                        'sendLocation',
                        'sendVenue',
                        'sendContact',

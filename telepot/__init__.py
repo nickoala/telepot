@@ -18,7 +18,7 @@ from . import hack
 from . import exception
 
 
-__version_info__ = (12, 4)
+__version_info__ = (12, 5)
 __version__ = '.'.join(map(str, __version_info__))
 
 
@@ -235,6 +235,63 @@ def _dismantle_message_identifier(f):
             raise ValueError()
     else:
         return {'inline_message_id': f}
+
+def _split_input_media_array(media_array):
+    def ensure_dict(input_media):
+        if isinstance(input_media, tuple) and hasattr(input_media, '_asdict'):
+            return input_media._asdict()
+        elif isinstance(input_media, dict):
+            return input_media
+        else:
+            raise ValueError()
+
+    def given_attach_name(input_media):
+        if isinstance(input_media['media'], tuple):
+            return input_media['media'][0]
+        else:
+            return None
+
+    def attach_name_generator(used_names):
+        x = 0
+        while 1:
+            x += 1
+            name = 'media' + str(x)
+            if name in used_names:
+                continue;
+            yield name
+
+    def split_media(input_media, name_generator):
+        file_spec = input_media['media']
+
+        # file_id, URL
+        if _isstring(file_spec):
+            return (input_media, None)
+
+        # file-object
+        # (attach-name, file-object)
+        # (attach-name, (filename, file-object))
+        if isinstance(file_spec, tuple):
+            name, f = file_spec
+        else:
+            name, f = next(name_generator), file_spec
+
+        m = input_media.copy()
+        m['media'] = 'attach://' + name
+
+        return (m, (name, f))
+
+    ms = [ensure_dict(m) for m in media_array]
+
+    used_names = [given_attach_name(m) for m in ms if given_attach_name(m) is not None]
+    name_generator = attach_name_generator(used_names)
+
+    splitted = [split_media(m, name_generator) for m in ms]
+
+    legal_media, attachments = map(list, zip(*splitted))
+    files_to_attach = dict([a for a in attachments if a is not None])
+
+    return (legal_media, files_to_attach)
+
 
 PY_3 = sys.version_info.major >= 3
 _string_type = str if PY_3 else basestring
@@ -470,14 +527,12 @@ class Bot(_BotBase):
         See: https://core.telegram.org/bots/api#sendphoto
 
         :param photo:
-            a string indicating a ``file_id`` on server or HTTP URL of a photo from the Internet,
-            a file-like object as obtained by ``open()`` or ``urlopen()``,
-            or a (filename, file-like object) tuple.
-            If the file-like object is obtained by ``urlopen()``, you most likely
-            have to supply a filename because Telegram servers require to know
-            the file extension.
-            If the filename contains non-ASCII characters and you are using Python 2.7,
-            make sure the filename is a unicode string.
+            - string: ``file_id`` for a photo existing on Telegram servers
+            - string: HTTP URL of a photo from the Internet
+            - file-like object: obtained by ``open(path, 'rb')``
+            - tuple: (filename, file-like object). If the filename contains
+              non-ASCII characters and you are using Python 2.7, make sure the
+              filename is a unicode string.
         """
         p = _strip(locals(), more=['photo'])
         return self._api_request_with_file('sendPhoto', _rectify(p), 'photo', photo)
@@ -560,6 +615,34 @@ class Bot(_BotBase):
         p = _strip(locals(), more=['video_note'])
         return self._api_request_with_file('sendVideoNote', _rectify(p), 'video_note', video_note)
 
+    def sendMediaGroup(self, chat_id, media,
+                       disable_notification=None,
+                       reply_to_message_id=None):
+        """
+        See: https://core.telegram.org/bots/api#sendmediagroup
+
+        :type media: array of `InputMedia <https://core.telegram.org/bots/api#inputmedia>`_ objects
+        :param media:
+            To indicate media locations, each InputMedia object's ``media`` field
+            should be one of these:
+
+            - string: ``file_id`` for a file existing on Telegram servers
+            - string: HTTP URL of a file from the Internet
+            - file-like object: obtained by ``open(path, 'rb')``
+            - tuple: (form-data name, file-like object)
+            - tuple: (form-data name, (filename, file-like object))
+
+            In case of uploading, you may supply customized multipart/form-data
+            names for each uploaded file (as in last 2 options above). Otherwise,
+            telepot assigns unique names to each uploaded file. Names assigned by
+            telepot will not collide with user-supplied names, if any.
+        """
+        p = _strip(locals(), more=['media'])
+        legal_media, files_to_attach = _split_input_media_array(media)
+
+        p['media'] = legal_media
+        return self._api_request('sendMediaGroup', _rectify(p), files_to_attach)
+
     def sendLocation(self, chat_id, latitude, longitude,
                      live_period=None,
                      disable_notification=None,
@@ -619,6 +702,7 @@ class Bot(_BotBase):
 
     def sendInvoice(self, chat_id, title, description, payload,
                     provider_token, start_parameter, currency, prices,
+                    provider_data=None,
                     photo_url=None,
                     photo_size=None,
                     photo_width=None,

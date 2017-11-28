@@ -1,5 +1,13 @@
 # telepot changelog
 
+## 12.5 (2017-11-28)
+
+- Bot API 3.5
+- Added method `sendMediaGroup` and namedtuple `InputMediaPhoto` and
+  `InputMediaVideo`
+- Added parameter `provider_data` to method `sendInvoice`
+- Better exception handling in `telepot.aio.api` module
+
 ## 12.4 (2017-10-19)
 
 - Bot API 3.4
