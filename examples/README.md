@@ -29,3 +29,7 @@ Demonstration of deep linking.
 ## Payment
 
 How to handle payments.
+
+## Event
+
+Use the built-in scheduler to schedule custom events
