@@ -126,7 +126,7 @@ def send_everything_on_contact(msg):
     bot.sendPhoto(chat_id, file_id, caption='Show original message and keyboard', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
     time.sleep(0.5)
 
-    bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=remove_keyboard)
+    bot.sendPhoto(chat_id, file_id, caption='_Hide keyboard_', parse_mode='Markdown', reply_markup=remove_keyboard)
     time.sleep(0.5)
 
     furl = urllib2.urlopen('http://i.imgur.com/35HSRQ6.png')

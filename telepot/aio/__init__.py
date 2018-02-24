@@ -107,6 +107,7 @@ class Bot(_BotBase):
 
     async def sendPhoto(self, chat_id, photo,
                         caption=None,
+                        parse_mode=None,
                         disable_notification=None,
                         reply_to_message_id=None,
                         reply_markup=None):
@@ -126,6 +127,7 @@ class Bot(_BotBase):
 
     async def sendAudio(self, chat_id, audio,
                         caption=None,
+                        parse_mode=None,
                         duration=None,
                         performer=None,
                         title=None,
@@ -142,6 +144,7 @@ class Bot(_BotBase):
 
     async def sendDocument(self, chat_id, document,
                            caption=None,
+                           parse_mode=None,
                            disable_notification=None,
                            reply_to_message_id=None,
                            reply_markup=None):
@@ -158,6 +161,8 @@ class Bot(_BotBase):
                         width=None,
                         height=None,
                         caption=None,
+                        parse_mode=None,
+                        supports_streaming=None,
                         disable_notification=None,
                         reply_to_message_id=None,
                         reply_markup=None):
@@ -171,6 +176,7 @@ class Bot(_BotBase):
 
     async def sendVoice(self, chat_id, voice,
                         caption=None,
+                        parse_mode=None,
                         duration=None,
                         disable_notification=None,
                         reply_to_message_id=None,
@@ -470,6 +476,7 @@ class Bot(_BotBase):
 
     async def editMessageCaption(self, msg_identifier,
                                  caption=None,
+                                 parse_mode=None,
                                  reply_markup=None):
         """
         See: https://core.telegram.org/bots/api#editmessagecaption

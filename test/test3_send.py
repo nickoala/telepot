@@ -124,7 +124,7 @@ def send_everything_on_contact(msg):
     bot.sendPhoto(chat_id, file_id, caption='Show original message and keyboard', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
     time.sleep(0.5)
 
-    bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=remove_keyboard)
+    bot.sendPhoto(chat_id, file_id, caption='_Hide keyboard_', parse_mode='Markdown', reply_markup=remove_keyboard)
     time.sleep(0.5)
 
     furl = urllib.request.urlopen('http://i.imgur.com/35HSRQ6.png')
@@ -364,6 +364,9 @@ def test_webhook_getupdates_exclusive():
 
 TOKEN = sys.argv[1]
 USER_ID = int(sys.argv[2])
+
+# Edit /etc/tinyproxy/tinyproxy.conf to allow access
+# telepot.api.set_proxy('http://192.168.0.103:8888')
 
 bot = telepot.Bot(TOKEN)
 

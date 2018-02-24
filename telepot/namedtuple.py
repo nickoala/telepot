@@ -478,6 +478,7 @@ Message = _create_class('Message', [
               _Field('pinned_message', constructor=_Message),
               _Field('invoice', constructor=Invoice),
               _Field('successful_payment', constructor=SuccessfulPayment),
+              'connected_website',
           ])
 
 # incoming
@@ -590,6 +591,7 @@ InlineQueryResultPhoto = _create_class('InlineQueryResultPhoto', [
                              'title',
                              'description',
                              'caption',
+                             'parse_mode',
                              'reply_markup',
                              'input_message_content',
                          ])
@@ -605,6 +607,7 @@ InlineQueryResultGif = _create_class('InlineQueryResultGif', [
                            'thumb_url',
                            'title',
                            'caption',
+                           'parse_mode',
                            'reply_markup',
                            'input_message_content',
                        ])
@@ -620,6 +623,7 @@ InlineQueryResultMpeg4Gif = _create_class('InlineQueryResultMpeg4Gif', [
                                 'thumb_url',
                                 'title',
                                 'caption',
+                                'parse_mode',
                                 'reply_markup',
                                 'input_message_content',
                             ])
@@ -633,6 +637,7 @@ InlineQueryResultVideo = _create_class('InlineQueryResultVideo', [
                              'thumb_url',
                              'title',
                              'caption',
+                             'parse_mode',
                              'video_width',
                              'video_height',
                              'video_duration',
@@ -648,6 +653,7 @@ InlineQueryResultAudio = _create_class('InlineQueryResultAudio', [
                              'audio_url',
                              'title',
                              'caption',
+                             'parse_mode',
                              'performer',
                              'audio_duration',
                              'reply_markup',
@@ -661,6 +667,7 @@ InlineQueryResultVoice = _create_class('InlineQueryResultVoice', [
                              'voice_url',
                              'title',
                              'caption',
+                             'parse_mode',
                              'voice_duration',
                              'reply_markup',
                              'input_message_content',
@@ -672,6 +679,7 @@ InlineQueryResultDocument = _create_class('InlineQueryResultDocument', [
                                 'id',
                                 'title',
                                 'caption',
+                                'parse_mode',
                                 'document_url',
                                 'mime_type',
                                 'description',
@@ -743,6 +751,7 @@ InlineQueryResultCachedPhoto = _create_class('InlineQueryResultCachedPhoto', [
                                    'title',
                                    'description',
                                    'caption',
+                                   'parse_mode',
                                    'reply_markup',
                                    'input_message_content',
                                ])
@@ -754,6 +763,7 @@ InlineQueryResultCachedGif = _create_class('InlineQueryResultCachedGif', [
                                  'gif_file_id',
                                  'title',
                                  'caption',
+                                 'parse_mode',
                                  'reply_markup',
                                  'input_message_content',
                              ])
@@ -765,6 +775,7 @@ InlineQueryResultCachedMpeg4Gif = _create_class('InlineQueryResultCachedMpeg4Gif
                                       'mpeg4_file_id',
                                       'title',
                                       'caption',
+                                      'parse_mode',
                                       'reply_markup',
                                       'input_message_content',
                                   ])
@@ -786,6 +797,7 @@ InlineQueryResultCachedDocument = _create_class('InlineQueryResultCachedDocument
                                       'document_file_id',
                                       'description',
                                       'caption',
+                                      'parse_mode',
                                       'reply_markup',
                                       'input_message_content',
                                   ])
@@ -798,6 +810,7 @@ InlineQueryResultCachedVideo = _create_class('InlineQueryResultCachedVideo', [
                                    'title',
                                    'description',
                                    'caption',
+                                   'parse_mode',
                                    'reply_markup',
                                    'input_message_content',
                                ])
@@ -809,6 +822,7 @@ InlineQueryResultCachedVoice = _create_class('InlineQueryResultCachedVoice', [
                                    'voice_file_id',
                                    'title',
                                    'caption',
+                                   'parse_mode',
                                    'reply_markup',
                                    'input_message_content',
                                ])
@@ -819,6 +833,7 @@ InlineQueryResultCachedAudio = _create_class('InlineQueryResultCachedAudio', [
                                    'id',
                                    'audio_file_id',
                                    'caption',
+                                   'parse_mode',
                                    'reply_markup',
                                    'input_message_content',
                                ])
@@ -828,6 +843,7 @@ InputMediaPhoto = _create_class('InputMediaPhoto', [
                       _Field('type', default='photo'),
                       'media',
                       'caption',
+                      'parse_mode',
                   ])
 
 # outgoing
@@ -835,9 +851,11 @@ InputMediaVideo = _create_class('InputMediaVideo', [
                       _Field('type', default='video'),
                       'media',
                       'caption',
+                      'parse_mode',
                       'width',
                       'height',
                       'duration',
+                      'supports_streaming',
                   ])
 
 # incoming

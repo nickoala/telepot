@@ -101,7 +101,7 @@ async def send_everything(msg):
 
     await bot.sendPhoto(chat_id, file_id, caption='Show original message and keyboard', reply_to_message_id=msg_id, reply_markup=nt_show_keyboard)
 
-    await bot.sendPhoto(chat_id, file_id, caption='Hide keyboard', reply_markup=remove_keyboard)
+    await bot.sendPhoto(chat_id, file_id, caption='_Hide keyboard_', parse_mode='Markdown', reply_markup=remove_keyboard)
 
     async with aiohttp.ClientSession() as session:
         async with session.get('http://i.imgur.com/35HSRQ6.png') as r:
@@ -327,6 +327,9 @@ async def handle(msg):
 
 TOKEN = sys.argv[1]
 USER_ID = int(sys.argv[2])
+
+# Edit /etc/tinyproxy/tinyproxy.conf to allow access
+# telepot.aio.api.set_proxy('http://192.168.0.104:8888')
 
 bot = telepot.aio.Bot(TOKEN)
 loop = asyncio.get_event_loop()

@@ -25,6 +25,16 @@ def set_proxy(url, basic_auth=None):
     else:
         _proxy = (url, basic_auth) if basic_auth else (url,)
 
+def _proxy_kwargs():
+    if _proxy is None or len(_proxy) == 0:
+        return {}
+    elif len(_proxy) == 1:
+        return {'proxy': _proxy[0]}
+    elif len(_proxy) == 2:
+        return {'proxy': _proxy[0], 'proxy_auth': aiohttp.BasicAuth(*_proxy[1])}
+    else:
+        raise RuntimeError("_proxy has invalid length")
+
 def _close_pools():
     global _pools
     for s in _pools.values():
@@ -124,11 +134,7 @@ async def _parse(response):
 async def request(req, **user_kw):
     fn, args, kwargs, timeout, cleanup = _transform(req, **user_kw)
 
-    if _proxy:
-        kwargs['proxy'] = _proxy[0]
-        if len(_proxy) > 1:
-            kwargs['proxy_auth'] = aiohttp.BasicAuth(*_proxy[1])
-
+    kwargs.update(_proxy_kwargs())
     try:
         if timeout is None:
             async with fn(*args, **kwargs) as r:
@@ -151,5 +157,9 @@ async def request(req, **user_kw):
 
 def download(req):
     session = _create_onetime_pool()
-    return session, session.get(_fileurl(req), timeout=_timeout)
+
+    kwargs = {}
+    kwargs.update(_proxy_kwargs())
+
+    return session, session.get(_fileurl(req), timeout=_timeout, **kwargs)
     # Caller should close session after download is complete
