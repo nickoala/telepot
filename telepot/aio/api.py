@@ -35,12 +35,12 @@ def _proxy_kwargs():
     else:
         raise RuntimeError("_proxy has invalid length")
 
-def _close_pools():
+async def _close_pools():
     global _pools
     for s in _pools.values():
-        s.close()
+        await s.close()
 
-atexit.register(_close_pools)
+atexit.register(lambda: _loop.create_task(_close_pools()))  # have to wrap async function
 
 def _create_onetime_pool():
     return aiohttp.ClientSession(
@@ -152,8 +152,11 @@ async def request(req, **user_kw):
         raise exception.TelegramError('Connection Error', 400, {})
 
     finally:
-        if cleanup:
-            cleanup()  # e.g. closing one-time session
+        if cleanup:  # e.g. closing one-time session
+            if asyncio.iscoroutinefunction(cleanup):
+                await cleanup()
+            else:
+                cleanup()
 
 def download(req):
     session = _create_onetime_pool()

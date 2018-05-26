@@ -1,5 +1,10 @@
 # telepot changelog
 
+## 12.7 (2018-05-27)
+
+- Await `aiohttp.ClientSession.close()`
+- Upgraded dependency `aiohttp>=3.0.0`
+
 ## 12.6 (2018-02-24)
 
 - Bot API 3.6
