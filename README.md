@@ -1,6 +1,6 @@
 # telepot - Python framework for Telegram Bot API
 
-**[Bot API 3.6](https://core.telegram.org/bots/api)**-compliant!
+## I am no longer maintaining this library. Thanks for considering telepot.
 
 ### [Introduction »](http://telepot.readthedocs.io/en/latest/)
 ### [Reference »](http://telepot.readthedocs.io/en/latest/reference.html)
